@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Resume Builder (Next.js + TypeScript)
+
+A fast, privacy‑first resume builder with three professional templates, structured inputs, a gamified editor, carbon footprint scoring, server PDF export, and lightweight metrics.
+
+### Highlights
+- 3 templates: Minimalist, Onyx, AwesomeCV
+- Structured Experience + Skills (with sliders)
+- PDF Export (server‑side)
+- Gamified Builder (score, badges, challenges)
+- Carbon Footprint Score per template
+- Privacy‑first (no ads/trackers; server renders PDF only on export)
+- Forever free (no trials, no paywalls)
+- Lightweight metrics: Page Hits and Resumes Downloaded
+
+---
+
+## Tech Stack
+- Next.js 15 (App Router) + React 19 + TypeScript
+- Tailwind CSS 4
+- ESLint (flat config)
+- Puppeteer (local), puppeteer‑core + @sparticuz/chromium (serverless)
+- Nodemailer (SMTP; Mailtrap‑friendly)
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
+1) Install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Create `.env.local` (optional, for email/PDF origin)
+```bash
+# SMTP (optional: email login link route)
+SMTP_HOST=sandbox.smtp.mailtrap.io
+SMTP_PORT=2525
+SMTP_USER=your_user
+SMTP_PASS=your_pass
+SMTP_FROM="Resume Builder <no-reply@example.com>"
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Public origin used by server PDF export
+# If deploying to Vercel, VERCEL_URL is used automatically when set.
+APP_BASE_URL=http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3) Run the dev server
+```bash
+npm run dev
+```
+Open http://localhost:3000 (dev may fall back to 3001 if 3000 is busy).
 
-## Learn More
+4) Production build (optional)
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features in Detail
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Templates
+Three templates live under `src/components/`:
+- `MinimalistTemplate.tsx` (simple, print‑friendly)
+- `OnyxTemplate.tsx` (modern, with skill meters)
+- `AwesomeCVTemplate.tsx` (timeline, colored sections, meters)
 
-## Deploy on Vercel
+### Editor
+The editor (`src/app/page.tsx`) supports:
+- Experience items with dates and “current role” toggle
+- Skills with level sliders
+- Summary, Education, Certifications, Projects
+- Optional profile picture upload
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Gamification
+Live score, badges, and small challenges that encourage better content.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Carbon Footprint Score
+Each template shows a 0‑10 score (lower is greener) to guide eco‑conscious printing.
+
+### PDF Export
+- Client sends the filled data to `/api/export-pdf`.
+- The route renders `/print` server‑side with Puppeteer and returns a PDF.
+- Local dev uses `puppeteer`. On serverless platforms, it tries `puppeteer-core` + `@sparticuz/chromium`.
+
+### Metrics
+- `/api/metrics` keeps in‑memory counters for `page_hits` and `resume_downloads`.
+- The homepage sends one page‑hit per tab session (guarded via `sessionStorage`) and displays counters in the header.
+- After a successful export, “Resumes Downloaded” increments.
+- Note: in‑memory counters reset on server restarts; switch to SQLite/KV for persistence.
+
+---
+
+## API Routes
+- `POST /api/export-pdf` → returns PDF (application/pdf)
+- `POST /api/send-login-link` → sends a magic link via SMTP (optional)
+- `GET/POST /api/metrics` → read/update counters
+
+---
+
+## Project Structure
+```
+src/
+	app/
+		page.tsx           # Main UI (editor, preview, metrics)
+		layout.tsx         # App layout
+		print/page.tsx     # Printable renderer for server PDF
+		api/
+			export-pdf/route.ts      # PDF generation endpoint
+			send-login-link/route.ts # SMTP login link (optional)
+			metrics/route.ts         # In‑memory metrics
+	components/
+		MinimalistTemplate.tsx
+		OnyxTemplate.tsx
+		AwesomeCVTemplate.tsx
+		PrintResume.tsx
+	types/
+		nodemailer.d.ts
+		serverless-pdf.d.ts
+```
+
+---
+
+## Deployment
+
+### Vercel
+- `src/app/api/export-pdf/route.ts` prefers `puppeteer-core` + `@sparticuz/chromium` when available.
+- Ensure `APP_BASE_URL` or `VERCEL_URL` is set so the PDF route can render the `/print` page with the correct origin.
+
+### Node/VPS
+- The route falls back to full `puppeteer` which is already included.
+
+---
+
+## Linting & Type Checking
+```bash
+npm run lint
+npm run build
+```
+
+---
+
+## Troubleshooting
+
+### ENOENT under `.next` on Windows
+If you see a transient ENOENT (e.g., `_buildManifest.js.tmp.*`):
+1. Stop the dev server.
+2. Delete `.next/`.
+3. Re‑run `npm run dev`.
+Antivirus can occasionally lock temp files under `.next`; excluding the folder can help.
+
+### Port 3000 in use
+Dev will auto‑select 3001. Close other dev instances or free the port if needed.
+
+### PDF export issues in production
+Confirm `APP_BASE_URL`/`VERCEL_URL` and that `@sparticuz/chromium` + `puppeteer-core` are installed on serverless. Locally, ensure `puppeteer` can launch Chrome (no sandbox flags may be required in some environments).
+
+---
+
+## License
+MIT (or your preferred license)
