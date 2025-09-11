@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Privacy & Transparency",
-  description:
-    "Privacy‑first by design: no ads, no trackers, your data stays in your browser. Learn how PDF export works and what minimal data our APIs process.",
-};
+// export const metadata: Metadata = {
+//   title: "Privacy & Transparency",
+//   description:
+//     "Privacy‑first by design: no ads, no trackers, your data stays in your browser. Learn how PDF export works and what minimal data our APIs process.",
+// };
 
 export default function PrivacyPage() {
   return (

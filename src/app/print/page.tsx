@@ -1,8 +1,8 @@
 "use client";
 import type { Metadata } from "next";
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+// export const metadata: Metadata = {
+//   robots: { index: false, follow: false },
+// };
 import React, { useEffect, useState } from "react";
 import PrintResume, { PrintPayload } from "@/components/PrintResume";
 

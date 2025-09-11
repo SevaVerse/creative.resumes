@@ -47,7 +47,7 @@ export default function OnyxTemplate({
   return (
     <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200 flex" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontSize: '12pt' }}>
       {/* Sidebar */}
-      <aside className="w-1/3 bg-[#E6F0FF] text-gray-900 p-8 flex flex-col items-center min-h-full">
+  <aside className="w-1/3 bg-[#1a2742] text-white p-8 flex flex-col items-center min-h-full">
         {profilePictureUrl && (
           <div className="mb-6">
             <Image
@@ -60,19 +60,19 @@ export default function OnyxTemplate({
           </div>
         )}
         <div className="mb-8 text-center">
-          <div className="font-extrabold text-2xl mb-1 text-gray-900">{name}</div>
-          <div className="text-xs mt-1 text-gray-700">{email}</div>
-          <div className="text-xs text-gray-700">{phone}</div>
+          <div className="font-extrabold text-2xl mb-1 text-white">{name}</div>
+          <div className="text-xs mt-1 text-gray-200">{email}</div>
+          <div className="text-xs text-gray-200">{phone}</div>
           {website && (
             <div className="text-xs">
-              <a href={website} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={website} className="text-blue-300 hover:underline" target="_blank" rel="noopener noreferrer">
                 {website}
               </a>
             </div>
           )}
           {linkedin && (
             <div className="text-xs">
-              <a href={linkedin} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={linkedin} className="text-blue-300 hover:underline" target="_blank" rel="noopener noreferrer">
                 {linkedin}
               </a>
             </div>
@@ -93,7 +93,7 @@ export default function OnyxTemplate({
         </div>
       </aside>
       {/* Main Content */}
-      <main className="w-2/3 p-10 bg-white">
+  <main className="w-2/3 p-10 bg-white">
         <section className="mb-8">
           <div className="font-bold text-base uppercase mb-2 tracking-wider text-gray-900 border-b border-gray-200 pb-1">Professional Summary</div>
           <div className="text-sm mt-2 text-gray-800 leading-relaxed">{summary}</div>
@@ -102,7 +102,6 @@ export default function OnyxTemplate({
         <section className="mb-8">
           <div className="font-bold text-base uppercase mb-4 tracking-wider text-gray-900">Work Experience</div>
           <div className="relative">
-            <div className="absolute top-4 left-0 right-0 h-[2px] bg-gray-200"></div>
             <div className="flex flex-col gap-6">
               {experiences?.map((exp: ExperienceItem, idx: number) => (
                 <div key={idx} className="relative">
@@ -116,6 +115,10 @@ export default function OnyxTemplate({
                       <div className="mt-1 text-sm text-gray-800 whitespace-pre-line leading-relaxed">{exp.details}</div>
                     </div>
                   </div>
+                  {/* Only render the horizontal line after each item except the last */}
+                  {idx < experiences.length - 1 && (
+                    <div className="ml-5 mt-2 h-[2px] bg-gray-200"></div>
+                  )}
                 </div>
               ))}
             </div>

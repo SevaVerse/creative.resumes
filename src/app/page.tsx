@@ -1,4 +1,57 @@
+// Tabbed preview component for templates
 "use client";
+// Tabbed preview component for templates
+type TabsPreviewProps = {
+  formData: any;
+  onExport: (tpl: string) => void | Promise<void>;
+  onEdit: () => void;
+};
+function TabsPreview({ formData, onExport, onEdit }: TabsPreviewProps) {
+  const TEMPLATES = [
+    { id: "minimalist", label: "Minimalist", color: "bg-green-500", score: 10, Component: MinimalistTemplate },
+    { id: "onyx", label: "Onyx", color: "bg-yellow-400", score: 6, Component: OnyxTemplate },
+    { id: "awesomecv", label: "AwesomeCV", color: "bg-red-500", score: 4, Component: AwesomeCVTemplate },
+  ];
+  const [tab, setTab] = useState("minimalist");
+  const tpl = TEMPLATES.find((t) => t.id === tab) || TEMPLATES[0];
+  const TemplateComponent = tpl.Component;
+  return (
+    <div className="w-full max-w-3xl">
+      <div className="flex gap-2 mb-4">
+        {TEMPLATES.map((t) => (
+          <button
+            key={t.id}
+            className={`px-4 py-2 rounded-t-lg font-semibold text-sm border-b-2 transition-colors ${tab === t.id ? t.color + " text-white border-b-0" : "bg-gray-100 text-gray-700 border-b-gray-300"}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="border border-gray-200 rounded-b-xl shadow bg-white p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold text-white ${tpl.color}`}>Carbon Footprint Score: {tpl.score}/10</span>
+          <span title="Lower = less ink, less energy, more eco-friendly. Score is based on template color, graphics, and print area." className="text-gray-400 cursor-help text-lg">&#9432;</span>
+        </div>
+        <TemplateComponent {...formData} />
+        <div className="flex gap-3 mt-6">
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition print:hidden"
+            onClick={() => onExport(tpl.id)}
+          >
+            Download PDF
+          </button>
+          <button
+            className="bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 font-semibold px-6 py-2 rounded transition"
+            onClick={onEdit}
+          >
+            Edit Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Confetti from "react-confetti";
@@ -323,16 +376,7 @@ export default function Home() {
       )}
       <main className="w-full max-w-6xl flex flex-col items-center gap-10">
         {/* Trust + Metrics summary */}
-        <div className="w-full mt-2 flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/privacy"
-              className="underline-offset-2 hover:underline text-blue-600 dark:text-blue-400"
-              aria-label="Read our Privacy & Transparency policy"
-            >
-              Privacy & Transparency
-            </Link>
-          </div>
+        <div className="w-full mt-2 flex items-center justify-end text-xs text-gray-600 dark:text-gray-400 gap-4">
           <div className="flex gap-4">
             <span>Page Hits: <strong>{metrics.page_hits}</strong></span>
             <span>Resumes Downloaded: <strong>{metrics.resume_downloads}</strong></span>
@@ -617,6 +661,40 @@ export default function Home() {
     </button>
   </div>
 )}
+{session && selectedTemplate && showPreview && (
+  <div className="w-full mt-8 flex flex-col items-center">
+    <TabsPreview
+      formData={formData}
+  onExport={async (tpl: string) => {
+        const payload = {
+          selectedTemplate: tpl,
+          ...formData,
+        };
+        const res = await fetch("/api/export-pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `resume-${tpl}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          alert("Failed to export PDF.");
+        }
+      }}
+      onEdit={() => setShowPreview(false)}
+    />
+  </div>
+)}
+
+
       </main>
 
       {/* Login Modal */}
