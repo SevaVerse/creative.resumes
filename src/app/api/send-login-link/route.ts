@@ -6,10 +6,10 @@ export async function POST(req: NextRequest) {
   const { email } = await req.json();
 
     // Configure Nodemailer (Mailtrap Sandbox by default)
-    const host = process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io";
-    const port = Number(process.env.SMTP_PORT || 2525);
-    const user = process.env.SMTP_USER || "e5bd6deca696ef";
-    const pass = process.env.SMTP_PASS || "3507ae78244901"; // set in .env.local
+    const host = process.env.SMTP_HOST;
+    const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
 
     const transporter = nodemailer.createTransport({
         host,

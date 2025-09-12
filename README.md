@@ -127,9 +127,25 @@ src/
 ### Vercel
 - `src/app/api/export-pdf/route.ts` prefers `puppeteer-core` + `@sparticuz/chromium` when available.
 - Ensure `APP_BASE_URL` or `VERCEL_URL` is set so the PDF route can render the `/print` page with the correct origin.
+- `@sparticuz/chromium` and `puppeteer-core` are moved to `dependencies` for production runtime.
+- `vercel.json` configures serverless function timeout (30s) for PDF generation.
 
 ### Node/VPS
 - The route falls back to full `puppeteer` which is already included.
+
+### Environment Variables for Production
+```bash
+# For Vercel deployment
+VERCEL_URL=your-deployment-url.vercel.app
+APP_BASE_URL=https://your-deployment-url.vercel.app
+
+# SMTP (optional)
+SMTP_HOST=your-smtp-host
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+FROM_EMAIL=noreply@yourdomain.com
+```
 
 ---
 
@@ -155,6 +171,12 @@ Dev will auto‑select 3001. Close other dev instances or free the port if neede
 
 ### PDF export issues in production
 Confirm `APP_BASE_URL`/`VERCEL_URL` and that `@sparticuz/chromium` + `puppeteer-core` are installed on serverless. Locally, ensure `puppeteer` can launch Chrome (no sandbox flags may be required in some environments).
+
+### Vercel deployment issues
+- Ensure `@sparticuz/chromium` and `puppeteer-core` are in `dependencies` (not `devDependencies`)
+- Check that `vercel.json` is present with proper function configuration
+- Monitor function logs for Puppeteer launch errors
+- PDF generation may take 10-20 seconds in serverless environments
 
 ---
 

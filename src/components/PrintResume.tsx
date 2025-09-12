@@ -3,6 +3,7 @@ import React from "react";
 import MinimalistTemplate from "./MinimalistTemplate";
 import OnyxTemplate from "./OnyxTemplate";
 import AwesomeCVTemplate from "./AwesomeCVTemplate";
+import SubtleElegantTemplate from "./SubtleElegantTemplate";
 
 export type ExperienceItem = {
   company: string;
@@ -16,7 +17,7 @@ export type ExperienceItem = {
 export type SkillItem = { name: string; level: number };
 
 export type PrintPayload = {
-  selectedTemplate: "minimalist" | "onyx" | "awesomecv";
+  selectedTemplate: "minimalist" | "onyx" | "awesomecv" | "subtleelegant";
   name: string;
   email: string;
   phone: string;
@@ -39,6 +40,8 @@ export default function PrintResume(props: PrintPayload) {
         <OnyxTemplate {...props} />
       ) : selectedTemplate === "awesomecv" ? (
         <AwesomeCVTemplate {...props} />
+      ) : selectedTemplate === "subtleelegant" ? (
+        <SubtleElegantTemplate {...props} />
       ) : (
         <MinimalistTemplate {...props} />
       )}

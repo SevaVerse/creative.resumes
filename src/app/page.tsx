@@ -1,16 +1,42 @@
 // Tabbed preview component for templates
 "use client";
 // Tabbed preview component for templates
+type ExperienceItem = {
+  company: string;
+  title: string;
+  startDate: string;
+  endDate?: string;
+  current?: boolean;
+  details: string;
+};
+type SkillItem = { name: string; level: number };
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  website: string;
+  linkedin: string;
+  summary: string;
+  experiences: ExperienceItem[];
+  education: string;
+  skills: SkillItem[];
+  certifications: string;
+  projects: string;
+  profilePicture?: File;
+  profilePictureUrl: string;
+};
 type TabsPreviewProps = {
-  formData: any;
+  formData: FormData;
   onExport: (tpl: string) => void | Promise<void>;
   onEdit: () => void;
+  isExporting?: boolean;
 };
-function TabsPreview({ formData, onExport, onEdit }: TabsPreviewProps) {
+function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPreviewProps) {
   const TEMPLATES = [
-    { id: "minimalist", label: "Minimalist", color: "bg-green-500", score: 10, Component: MinimalistTemplate },
-    { id: "onyx", label: "Onyx", color: "bg-yellow-400", score: 6, Component: OnyxTemplate },
-    { id: "awesomecv", label: "AwesomeCV", color: "bg-red-500", score: 4, Component: AwesomeCVTemplate },
+    { id: "minimalist", label: "Minimalist", color: "bg-green-500", score: normalizeCarbonScore(computeCarbonScore("minimalist")), Component: MinimalistTemplate },
+    { id: "onyx", label: "Onyx", color: "bg-yellow-400", score: normalizeCarbonScore(computeCarbonScore("onyx")), Component: OnyxTemplate },
+    { id: "awesomecv", label: "AwesomeCV", color: "bg-red-500", score: normalizeCarbonScore(computeCarbonScore("awesomecv")), Component: AwesomeCVTemplate },
+    { id: "subtleelegant", label: "Subtle & Elegant", color: "bg-gray-500", score: normalizeCarbonScore(computeCarbonScore("subtleelegant")), Component: SubtleElegantTemplate },
   ];
   const [tab, setTab] = useState("minimalist");
   const tpl = TEMPLATES.find((t) => t.id === tab) || TEMPLATES[0];
@@ -36,10 +62,21 @@ function TabsPreview({ formData, onExport, onEdit }: TabsPreviewProps) {
         <TemplateComponent {...formData} />
         <div className="flex gap-3 mt-6">
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition print:hidden"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition print:hidden disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             onClick={() => onExport(tpl.id)}
+            disabled={isExporting}
           >
-            Download PDF
+            {isExporting ? (
+              <>
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating PDF...
+              </>
+            ) : (
+              'Download PDF'
+            )}
           </button>
           <button
             className="bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 font-semibold px-6 py-2 rounded transition"
@@ -59,13 +96,27 @@ import Confetti from "react-confetti";
 import MinimalistTemplate from "../components/MinimalistTemplate";
 import OnyxTemplate from "../components/OnyxTemplate";
 import AwesomeCVTemplate from "../components/AwesomeCVTemplate";
+import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
 
-const BASE_CHALLENGES = [
-  { id: "achievements", text: "Add 3 quantifiable achievements to boost your score by 20%.", completed: false },
-  { id: "ats", text: "Make your resume ATS-friendly for a badge!", completed: false },
-  { id: "creativity", text: "Add a creative project for a creativity badge!", completed: false },
-];
+// Carbon footprint scoring function based on template color usage
+function computeCarbonScore(templateId: string): number {
+  // Base scores based on visual analysis of dark color coverage
+  const baseScores: Record<string, number> = {
+    minimalist: 2,    // Mostly white background, minimal dark elements
+    onyx: 6,         // Light gray sidebar, some blue accents
+    awesomecv: 10,   // Dark sidebar covering 1/3 of page, white text
+    subtleelegant: 3 // White background, subtle gray borders and text
+  };
+
+  return baseScores[templateId] || 5; // Default fallback
+}
+
+// Normalize scores to a scale of 10 (where 10 is most eco-friendly/lowest carbon)
+function normalizeCarbonScore(rawScore: number, maxRawScore: number = 10): number {
+  // Invert the score: higher raw score (more ink) = lower normalized score (less eco-friendly)
+  return Math.round((1 - rawScore / maxRawScore) * 10);
+}
 
 // Future-proof features list for the homepage tile (easy to extend)
 type Feature = { id: string; title: string; description: string; icon?: string };
@@ -79,16 +130,15 @@ const FEATURES: Feature[] = [
   { id: "gamification", title: "Gamified Builder", description: "Score, badges, and challenges to guide better resumes.", icon: "🏅" },
 ];
 
+// Base challenges for gamification
+type Challenge = { id: string; text: string; completed: boolean };
+const BASE_CHALLENGES: Challenge[] = [
+  { id: "ats", text: "Complete all required fields for ATS compatibility", completed: false },
+  { id: "achievements", text: "Include quantifiable achievements (numbers) in experience", completed: false },
+  { id: "creativity", text: "Mention creative projects", completed: false },
+];
+
 export default function Home() {
-  type ExperienceItem = {
-    company: string;
-    title: string;
-    startDate: string;
-    endDate?: string;
-    current?: boolean;
-    details: string;
-  };
-  type SkillItem = { name: string; level: number };
   const [session, setSession] = useState<{ email: string } | null>(null);
   const [showLogin, setShowLogin] = useState(false);
 
@@ -117,6 +167,9 @@ export default function Home() {
   // Metrics state
   const [metrics, setMetrics] = useState<{ page_hits: number; resume_downloads: number }>({ page_hits: 0, resume_downloads: 0 });
 
+  // Export loading state
+  const [isExporting, setIsExporting] = useState(false);
+
   // Gamification state
   const [score, setScore] = useState(0);
   const [badges, setBadges] = useState<string[]>([]);
@@ -135,6 +188,7 @@ export default function Home() {
 
   // Fire a page hit and pull current metrics on mount
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_ENABLE_METRICS === "false") return;
     const fire = async () => {
       // Guard: only count once per session/tab
       const key = "rb_page_hit_once";
@@ -309,55 +363,7 @@ export default function Home() {
     setShowPreview(true);
   };
 
-  const handleExportServerPDF = async () => {
-    if (!selectedTemplate) return;
-    const payload = {
-      selectedTemplate: selectedTemplate as "minimalist" | "onyx" | "awesomecv",
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      website: formData.website,
-      linkedin: formData.linkedin,
-      summary: formData.summary,
-      experiences: formData.experiences,
-      education: formData.education,
-      skills: formData.skills,
-      certifications: formData.certifications,
-      projects: formData.projects,
-      profilePictureUrl: formData.profilePictureUrl,
-    };
-    const res = await fetch("/api/export-pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      alert("Failed to export PDF on server.");
-      return;
-    }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "resume.pdf";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    // Increment resume download metric and refresh
-    try {
-      await fetch("/api/metrics", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "resume_download" }),
-      });
-      const m = await fetch("/api/metrics");
-      if (m.ok) {
-        const data = await m.json();
-        setMetrics({ page_hits: data.page_hits ?? 0, resume_downloads: data.resume_downloads ?? 0 });
-      }
-    } catch {}
-  };
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 dark:from-neutral-900 dark:to-neutral-950 px-4 py-12">
@@ -600,96 +606,39 @@ export default function Home() {
 {/* Show resume preview after form submit */}
 {session && selectedTemplate && showPreview && (
   <div className="w-full mt-8 flex flex-col items-center">
-    {/* Show all three template previews horizontally with carbon scores */}
-    <div className="flex flex-col gap-6 md:flex-row md:gap-4 justify-center items-start w-full">
-      {["minimalist", "onyx", "awesomecv"].map((tpl) => {
-        let carbonScore = 0;
-        let color = "";
-        let label = "";
-        if (tpl === "minimalist") {
-          carbonScore = 10;
-          color = "bg-green-500";
-          label = "Minimalist";
-        } else if (tpl === "onyx") {
-          carbonScore = 6;
-          color = "bg-yellow-400";
-          label = "Onyx";
-        } else if (tpl === "awesomecv") {
-          carbonScore = 4;
-          color = "bg-red-500";
-          label = "AwesomeCV";
-        }
-        const TemplateComponent = tpl === "minimalist" ? MinimalistTemplate : tpl === "onyx" ? OnyxTemplate : AwesomeCVTemplate;
-        return (
-          <div key={tpl} className="flex flex-col items-center w-full max-w-lg border border-gray-200 rounded-xl shadow bg-white">
-            <div className="mt-4 mb-2 flex items-center gap-2">
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold text-white ${color}`}>Carbon Footprint Score: {carbonScore}/10</span>
-              <span title="Lower = less ink, less energy, more eco-friendly. Score is based on template color, graphics, and print area." className="text-gray-400 cursor-help text-lg">&#9432;</span>
-            </div>
-            <div className="mb-2 text-xs font-semibold text-gray-600">{label}</div>
-            <div className="w-full p-4">
-              <TemplateComponent
-                name={formData.name}
-                email={formData.email}
-                phone={formData.phone}
-                website={formData.website}
-                linkedin={formData.linkedin}
-                summary={formData.summary}
-                experiences={formData.experiences}
-                education={formData.education}
-                skills={formData.skills}
-                certifications={formData.certifications}
-                projects={formData.projects}
-                profilePictureUrl={formData.profilePictureUrl}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-    <button
-      className="mt-6 bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 font-semibold px-6 py-2 rounded transition"
-      onClick={() => setShowPreview(false)}
-    >
-      Edit Details
-    </button>
-    <button
-  className="mt-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition print:hidden"
-      onClick={handleExportServerPDF}
-    >
-  Export to PDF
-    </button>
-  </div>
-)}
-{session && selectedTemplate && showPreview && (
-  <div className="w-full mt-8 flex flex-col items-center">
     <TabsPreview
       formData={formData}
-  onExport={async (tpl: string) => {
-        const payload = {
-          selectedTemplate: tpl,
-          ...formData,
-        };
-        const res = await fetch("/api/export-pdf", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `resume-${tpl}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        } else {
-          alert("Failed to export PDF.");
+      onExport={async (tpl: string) => {
+        setIsExporting(true);
+        try {
+          const payload = {
+            selectedTemplate: tpl,
+            ...formData,
+          };
+          const res = await fetch("/api/export-pdf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `resume-${tpl}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          } else {
+            alert("Failed to export PDF.");
+          }
+        } finally {
+          setIsExporting(false);
         }
       }}
       onEdit={() => setShowPreview(false)}
+      isExporting={isExporting}
     />
   </div>
 )}

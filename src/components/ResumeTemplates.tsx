@@ -24,6 +24,11 @@ const templates: ResumeTemplate[] = [
     name: "AwesomeCV",
     description: "AwesomeCV: Inspired by the popular open-source LaTeX/React template.",
   },
+  {
+    id: "subtleelegant",
+    name: "Subtle & Elegant",
+    description: "Subtle & Elegant: Clean serif typography, soft grays, and refined layout for a sophisticated look.",
+  },
 ];
 
 export default function ResumeTemplates({ onSelect }: { onSelect: (id: string) => void }) {

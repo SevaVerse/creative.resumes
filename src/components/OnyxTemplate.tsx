@@ -47,7 +47,7 @@ export default function OnyxTemplate({
   return (
     <div className="w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200 flex" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontSize: '12pt' }}>
       {/* Sidebar */}
-  <aside className="w-1/3 bg-[#1a2742] text-white p-8 flex flex-col items-center min-h-full">
+  <aside className="w-1/3 bg-slate-100 text-gray-900 p-8 flex flex-col items-center min-h-full">
         {profilePictureUrl && (
           <div className="mb-6">
             <Image
@@ -55,24 +55,24 @@ export default function OnyxTemplate({
               alt="Profile picture"
               width={96}
               height={96}
-              className="rounded-full object-cover border-4 border-white shadow"
+              className="rounded-full object-cover border-4 border-slate-300 shadow"
             />
           </div>
         )}
         <div className="mb-8 text-center">
-          <div className="font-extrabold text-2xl mb-1 text-white">{name}</div>
-          <div className="text-xs mt-1 text-gray-200">{email}</div>
-          <div className="text-xs text-gray-200">{phone}</div>
+          <div className="font-extrabold text-2xl mb-1 text-gray-900">{name}</div>
+          <div className="text-xs mt-1 text-gray-600">{email}</div>
+          <div className="text-xs text-gray-600">{phone}</div>
           {website && (
             <div className="text-xs">
-              <a href={website} className="text-blue-300 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={website} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                 {website}
               </a>
             </div>
           )}
           {linkedin && (
             <div className="text-xs">
-              <a href={linkedin} className="text-blue-300 hover:underline" target="_blank" rel="noopener noreferrer">
+              <a href={linkedin} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                 {linkedin}
               </a>
             </div>
@@ -84,8 +84,8 @@ export default function OnyxTemplate({
             {skills.map((skill, idx) => (
               <div key={idx} className="w-full">
                 <div className="text-xs text-gray-700 mb-1">{skill.name}</div>
-                <div className="w-full bg-blue-100 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.max(0, Math.min(100, skill.level))}%` }}></div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.max(0, Math.min(100, skill.level))}%` }}></div>
                 </div>
               </div>
             ))}

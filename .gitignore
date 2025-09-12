@@ -56,3 +56,6 @@ next-env.d.ts
 
 # Optional: ignore local mailtrap/smtp4dev data
 smtp4dev.db
+
+# sensitive files
+.env
