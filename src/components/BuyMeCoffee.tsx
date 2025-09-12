@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+// जय श्री राम
 export default function BuyMeCoffee() {
   return (
     <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">

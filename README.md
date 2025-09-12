@@ -1,5 +1,6 @@
 ## Resume Builder (Next.js + TypeScript)
 
+<!-- जय श्री राम -->
 A fast, privacy‑first resume builder with three professional templates, structured inputs, a gamified editor, carbon footprint scoring, server PDF export, and lightweight metrics.
 
 ### Highlights

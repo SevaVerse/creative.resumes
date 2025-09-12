@@ -674,6 +674,7 @@ export default function Home() {
       )}
       <footer className="mt-16 flex flex-col items-center gap-4 text-gray-400 text-xs py-8">
         <BuyMeCoffee />
+        {/* जय श्री राम */}
       </footer>
     </div>
   );

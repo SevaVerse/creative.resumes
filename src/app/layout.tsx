@@ -84,6 +84,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* JSON-LD structured data */}
+        {/* जय श्री राम */}
         <Script id="ld-json-resume-app" type="application/ld+json" strategy="afterInteractive">
           {JSON.stringify({
             "@context": "https://schema.org",

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 
+// जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
 
 // Minimal runtime types to avoid using `any`
