@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     "Minimalist resume",
     "AwesomeCV",
     "Onyx template",
+    "privacy first resume builder",
+    "free resume generator",
+    "download resume PDF",
   ],
   applicationName: "Resume Builder",
   authors: [{ name: "Resume Builder" }],
@@ -62,6 +65,7 @@ export const metadata: Metadata = {
     description:
       "Build a professional, ATS‑friendly resume in minutes. Choose Minimalist, Onyx, or AwesomeCV and export to PDF.",
     images: ["/vercel.svg"],
+    creator: "@resume_builder",
   },
   robots: {
     index: true,
@@ -98,6 +102,44 @@ export default function RootLayout({
               "Carbon footprint score",
               "One‑click PDF export",
               "Privacy‑first and free",
+            ],
+          })}
+        </Script>
+        <Script id="ld-json-breadcrumbs" type="application/ld+json" strategy="afterInteractive">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: baseUrl },
+              { "@type": "ListItem", position: 2, name: "Privacy", item: baseUrl + "/privacy" },
+            ],
+          })}
+        </Script>
+        <Script id="ld-json-faq" type="application/ld+json" strategy="afterInteractive">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: "Do you store my resume data?",
+                acceptedAnswer: { "@type": "Answer", text: "No. Your data stays in your browser; only a transient payload is sent for PDF generation when you export." },
+              },
+              {
+                "@type": "Question",
+                name: "Is the resume builder free?",
+                acceptedAnswer: { "@type": "Answer", text: "Yes. All core features are free with no trials or paywalls." },
+              },
+              {
+                "@type": "Question",
+                name: "What templates are available?",
+                acceptedAnswer: { "@type": "Answer", text: "Minimalist, Onyx, AwesomeCV, and Subtle & Elegant templates are provided." },
+              },
+              {
+                "@type": "Question",
+                name: "Do you track users?",
+                acceptedAnswer: { "@type": "Answer", text: "We do not use third‑party analytics scripts or trackers; optional lightweight in‑memory metrics are anonymous." },
+              },
             ],
           })}
         </Script>

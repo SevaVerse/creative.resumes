@@ -1,8 +1,5 @@
 "use client";
-import type { Metadata } from "next";
-// export const metadata: Metadata = {
-//   robots: { index: false, follow: false },
-// };
+// Metadata export cannot be used in a client component; inject minimal head tags inline.
 import React, { useEffect, useState } from "react";
 import PrintResume, { PrintPayload } from "@/components/PrintResume";
 
@@ -35,8 +32,15 @@ export default function PrintPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-start justify-center p-6">
-      <PrintResume {...payload} />
-    </div>
+    <>
+      <head>
+        <title>Print Resume (Session Render)</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="description" content="Temporary print rendering page for generating a PDF of your selected resume template." />
+      </head>
+      <div className="min-h-screen bg-white flex items-start justify-center p-6">
+        <PrintResume {...payload} />
+      </div>
+    </>
   );
 }

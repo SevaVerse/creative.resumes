@@ -1,10 +1,25 @@
 import type { Metadata } from "next";
 
-// export const metadata: Metadata = {
-//   title: "Privacy & Transparency",
-//   description:
-//     "Privacy‑first by design: no ads, no trackers, your data stays in your browser. Learn how PDF export works and what minimal data our APIs process.",
-// };
+export const metadata: Metadata = {
+  title: "Privacy & Transparency",
+  description:
+    "Privacy‑first resume builder: no ads or trackers, no persistent storage—learn exactly what minimal data is processed during PDF export.",
+  alternates: { canonical: "/privacy" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: "Privacy & Transparency | Resume Builder",
+    description:
+      "Zero tracking, zero persistent storage. See how our privacy‑first resume builder handles your data.",
+    url: "/privacy",
+    type: "article",
+  },
+  twitter: {
+    title: "Privacy & Transparency | Resume Builder",
+    description:
+      "No trackers. No ads. Your data stays in your browser—learn the details.",
+    card: "summary",
+  },
+};
 
 export default function PrivacyPage() {
   return (
