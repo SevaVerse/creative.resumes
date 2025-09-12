@@ -98,6 +98,7 @@ import OnyxTemplate from "../components/OnyxTemplate";
 import AwesomeCVTemplate from "../components/AwesomeCVTemplate";
 import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
+import BuyMeCoffee from "../components/BuyMeCoffee";
 
 // Carbon footprint scoring function based on template color usage
 function computeCarbonScore(templateId: string): number {
@@ -671,8 +672,8 @@ export default function Home() {
           </div>
         </div>
       )}
-      <footer className="mt-16 text-gray-400 text-xs text-center">
-        &copy; {new Date().getFullYear()} Resume Builder. All rights reserved.
+      <footer className="mt-16 flex flex-col items-center gap-4 text-gray-400 text-xs py-8">
+        <BuyMeCoffee />
       </footer>
     </div>
   );
