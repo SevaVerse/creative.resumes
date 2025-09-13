@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
@@ -106,7 +107,25 @@ async function launchBrowser() {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("Starting PDF export...");
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    // Perform rate limit check early (per IP only – could include template if desired)
+    const rlKey = buildKey(["pdf", ip]);
+    const rl = pdfLimiter.check(rlKey);
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: "Too many export requests", retryAfterMs: rl.retryAfterMs }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
+            "RateLimit-Limit": "10",
+            "RateLimit-Remaining": "0",
+          },
+        }
+      );
+    }
+    console.log("Starting PDF export... remaining:", rl.remaining);
     const payload = await req.json();
     console.log("Payload received:", payload.selectedTemplate);
 
@@ -137,12 +156,14 @@ export async function POST(req: NextRequest) {
 
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     return new Response(new Uint8Array(pdf), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="resume.pdf"`,
-        },
-      });
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="resume.pdf"`,
+        "RateLimit-Limit": "10",
+        "RateLimit-Remaining": rl.remaining.toString(),
+      },
+    });
   } catch (error) {
     console.error("PDF export error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

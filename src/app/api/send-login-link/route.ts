@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { loginLimiter, buildKey } from "@/utils/rateLimit";
 
 function html(loginLink: string) {
   const year = new Date().getFullYear();
@@ -26,9 +27,19 @@ function html(loginLink: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const { email } = await req.json();
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Email required" }, { status: 400 });
+  }
+  // Basic shape/size validation
+  if (email.length > 254) {
+    return NextResponse.json({ error: "Email too long" }, { status: 400 });
+  }
+  const key = buildKey(["login", ip, email.toLowerCase()]);
+  const rl = loginLimiter.check(key);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests", retryAfterMs: rl.retryAfterMs }, { status: 429 });
   }
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;

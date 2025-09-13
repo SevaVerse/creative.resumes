@@ -1,0 +1,56 @@
+---
+title: "Privacy‑First Open Source Resume Builder"
+description: "Build a professional resume with structured inputs, gamified scoring, and secure PDF export—no tracking or persistent accounts."
+---
+
+import TemplateShowcase from '@/components/TemplateShowcase';
+
+# Privacy‑First Open Source Resume Builder
+
+> Structured editing, clean templates, real PDF output—without trackers.
+
+## Quick Glance
+- 3 Templates (switch instantly)
+- Structured Experience & Skills
+- Gamified Score (gentle guidance)
+- Carbon Footprint Indicator
+- Headless Chrome PDF export
+- No account: close tab, session ends
+
+[Full How‑To Guide](../../../docs/blog-how-to-resume-builder.md)
+
+## Templates Preview
+<TemplateShowcase />
+
+## Export Flow (High Level)
+1. Client serializes resume data
+2. POST → `/api/export-pdf`
+3. Server launches headless Chromium
+4. Renders `/print` with injected data
+5. Streams back A4 PDF
+
+## Security Layers
+- In-memory rate limiting (login + export)
+- Security headers via middleware (CSP, frame, referrer, COOP/COEP, HSTS prod)
+- Ephemeral session model (no stored user record)
+
+## Roadmap Highlights
+- Turnstile / hCaptcha option
+- Persistent metrics backend
+- Drag & drop reordering
+- Offline mode exploration
+
+See the full [Roadmap](/docs/roadmap.md)
+
+## Get Started
+```bash
+npm install
+npm run dev
+```
+Open http://localhost:3000 and begin editing.
+
+---
+
+If you find this useful, star the repo or share feedback.
+
+{/* जय श्री राम */}

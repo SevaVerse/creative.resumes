@@ -9,7 +9,7 @@ type ExperienceItem = {
   current?: boolean;
   details: string;
 };
-type SkillItem = { name: string; level: number };
+type SkillItem = { name: string; level: number }
 type FormData = {
   name: string;
   email: string;
@@ -120,7 +120,7 @@ function normalizeCarbonScore(rawScore: number, maxRawScore: number = 10): numbe
 }
 
 // Future-proof features list for the homepage tile (easy to extend)
-type Feature = { id: string; title: string; description: string; icon?: string };
+type Feature = { id: string; title: string; description: string; icon?: string }
 const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
@@ -132,7 +132,7 @@ const FEATURES: Feature[] = [
 ];
 
 // Base challenges for gamification
-type Challenge = { id: string; text: string; completed: boolean };
+type Challenge = { id: string; text: string; completed: boolean }
 const BASE_CHALLENGES: Challenge[] = [
   { id: "ats", text: "Complete all required fields for ATS compatibility", completed: false },
   { id: "achievements", text: "Include quantifiable achievements (numbers) in experience", completed: false },
@@ -142,7 +142,60 @@ const BASE_CHALLENGES: Challenge[] = [
 export default function Home() {
   const [session, setSession] = useState<{ email: string } | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  // Captcha state
+  const [captchaQuestion, setCaptchaQuestion] = useState<string>("");
+  const [captchaExpected, setCaptchaExpected] = useState<number | null>(null);
+  const [captchaInput, setCaptchaInput] = useState<string>("");
+  const [captchaError, setCaptchaError] = useState<string>("");
+  const [isSendingLoginLink, setIsSendingLoginLink] = useState(false);
+  // TODO(future): Add in-memory rate limiting for login link requests (env configurable)
+  // TODO(future): Swap math captcha with Turnstile/hCaptcha behind CAPTCHA_PROVIDER env
+  // TODO(future): Add aria-live polite region for captcha errors & new challenge announcements
+  // TODO(future): Persist last email (localStorage) with opt-in remember checkbox
 
+  function generateCaptcha() {
+    const a = Math.floor(Math.random() * 6) + 2; // 2..7
+    const b = Math.floor(Math.random() * 6) + 2; // 2..7
+    setCaptchaQuestion(`${a} + ${b} = ?`);
+    setCaptchaExpected(a + b);
+    setCaptchaInput("");
+    setCaptchaError("");
+  }
+
+  useEffect(() => {
+    if (showLogin) {
+      generateCaptcha();
+    }
+  }, [showLogin]);
+
+  const handleLogin = async () => {
+    if (isSendingLoginLink) return;
+    const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
+    if (!emailInput || !emailInput.value) return;
+    if (captchaExpected === null) {
+      generateCaptcha();
+      return;
+    }
+    const numeric = Number(captchaInput.trim());
+    if (Number.isNaN(numeric) || numeric !== captchaExpected) {
+      setCaptchaError("Incorrect answer. Try again.");
+      generateCaptcha();
+      return;
+    }
+    setCaptchaError("");
+    try {
+      setIsSendingLoginLink(true);
+      await fetch("/api/send-login-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailInput.value }),
+      });
+      setShowLogin(false);
+      alert("A login link has been sent to your email (check smtp4dev).");
+    } finally {
+      setIsSendingLoginLink(false);
+    }
+  };
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -220,19 +273,6 @@ export default function Home() {
       setFormData((prev) => ({ ...prev, email: prev.email || session.email }));
     }
   }, [session]);
-
-  const handleLogin = async () => {
-    const emailInput = document.getElementById('login-email') as HTMLInputElement;
-    if (emailInput && emailInput.value) {
-      await fetch("/api/send-login-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput.value }),
-      });
-      setShowLogin(false);
-      alert("A login link has been sent to your email (check smtp4dev).");
-    }
-  };
 
   // Logout handler
   const handleLogout = () => {
@@ -657,11 +697,38 @@ export default function Home() {
               placeholder="Enter your email"
               className="border border-gray-300 dark:border-neutral-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            <div className="flex flex-col gap-2 mt-2">
+              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Quick Check</label>
+              <div className="flex items-center justify-between text-sm bg-gray-100 dark:bg-neutral-800 px-3 py-2 rounded">
+                <span className="font-mono select-none">{captchaQuestion}</span>
+                <button type="button" onClick={generateCaptcha} className="text-xs text-blue-600 hover:underline">Refresh</button>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Answer"
+                value={captchaInput}
+                onChange={(e) => setCaptchaInput(e.target.value)}
+                className="border border-gray-300 dark:border-neutral-700 rounded px-3 py-2 text-sm"
+              />
+              {captchaError && <p className="text-xs text-red-600">{captchaError}</p>}
+            </div>
             <button
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition"
+              className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded transition flex items-center justify-center gap-2"
               onClick={handleLogin}
+              disabled={isSendingLoginLink || !captchaInput}
             >
-              Continue
+              {isSendingLoginLink ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Sending...
+                </>
+              ) : (
+                'Continue'
+              )}
             </button>
             <button
               className="mt-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"

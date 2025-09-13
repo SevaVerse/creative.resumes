@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "thumbnails": "node scripts/generate-thumbnails.mjs public/screenshots public/thumbs"
   },
   "dependencies": {
     "@sparticuz/chromium": "^138.0.2",
@@ -16,7 +17,8 @@
     "puppeteer-core": "^24.20.0",
     "react": "19.1.0",
     "react-confetti": "^6.4.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

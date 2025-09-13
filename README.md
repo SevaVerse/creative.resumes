@@ -15,6 +15,20 @@ A fast, privacy‑first resume builder with three professional templates, struct
 
 ---
 
+## Planned Enhancements
+See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming improvements, including:
+- Rate limiting for login
+- Optional Turnstile / hCaptcha via env flag
+- Accessibility upgrades (aria-live captcha feedback)
+- Remember last email option
+
+### New Content & Docs
+- Short announcement: [`docs/blog-announcement.md`](docs/blog-announcement.md)
+- Full how‑to guide: [`docs/blog-how-to-resume-builder.md`](docs/blog-how-to-resume-builder.md)
+- Live MDX preview page (dev runtime): `/blog/privacy-first-resume-builder`
+
+---
+
 ## Support
 
 If you find this project helpful, consider buying me a coffee! ☕
@@ -112,6 +126,18 @@ Each template shows a 0‑10 score (lower is greener) to guide eco‑conscious p
 
 ## Project Structure
 ```
+scripts/
+	generate-thumbnails.mjs   # Create low‑res thumbs + manifest for screenshots
+```
+
+### MDX & Thumbnails
+MDX support is enabled via `@next/mdx`; create pages under `src/app/blog/` with `.mdx` extension.
+
+Generate screenshot thumbnails (example expects raw images in `public/screenshots`):
+```bash
+npm run thumbnails
+```
+Outputs optimized images + `thumbnails.json` under `public/thumbs/`.
 src/
 	app/
 		page.tsx           # Main UI (editor, preview, metrics)
