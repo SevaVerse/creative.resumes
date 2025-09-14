@@ -131,13 +131,82 @@ scripts/
 ```
 
 ### MDX & Thumbnails
-MDX support is enabled via `@next/mdx`; create pages under `src/app/blog/` with `.mdx` extension.
+MDX support enabled (Next.js `mdxRs`). Create pages under `src/app/blog/` with `.mdx` extension.
 
 Generate screenshot thumbnails (example expects raw images in `public/screenshots`):
 ```bash
 npm run thumbnails
 ```
 Outputs optimized images + `thumbnails.json` under `public/thumbs/`.
+
+---
+
+## Logging & Observability
+
+Structured JSON logging is provided via `src/utils/logger.ts`:
+- Levels: `debug`, `info`, `warn`, `error` filtered by `LOG_LEVEL` env (default `info`).
+- Request correlation: `middleware` assigns `x-request-id` if absent.
+- Rate limiting blocks emit `rate_limit.block` events.
+- PDF + login routes emit start/end, duration, error events (`pdf.*`, `login.*`).
+
+Example line (pretty printed):
+```json
+{ "time": "2025-09-13T12:34:56.789Z", "level": "info", "msg": "pdf.success", "durationMs": 842.31, "requestId": "..." }
+```
+
+### Environment
+```bash
+LOG_LEVEL=debug
+```
+
+### New Relic (Optional APM & Log Forwarding)
+
+Security note: Never commit your `NEW_RELIC_LICENSE_KEY` (treat like a password). Keep it only in deployment env vars / secret manager. If it ever leaks, immediately rotate it in the New Relic UI and redeploy.
+
+#### Option 1: Log Forwarding Only (Recommended - No Agent Installation)
+Structured logs are automatically forwarded to New Relic via the Log API (buffered batches). This works in Node runtime only and requires `NEW_RELIC_LOG_API_KEY`.
+
+1. Set env vars (example – do NOT commit these):
+```bash
+NEW_RELIC_LOG_API_KEY=your_ingest_key_or_license_key
+NEW_RELIC_LOG_API_ENDPOINT=https://log-api.newrelic.com/log/v1
+NEW_RELIC_APP_NAME=resume_builder
+```
+2. That's it! Logs will be forwarded automatically when your app runs.
+
+- Batches up to 50 logs every 2 seconds.
+- Includes `request.id` for correlation.
+- Graceful failure handling (re-queues on error).
+- Disable by omitting `NEW_RELIC_LOG_API_KEY`.
+
+#### Option 2: Full APM + Agent (Optional)
+For performance monitoring and tracing:
+
+1. Install the agent (not committed by default):
+```bash
+npm install newrelic
+```
+2. Set additional env vars:
+```bash
+NEW_RELIC_LICENSE_KEY=xxxx
+NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
+NEW_RELIC_LOG_LEVEL=info
+```
+3. Preload the agent for Node runtime only:
+```bash
+NODE_OPTIONS="-r ./newrelic.js" npm start
+```
+The `newrelic.js` file safely no-ops if the module isn't installed. Edge runtime code (middleware / edge routes) is not instrumented.
+
+Rotation procedure:
+1. In New Relic UI generate a new license key.
+2. Update the secret in your hosting provider (e.g., Vercel project settings `NEW_RELIC_LICENSE_KEY`).
+3. Redeploy. Confirm startup log: `[newrelic] agent initialized`.
+4. Revoke the old key in New Relic.
+
+You can forward logs to New Relic Log API or any collector by shipping stdout.
+
+---
 src/
 	app/
 		page.tsx           # Main UI (editor, preview, metrics)

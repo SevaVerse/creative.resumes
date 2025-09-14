@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { loginLimiter, buildKey } from "@/utils/rateLimit";
+import { logger, extractRequestId } from "@/utils/logger";
 
 function html(loginLink: string) {
   const year = new Date().getFullYear();
@@ -27,38 +28,60 @@ function html(loginLink: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const { email } = await req.json();
-  if (!email || typeof email !== "string") {
-    return NextResponse.json({ error: "Email required" }, { status: 400 });
+  const started = performance.now();
+  const requestId = extractRequestId(req.headers);
+  const log = logger.withRequest(requestId);
+  try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const { email } = await req.json();
+    if (!email || typeof email !== "string") {
+      log.warn('login.invalid_email');
+      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    }
+    if (email.length > 254) {
+      log.warn('login.email_too_long', { length: email.length });
+      return NextResponse.json({ error: "Email too long" }, { status: 400 });
+    }
+    const key = buildKey(["login", ip, email.toLowerCase()]);
+    const rl = loginLimiter.check(key);
+    if (!rl.allowed) {
+      log.warn('login.rate_limited', { ip, email, retryAfterMs: rl.retryAfterMs });
+      return NextResponse.json({ error: "Too many requests", retryAfterMs: rl.retryAfterMs }, { status: 429 });
+    }
+    const host = process.env.SMTP_HOST;
+    const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: false,
+      auth: user && pass ? { user, pass } : undefined,
+    });
+    const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+    const loginLink = `${baseUrl}/?login=${encodeURIComponent(email)}`;
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || "Resume Builder <no-reply@resumebuilder.local>",
+      to: email,
+      subject: "Your Secure Magic Login Link",
+      text: `Resume Builder Login Link\n\nOpen this link to continue:\n${loginLink}\n\nWe do not persist accounts. Session ends when you close the browser tab—download your resume first. If you didn't request this, ignore it.`,
+      html: html(loginLink),
+    });
+    const durationMs = +(performance.now() - started).toFixed(2);
+    log.info('login.sent', { ip, emailHash: hashEmail(email), durationMs });
+    return NextResponse.json({ success: true, requestId });
+  } catch (err) {
+    const durationMs = +(performance.now() - started).toFixed(2);
+    logger.error('login.error', { err: (err as Error).message, durationMs, requestId });
+    return NextResponse.json({ error: 'Internal error', requestId }, { status: 500 });
   }
-  // Basic shape/size validation
-  if (email.length > 254) {
-    return NextResponse.json({ error: "Email too long" }, { status: 400 });
+}
+
+function hashEmail(email: string) {
+  // Lightweight reversible-safe hash substitute (do NOT use for security sensitive anonymization)
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = Math.imul(31, hash) + email.charCodeAt(i) | 0;
   }
-  const key = buildKey(["login", ip, email.toLowerCase()]);
-  const rl = loginLimiter.check(key);
-  if (!rl.allowed) {
-    return NextResponse.json({ error: "Too many requests", retryAfterMs: rl.retryAfterMs }, { status: 429 });
-  }
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: false,
-    auth: user && pass ? { user, pass } : undefined,
-  });
-  const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
-  const loginLink = `${baseUrl}/?login=${encodeURIComponent(email)}`;
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || "Resume Builder <no-reply@resumebuilder.local>",
-    to: email,
-    subject: "Your Secure Magic Login Link",
-    text: `Resume Builder Login Link\n\nOpen this link to continue:\n${loginLink}\n\nWe do not persist accounts. Session ends when you close the browser tab—download your resume first. If you didn't request this, ignore it.`,
-    html: html(loginLink),
-  });
-  return NextResponse.json({ success: true });
+  return 'h' + (hash >>> 0).toString(36);
 }
