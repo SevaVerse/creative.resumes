@@ -20,8 +20,12 @@ const csp = [
   "base-uri 'self'",
 ].join('; ');
 
-export function middleware() {
+export function middleware(request: Request) {
+  const existingId = request.headers.get('x-request-id');
+  // Use Web Crypto (available in edge) rather than Node 'crypto'
+  const requestId = existingId || (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,10)}`);
   const response = NextResponse.next();
+  response.headers.set('x-request-id', requestId);
 
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');

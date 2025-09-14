@@ -1,3 +1,4 @@
+import { logger } from './logger';
 // Simple in-memory rate limiting utilities.
 // Not persistent across server restarts; suitable for low‑risk throttling.
 // For production hardening, consider redis / durable KV.
@@ -35,6 +36,7 @@ export function createRateLimiter(windowMs: number, max: number): RateLimiter {
       if (bucket.hits.length >= max) {
         const earliest = bucket.hits[0];
         const retryAfterMs = (earliest + windowMs) - now;
+        logger.warn('rate_limit.block', { key, max, windowMs, retryAfterMs });
         return { allowed: false, remaining: 0, retryAfterMs };
       }
       bucket.hits.push(now);
