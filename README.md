@@ -4,8 +4,9 @@
 A fast, privacy‑first resume builder with three professional templates, structured inputs, a gamified editor, carbon footprint scoring, server PDF export, and lightweight metrics.
 
 ### Highlights
-- 3 templates: Minimalist, Onyx, AwesomeCV
+- 4 templates: Minimalist, Onyx, AwesomeCV, SubtleElegant
 - Structured Experience + Skills (with sliders)
+- **AI-powered text rewriting** (Groq integration)
 - PDF Export (server‑side)
 - Gamified Builder (score, badges, challenges)
 - Carbon Footprint Score per template
@@ -64,6 +65,11 @@ SMTP_USER=your_user
 SMTP_PASS=your_pass
 SMTP_FROM="Resume Builder <no-reply@example.com>"
 
+# AI Text Rewriting (Groq) - Get free API key from https://console.groq.com
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.1-70b-versatile
+ENABLE_AI_REWRITER=true
+
 # Public origin used by server PDF export
 # If deploying to Vercel, VERCEL_URL is used automatically when set.
 APP_BASE_URL=http://localhost:3000
@@ -86,10 +92,32 @@ npm start
 ## Features in Detail
 
 ### Templates
-Three templates live under `src/components/`:
+Four templates live under `src/components/`:
 - `MinimalistTemplate.tsx` (simple, print‑friendly)
 - `OnyxTemplate.tsx` (modern, with skill meters)
 - `AwesomeCVTemplate.tsx` (timeline, colored sections, meters)
+- `SubtleElegantTemplate.tsx` (clean, professional design)
+
+### AI-Powered Text Rewriting
+**Zero-cost AI enhancement using Groq's free tier**
+- Smart text optimization for all resume sections
+- Professional summary refinement
+- Experience bullet point enhancement  
+- Education and project descriptions
+- Maintains user control with suggestion/accept workflow
+- 14,400+ free API calls per day via Groq
+
+Setup:
+1. Get free API key from [Groq Console](https://console.groq.com)
+2. Add to `.env`: `GROQ_API_KEY=your_key_here`
+3. Optional: `ENABLE_AI_REWRITER=true` (enabled by default)
+
+Features:
+- **Resume-specific prompts** for each content type
+- **Conciseness focus** with character count optimization
+- **ATS-friendly** rewriting suggestions
+- **Rate limiting** (20 requests/minute per IP)
+- **Error handling** with graceful fallbacks
 
 ### Editor
 The editor (`src/app/page.tsx`) supports:
@@ -137,6 +165,7 @@ When configured, `/api/metrics` will read/write counters in Redis. When not conf
 ## API Routes
 - `POST /api/export-pdf` → returns PDF (application/pdf)
 - `POST /api/send-login-link` → sends a magic link via SMTP (optional)
+- `POST /api/rewrite` → AI text rewriting (Groq integration)
 - `GET/POST /api/metrics` → read/update counters
 
 ---

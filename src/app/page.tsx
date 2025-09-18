@@ -103,6 +103,7 @@ import AwesomeCVTemplate from "../components/AwesomeCVTemplate";
 import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
 import BuyMeCoffee from "../components/BuyMeCoffee";
+import { AIRewriter } from "../components/AIRewriter";
 
 // Carbon footprint scoring function based on template color usage
 function computeCarbonScore(templateId: string): number {
@@ -578,7 +579,19 @@ export default function Home() {
               <input type="url" name="website" placeholder="Website URL" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.website} onChange={handleFieldChange} />
               <input type="url" name="linkedin" placeholder="LinkedIn URL" className="sm:col-span-2 bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.linkedin} onChange={handleFieldChange} />
             </div>
-            <textarea name="summary" placeholder="Professional Summary" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[80px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.summary} onChange={handleFieldChange} />
+            
+            {/* Professional Summary */}
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Professional Summary</h3>
+              <div className="space-y-2">
+                <textarea name="summary" placeholder="Brief overview of your professional background and key strengths" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[80px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.summary} onChange={handleFieldChange} />
+                <AIRewriter
+                  text={formData.summary}
+                  type="summary"
+                  onRewrite={(rewritten) => setFormData(prev => ({ ...prev, summary: rewritten }))}
+                />
+              </div>
+            </div>
 
             {/* Work Experience */}
             <div className="mt-4">
@@ -600,7 +613,14 @@ export default function Home() {
                           <span>Current role</span>
                         </label>
                       </div>
-                      <textarea placeholder={"2-3 bullet lines (use line breaks). Include quantifiable impact, e.g., 'Increased X by 25%'."} className="sm:col-span-2 bg-white/50 dark:bg-black/20 border-gray-300/50 dark:border-neutral-700/50 rounded-md px-3 py-2 text-sm min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={exp.details} onChange={(e) => handleExperienceChange(idx, "details", (e.target as HTMLTextAreaElement).value)} />
+                      <div className="sm:col-span-2 space-y-2">
+                        <textarea placeholder={"2-3 bullet lines (use line breaks). Include quantifiable impact, e.g., 'Increased X by 25%'."} className="w-full bg-white/50 dark:bg-black/20 border-gray-300/50 dark:border-neutral-700/50 rounded-md px-3 py-2 text-sm min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={exp.details} onChange={(e) => handleExperienceChange(idx, "details", (e.target as HTMLTextAreaElement).value)} />
+                        <AIRewriter
+                          text={exp.details}
+                          type="experience"
+                          onRewrite={(rewritten) => handleExperienceChange(idx, "details", rewritten)}
+                        />
+                      </div>
                     </div>
                     <div className="mt-2 flex justify-end">
                       <button type="button" onClick={() => removeExperience(idx)} className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 font-medium">Remove</button>
@@ -611,7 +631,10 @@ export default function Home() {
             </div>
 
             {/* Education */}
-            <textarea name="education" placeholder="Education" className="mt-2 bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.education} onChange={handleFieldChange} />
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Education</h3>
+              <textarea name="education" placeholder="Education" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.education} onChange={handleFieldChange} />
+            </div>
 
             {/* Skills */}
             <div className="mt-2">
@@ -633,10 +656,23 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Optional Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-              <textarea name="certifications" placeholder="Certifications (optional)" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.certifications} onChange={handleFieldChange} />
-              <textarea name="projects" placeholder="Projects (optional)" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.projects} onChange={handleFieldChange} />
+            {/* Certifications */}
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Certifications</h3>
+              <textarea name="certifications" placeholder="Certifications (optional)" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.certifications} onChange={handleFieldChange} />
+            </div>
+
+            {/* Projects */}
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Projects</h3>
+              <div className="space-y-2">
+                <textarea name="projects" placeholder="Projects (optional)" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.projects} onChange={handleFieldChange} />
+                <AIRewriter
+                  text={formData.projects}
+                  type="projects"
+                  onRewrite={(rewritten) => setFormData(prev => ({ ...prev, projects: rewritten }))}
+                />
+              </div>
             </div>
             <div>
               <label className="block mb-1 font-medium text-sm text-gray-800 dark:text-gray-200">Profile Picture</label>
