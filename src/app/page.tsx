@@ -250,7 +250,10 @@ export default function Home() {
 
   // Fire a page hit and pull current metrics on mount
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENABLE_METRICS === "false") return;
+    const metricsDisabled =
+      process.env.ENABLE_METRICS === "false" ||
+      process.env.NEXT_PUBLIC_ENABLE_METRICS === "false";
+    if (metricsDisabled) return;
     const fire = async () => {
       // Guard: only count once per session/tab
       const key = "rb_page_hit_once";
@@ -438,6 +441,7 @@ export default function Home() {
       {/* Top bar with email after login and logout button */}
       {session && (
         <div className="fixed top-0 right-0 p-4 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 z-40">
+          <Link href="/privacy" className="hover:underline">Privacy</Link>
           <BuyMeCoffee />
           <span>{session.email}</span>
           <button
@@ -458,13 +462,13 @@ export default function Home() {
           >
             <span className="inline-flex items-center gap-1.5">
               <span aria-hidden>👁</span>
-              <span className={`font-semibold transition ${pulseViews ? "animate-pulse text-blue-600 dark:text-blue-300" : ""}`}>{metrics.page_hits}</span>
+              <span className={`font-semibold transition ${pulseViews ? "animate-pulse text-blue-600 dark:text-blue-300 scale-110" : ""}`}>{metrics.page_hits}</span>
               <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400">views</span>
             </span>
             <span className="h-4 w-px bg-gray-300/70 dark:bg-neutral-700/70" aria-hidden="true"></span>
             <span className="inline-flex items-center gap-1.5">
               <span aria-hidden>⬇️</span>
-              <span className={`font-semibold transition ${pulseDownloads ? "animate-pulse text-green-600 dark:text-green-300" : ""}`}>{metrics.resume_downloads}</span>
+              <span className={`font-semibold transition ${pulseDownloads ? "animate-pulse text-green-600 dark:text-green-300 scale-110" : ""}`}>{metrics.resume_downloads}</span>
               <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400">downloads</span>
             </span>
           </div>
@@ -487,6 +491,7 @@ export default function Home() {
                 Get Started for Free
               </button>
               <BuyMeCoffee />
+              <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
             </div>
             <div className="mt-16 w-full max-w-5xl">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

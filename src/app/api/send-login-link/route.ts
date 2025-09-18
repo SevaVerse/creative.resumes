@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { loginLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
+import { getBaseUrl } from "@/utils/baseUrl";
 
 function html(loginLink: string) {
   const year = new Date().getFullYear();
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       secure: false,
       auth: user && pass ? { user, pass } : undefined,
     });
-    const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+  const baseUrl = getBaseUrl(req.headers);
     const loginLink = `${baseUrl}/?login=${encodeURIComponent(email)}`;
     await transporter.sendMail({
       from: process.env.SMTP_FROM || "Resume Builder <no-reply@resumebuilder.local>",

@@ -4,9 +4,8 @@ import Script from "next/script";
 // Centralized <head> content for App Router with meta tags and structured data.
 // Note: New Relic beforeInteractive scripts are now in layout.tsx root head.
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+import { getBaseUrl } from "@/utils/baseUrl";
+const baseUrl = getBaseUrl();
 
 export default function Head() {
   const hasNR = !!(process.env.NEXT_PUBLIC_NEW_RELIC_LICENSE_KEY && process.env.NEXT_PUBLIC_NEW_RELIC_ACCOUNT_ID);

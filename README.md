@@ -33,7 +33,7 @@ See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming im
 
 If you find this project helpful, consider buying me a coffee! ☕
 
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/yourusername)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/sevaverse)
 
 Your support helps keep this project free and open source.
 
