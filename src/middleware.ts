@@ -10,11 +10,11 @@ const isProd = process.env.NODE_ENV === 'production';
 // Consider hashing inline scripts if any are introduced later.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Next.js + possible inline JSON-LD
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js-agent.newrelic.com", // Next.js + New Relic + inline JSON-LD
   "style-src 'self' 'unsafe-inline'", // Tailwind injects styles
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.newrelic.com", // New Relic data collection
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",

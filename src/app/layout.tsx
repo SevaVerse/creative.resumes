@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+import Head from "./head";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 const baseUrl =
-  process.env.APP_BASE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
 export const metadata: Metadata = {
@@ -73,79 +74,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const hasNR = !!(process.env.NEXT_PUBLIC_NEW_RELIC_LICENSE_KEY && process.env.NEXT_PUBLIC_NEW_RELIC_ACCOUNT_ID);
+  
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {/* JSON-LD structured data */}
-        {/* जय श्री राम */}
-        <Script id="ld-json-resume-app" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            name: "Resume Builder",
-            url: baseUrl,
-            applicationCategory: "BusinessApplication",
-            operatingSystem: "Web",
-            isAccessibleForFree: true,
-            description:
-              "Build an ATS‑friendly resume in minutes. Three templates (Minimalist, Onyx, AwesomeCV), PDF export, and privacy‑first.",
-            featureList: [
-              "Three professional templates",
-              "Structured experience and skills",
-              "Gamified guidance with score and badges",
-              "Carbon footprint score",
-              "One‑click PDF export",
-              "Privacy‑first and free",
-            ],
-          })}
-        </Script>
-        <Script id="ld-json-breadcrumbs" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: baseUrl },
-              { "@type": "ListItem", position: 2, name: "Privacy", item: baseUrl + "/privacy" },
-            ],
-          })}
-        </Script>
-        <Script id="ld-json-faq" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: [
-              {
-                "@type": "Question",
-                name: "Do you store my resume data?",
-                acceptedAnswer: { "@type": "Answer", text: "No. Your data stays in your browser; only a transient payload is sent for PDF generation when you export." },
-              },
-              {
-                "@type": "Question",
-                name: "Is the resume builder free?",
-                acceptedAnswer: { "@type": "Answer", text: "Yes. All core features are free with no trials or paywalls." },
-              },
-              {
-                "@type": "Question",
-                name: "What templates are available?",
-                acceptedAnswer: { "@type": "Answer", text: "Minimalist, Onyx, AwesomeCV, and Subtle & Elegant templates are provided." },
-              },
-              {
-                "@type": "Question",
-                name: "Do you track users?",
-                acceptedAnswer: { "@type": "Answer", text: "We do not use third‑party analytics scripts or trackers; optional lightweight in‑memory metrics are anonymous." },
-              },
-            ],
-          })}
-        </Script>
-        {children}
-      </body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <Head />
+        {/* New Relic Browser RUM Configuration - Server-side APM is active */}
+        {hasNR && (
+          <Script id="newrelic-browser-config" strategy="beforeInteractive">
+            {`
+              // New Relic Browser RUM configuration (server-side APM agent handles monitoring)
+              window.NREUM=window.NREUM||{};
+              window.NREUM.loader_config=window.NREUM.loader_config||{};
+              window.NREUM.loader_config.licenseKey='${process.env.NEXT_PUBLIC_NEW_RELIC_LICENSE_KEY}';
+              window.NREUM.loader_config.accountID='${process.env.NEXT_PUBLIC_NEW_RELIC_ACCOUNT_ID}';
+              ${process.env.NEXT_PUBLIC_NEW_RELIC_APP_ID ? `window.NREUM.loader_config.applicationID='${process.env.NEXT_PUBLIC_NEW_RELIC_APP_ID}';` : ""}
+              
+              console.info('New Relic configuration loaded (server-side APM active)');
+            `}
+          </Script>
+        )}
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

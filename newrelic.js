@@ -57,7 +57,7 @@ if (process.env.NEW_RELIC_LICENSE_KEY) {
       record_sql: 'obfuscated'
     },
     slow_sql: { enabled: false },
-    browser_monitoring: { enabled: false },
+    browser_monitoring: { enabled: false }, // Disabled - using stub functions in browser instead
     utilization: { detect_aws: true, detect_docker: true },
     // Disable agent application logging since we're forwarding directly via Log API
     application_logging: {
