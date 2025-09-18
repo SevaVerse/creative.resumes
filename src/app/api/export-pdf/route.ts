@@ -1,9 +1,15 @@
 import { NextRequest } from "next/server";
 import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
+import { getRedis } from "@/utils/redis";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
+
+// Add type declaration for global temp storage
+declare global {
+  var tempPdfData: Map<string, string> | undefined;
+}
 
 // Minimal runtime types to avoid using `any`
 type GotoOptions = {
@@ -18,6 +24,8 @@ type PdfOptions = {
 type Page = {
   goto: (url: string, options?: GotoOptions) => Promise<void>;
   pdf: (options?: PdfOptions) => Promise<Buffer>;
+  setContent: (html: string, options?: { waitUntil?: string }) => Promise<void>;
+  evaluate: (pageFunction: (html: string) => void, html: string) => Promise<void>;
 };
 type Browser = {
   newPage: () => Promise<Page>;
@@ -144,12 +152,26 @@ export async function POST(req: NextRequest) {
     const origin =
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const encoded = Buffer.from(JSON.stringify(payload), "utf-8").toString("base64");
-    const url = `${origin}/print?data=${encodeURIComponent(encoded)}`;
-  log.debug("pdf.url", { url });
+    
+    // Store payload temporarily and get an ID to avoid URL length limits
+    const tempId = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const tempData = JSON.stringify(payload);
+    
+    // Store in memory (in production, use Redis/database)
+    globalThis.tempPdfData = globalThis.tempPdfData || new Map();
+    globalThis.tempPdfData.set(tempId, tempData);
+    
+    // Clean up after 5 minutes
+    setTimeout(() => {
+      globalThis.tempPdfData?.delete(tempId);
+    }, 5 * 60 * 1000);
+    
+    const url = `${origin}/print?id=${tempId}`;
+    
+    log.debug("pdf.url", { tempId, dataSize: tempData.length });
 
-  await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
-  log.info("pdf.page_loaded");
+    await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
+    log.info("pdf.page_loaded");
 
     const pdf = await page.pdf({
       format: "A4",
@@ -159,6 +181,17 @@ export async function POST(req: NextRequest) {
     log.info("pdf.generated", { bytes: pdf.length });
 
     await browser.close();
+
+    // Best-effort increment of download metric (non-blocking)
+    try {
+      const redis = getRedis();
+      if (redis) {
+        await redis.incr("resume_downloads");
+      } else {
+        // Fire-and-forget to the in-app metrics endpoint as a fallback (optional)
+        // Skipped here to avoid circular calls in server context.
+      }
+    } catch {}
 
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);

@@ -1,19 +1,15 @@
 import Link from "next/link";
 
-// जय श्री राम
 export default function BuyMeCoffee() {
   return (
-    <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-      <span>Enjoying the tool?</span>
-      <Link
-        href="https://www.buymeacoffee.com/yourusername" // Replace with actual link later
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800/30 transition-colors"
-      >
-        <span>☕</span>
-        <span>Buy me a coffee</span>
-      </Link>
-    </div>
+    <Link
+      href="https://buymeacoffee.com/sevaverse"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-100/80 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-200/90 dark:hover:bg-yellow-800/40 transition-colors text-sm font-medium border border-yellow-200/80 dark:border-yellow-800/50"
+    >
+      <span>☕</span>
+      <span>Support the project</span>
+    </Link>
   );
 }
