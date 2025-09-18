@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@sparticuz/chromium": "^138.0.2",
+    "@upstash/redis": "^1.35.3",
     "newrelic": "^13.3.2",
     "next": "15.5.2",
     "nodemailer": "^7.0.6",

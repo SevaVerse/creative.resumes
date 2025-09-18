@@ -93,7 +93,7 @@ function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPr
     </div>
   );
 }
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Confetti from "react-confetti";
 
@@ -128,7 +128,7 @@ type Feature = { id: string; title: string; description: string; icon?: string }
 const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
-  { id: "templates", title: "3 Pro Templates", description: "Minimalist, Onyx, and AwesomeCV—pick the style that fits you.", icon: "🎨" },
+  { id: "templates", title: "4 Pro Templates", description: "Minimalist, Onyx, AwesomeCV, and SubtleElegant—pick any or all the styles that fits you.", icon: "🎨" },
   { id: "structured-data", title: "Structured Experience + Skills", description: "Work history with dates, and slider-based skill levels.", icon: "🧩" },
   { id: "pdf", title: "PDF Export", description: "One‑click PDF export, optimized for fast and reliable results.", icon: "🖨️" },
   { id: "carbon", title: "Carbon Footprint Score", description: "Choose eco‑friendlier templates with lower print impact.", icon: "🌱" },
@@ -224,6 +224,10 @@ export default function Home() {
   const [showPreview, setShowPreview] = useState(false);
   // Metrics state
   const [metrics, setMetrics] = useState<{ page_hits: number; resume_downloads: number }>({ page_hits: 0, resume_downloads: 0 });
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [pulseViews, setPulseViews] = useState(false);
+  const [pulseDownloads, setPulseDownloads] = useState(false);
+  const prevMetrics = useRef<{ page_hits: number; resume_downloads: number } | null>(null);
 
   // Export loading state
   const [isExporting, setIsExporting] = useState(false);
@@ -265,11 +269,28 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           setMetrics({ page_hits: data.page_hits ?? 0, resume_downloads: data.resume_downloads ?? 0 });
+          setLastUpdated(Date.now());
         }
       } catch {}
     };
     fire();
   }, []);
+
+  // Trigger a subtle pulse when metrics values change
+  useEffect(() => {
+    const prev = prevMetrics.current;
+    if (prev) {
+      if (metrics.page_hits !== prev.page_hits) {
+        setPulseViews(true);
+        setTimeout(() => setPulseViews(false), 600);
+      }
+      if (metrics.resume_downloads !== prev.resume_downloads) {
+        setPulseDownloads(true);
+        setTimeout(() => setPulseDownloads(false), 600);
+      }
+    }
+    prevMetrics.current = metrics;
+  }, [metrics]);
 
   // Sync email into form once session established
   useEffect(() => {
@@ -429,10 +450,23 @@ export default function Home() {
       )}
       <main className="w-full max-w-6xl flex flex-col items-center gap-10">
         {/* Trust + Metrics summary */}
-        <div className="w-full mt-2 flex items-center justify-end text-xs text-gray-600 dark:text-gray-400 gap-4">
-          <div className="flex gap-4">
-            <span>Page Hits: <strong>{metrics.page_hits}</strong></span>
-            <span>Resumes Downloaded: <strong>{metrics.resume_downloads}</strong></span>
+        <div className="w-full mt-2 flex items-center justify-end">
+          <div
+            aria-label="Site metrics"
+            className="inline-flex items-center gap-3 px-3 py-2 rounded-full border border-gray-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm shadow-sm text-gray-700 dark:text-gray-200 text-sm"
+            title={`Counts since launch. Last updated: ${lastUpdated ? new Date(lastUpdated).toLocaleString() : "—"}`}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden>👁</span>
+              <span className={`font-semibold transition ${pulseViews ? "animate-pulse text-blue-600 dark:text-blue-300" : ""}`}>{metrics.page_hits}</span>
+              <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400">views</span>
+            </span>
+            <span className="h-4 w-px bg-gray-300/70 dark:bg-neutral-700/70" aria-hidden="true"></span>
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden>⬇️</span>
+              <span className={`font-semibold transition ${pulseDownloads ? "animate-pulse text-green-600 dark:text-green-300" : ""}`}>{metrics.resume_downloads}</span>
+              <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400">downloads</span>
+            </span>
           </div>
         </div>
         {/* Show hero section if not logged in */}

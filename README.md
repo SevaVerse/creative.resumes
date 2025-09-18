@@ -111,7 +111,24 @@ Each template shows a 0‑10 score (lower is greener) to guide eco‑conscious p
 
 ### Metrics
 - `/api/metrics` keeps in‑memory counters for `page_hits` and `resume_downloads`.
-- The homepage sends one page‑hit per tab session (guarded via `sessionStorage`) and displays counters in the header.
+The app exposes a simple `/api/metrics` endpoint used to collect page hits and resume download counts. By default, these are kept in-memory for simplicity.
+
+### Persist metrics for free (Upstash Redis)
+
+To persist metrics across deploys and scale-outs at zero cost, you can enable Upstash Redis:
+
+1. Create a free database at https://console.upstash.com (Global location recommended).
+2. Copy REST URL and Token into your local `.env` (see `.env.example`).
+3. Install dependency: `npm i @upstash/redis`.
+
+Set these variables:
+
+```
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+When configured, `/api/metrics` will read/write counters in Redis. When not configured, it falls back to in-memory counters.
 - After a successful export, “Resumes Downloaded” increments.
 - Note: in‑memory counters reset on server restarts; switch to SQLite/KV for persistence.
 

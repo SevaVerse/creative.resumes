@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
+import { getRedis } from "@/utils/redis";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
@@ -180,6 +181,17 @@ export async function POST(req: NextRequest) {
     log.info("pdf.generated", { bytes: pdf.length });
 
     await browser.close();
+
+    // Best-effort increment of download metric (non-blocking)
+    try {
+      const redis = getRedis();
+      if (redis) {
+        await redis.incr("resume_downloads");
+      } else {
+        // Fire-and-forget to the in-app metrics endpoint as a fallback (optional)
+        // Skipped here to avoid circular calls in server context.
+      }
+    } catch {}
 
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);
