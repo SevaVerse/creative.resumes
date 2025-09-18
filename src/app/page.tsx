@@ -130,9 +130,10 @@ const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
   { id: "templates", title: "4 Pro Templates", description: "Minimalist, Onyx, AwesomeCV, and SubtleElegant—pick any or all the styles that fits you.", icon: "🎨" },
+  { id: "ai-rewrite", title: "AI Rewrite Capabilities", description: "Enhance your resume content with AI-powered text rewriting for professional summary, experience, and projects.", icon: "🤖" },
+  { id: "carbon-calculator", title: "Carbon Score Calculator", description: "Make eco-conscious choices with real-time carbon footprint scoring for each resume template.", icon: "🌱" },
   { id: "structured-data", title: "Structured Experience + Skills", description: "Work history with dates, and slider-based skill levels.", icon: "🧩" },
   { id: "pdf", title: "PDF Export", description: "One‑click PDF export, optimized for fast and reliable results.", icon: "🖨️" },
-  { id: "carbon", title: "Carbon Footprint Score", description: "Choose eco‑friendlier templates with lower print impact.", icon: "🌱" },
   { id: "gamification", title: "Gamified Builder", description: "Score, badges, and challenges to guide better resumes.", icon: "🏅" },
 ];
 
@@ -476,31 +477,38 @@ export default function Home() {
         </div>
         {/* Show hero section if not logged in */}
         {!session && (
-          <div className="z-10 flex flex-col items-center text-center mt-10">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white !leading-tight">
-              Build a <span className="text-blue-600">Professional</span> Resume <br /> in Minutes
-            </h1>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl">
-              Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
-            </p>
-            <div className="mt-8 flex items-center gap-4">
-              <button
-                aria-label="Get started building your resume"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105"
-                onClick={() => setShowLogin(true)}
-              >
-                Get Started for Free
-              </button>
-              <BuyMeCoffee />
-              <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
+          <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mt-10 w-full max-w-6xl">
+            {/* Left Column: Hero Text */}
+            <div className="text-center md:text-left">
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white !leading-tight">
+                Build a <span className="text-blue-600">Professional</span> Resume <br /> in Minutes
+              </h1>
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto md:mx-0">
+                Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
+              </p>
+              <div className="mt-8 flex items-center gap-4 justify-center md:justify-start">
+                <button
+                  aria-label="Get started building your resume"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105"
+                  onClick={() => setShowLogin(true)}
+                >
+                  Get Started for Free
+                </button>
+                <BuyMeCoffee />
+                <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
+              </div>
             </div>
-            <div className="mt-16 w-full max-w-5xl">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {FEATURES.slice(0, 3).map((f) => (
-                  <div key={f.id} className="p-6 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
-                    <div className="text-2xl mb-3">{f.icon ?? "✔️"}</div>
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-200">{f.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{f.description}</p>
+
+            {/* Right Column: Features */}
+            <div className="p-6 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
+              <div className="flex flex-col gap-5">
+                {FEATURES.slice(0, 5).map((f) => (
+                  <div key={f.id} className="flex items-start gap-4">
+                    <div className="text-2xl mt-1">{f.icon ?? "✔️"}</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-200">{f.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{f.description}</p>
+                    </div>
                   </div>
                 ))}
               </div>
