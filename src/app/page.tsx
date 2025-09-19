@@ -253,15 +253,15 @@ export default function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [challenges, setChallenges] = useState(BASE_CHALLENGES);
 
-  // Handle login via query param
+  // Initialize session from localStorage (set by /verify page after token exchange)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const loginEmail = params.get("login");
-    if (loginEmail) {
-      setSession({ email: loginEmail });
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
+    try {
+      const stored = localStorage.getItem('rb_email');
+      if (stored && !session) {
+        setSession({ email: stored });
+      }
+    } catch {}
+  }, [session]);
 
   // Fire a page hit and pull current metrics on mount
   useEffect(() => {
@@ -319,6 +319,7 @@ export default function Home() {
 
   // Logout handler
   const handleLogout = () => {
+    try { localStorage.removeItem('rb_email'); } catch {}
     setSession(null);
     setSelectedTemplate(null);
   };
