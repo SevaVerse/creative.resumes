@@ -103,6 +103,8 @@ import AwesomeCVTemplate from "../components/AwesomeCVTemplate";
 import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
 import BuyMeCoffee from "../components/BuyMeCoffee";
+import { AIRewriter } from "../components/AIRewriter";
+import TurnstileWrapper from "../components/Turnstile";
 
 // Carbon footprint scoring function based on template color usage
 function computeCarbonScore(templateId: string): number {
@@ -129,9 +131,10 @@ const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
   { id: "templates", title: "4 Pro Templates", description: "Minimalist, Onyx, AwesomeCV, and SubtleElegant—pick any or all the styles that fits you.", icon: "🎨" },
+  { id: "ai-rewrite", title: "AI Rewrite Capabilities", description: "Enhance your resume content with AI-powered text rewriting for professional summary, experience, and projects.", icon: "🤖" },
+  { id: "carbon-calculator", title: "Carbon Score Calculator", description: "Make eco-conscious choices with real-time carbon footprint scoring for each resume template.", icon: "🌱" },
   { id: "structured-data", title: "Structured Experience + Skills", description: "Work history with dates, and slider-based skill levels.", icon: "🧩" },
   { id: "pdf", title: "PDF Export", description: "One‑click PDF export, optimized for fast and reliable results.", icon: "🖨️" },
-  { id: "carbon", title: "Carbon Footprint Score", description: "Choose eco‑friendlier templates with lower print impact.", icon: "🌱" },
   { id: "gamification", title: "Gamified Builder", description: "Score, badges, and challenges to guide better resumes.", icon: "🏅" },
 ];
 
@@ -146,29 +149,28 @@ const BASE_CHALLENGES: Challenge[] = [
 export default function Home() {
   const [session, setSession] = useState<{ email: string } | null>(null);
   const [showLogin, setShowLogin] = useState(false);
-  // Captcha state
-  const [captchaQuestion, setCaptchaQuestion] = useState<string>("");
-  const [captchaExpected, setCaptchaExpected] = useState<number | null>(null);
-  const [captchaInput, setCaptchaInput] = useState<string>("");
-  const [captchaError, setCaptchaError] = useState<string>("");
+  // Turnstile state
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [turnstileError, setTurnstileError] = useState<string>("");
   const [isSendingLoginLink, setIsSendingLoginLink] = useState(false);
   // TODO(future): Add in-memory rate limiting for login link requests (env configurable)
-  // TODO(future): Swap math captcha with Turnstile/hCaptcha behind CAPTCHA_PROVIDER env
-  // TODO(future): Add aria-live polite region for captcha errors & new challenge announcements
+  // TODO(future): Add aria-live polite region for turnstile errors & new challenge announcements
   // TODO(future): Persist last email (localStorage) with opt-in remember checkbox
 
-  function generateCaptcha() {
-    const a = Math.floor(Math.random() * 6) + 2; // 2..7
-    const b = Math.floor(Math.random() * 6) + 2; // 2..7
-    setCaptchaQuestion(`${a} + ${b} = ?`);
-    setCaptchaExpected(a + b);
-    setCaptchaInput("");
-    setCaptchaError("");
-  }
+  const handleTurnstileVerify = (token: string) => {
+    setTurnstileToken(token);
+    setTurnstileError("");
+  };
+
+  const handleTurnstileError = () => {
+    setTurnstileError("Security verification failed. Please try again.");
+    setTurnstileToken("");
+  };
 
   useEffect(() => {
     if (showLogin) {
-      generateCaptcha();
+      setTurnstileToken("");
+      setTurnstileError("");
     }
   }, [showLogin]);
 
@@ -176,26 +178,39 @@ export default function Home() {
     if (isSendingLoginLink) return;
     const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
     if (!emailInput || !emailInput.value) return;
-    if (captchaExpected === null) {
-      generateCaptcha();
+    
+    if (!turnstileToken) {
+      setTurnstileError("Please complete the security verification.");
       return;
     }
-    const numeric = Number(captchaInput.trim());
-    if (Number.isNaN(numeric) || numeric !== captchaExpected) {
-      setCaptchaError("Incorrect answer. Try again.");
-      generateCaptcha();
-      return;
-    }
-    setCaptchaError("");
+
     try {
       setIsSendingLoginLink(true);
+      setTurnstileError("");
+
+      // First verify the Turnstile token
+      const verifyResponse = await fetch("/api/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+
+      if (!verifyResponse.ok) {
+        setTurnstileError("Security verification failed. Please try again.");
+        return;
+      }
+
+      // If verification successful, send login link
       await fetch("/api/send-login-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailInput.value }),
       });
+      
       setShowLogin(false);
       alert("A login link has been sent to your email (check smtp4dev).");
+    } catch {
+      setTurnstileError("An error occurred. Please try again.");
     } finally {
       setIsSendingLoginLink(false);
     }
@@ -250,7 +265,10 @@ export default function Home() {
 
   // Fire a page hit and pull current metrics on mount
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENABLE_METRICS === "false") return;
+    const metricsDisabled =
+      process.env.ENABLE_METRICS === "false" ||
+      process.env.NEXT_PUBLIC_ENABLE_METRICS === "false";
+    if (metricsDisabled) return;
     const fire = async () => {
       // Guard: only count once per session/tab
       const key = "rb_page_hit_once";
@@ -438,6 +456,7 @@ export default function Home() {
       {/* Top bar with email after login and logout button */}
       {session && (
         <div className="fixed top-0 right-0 p-4 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 z-40">
+          <Link href="/privacy" className="hover:underline">Privacy</Link>
           <BuyMeCoffee />
           <span>{session.email}</span>
           <button
@@ -458,43 +477,51 @@ export default function Home() {
           >
             <span className="inline-flex items-center gap-1.5">
               <span aria-hidden>👁</span>
-              <span className={`font-semibold transition ${pulseViews ? "animate-pulse text-blue-600 dark:text-blue-300" : ""}`}>{metrics.page_hits}</span>
+              <span className={`font-semibold transition ${pulseViews ? "animate-pulse text-blue-600 dark:text-blue-300 scale-110" : ""}`}>{metrics.page_hits}</span>
               <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400">views</span>
             </span>
             <span className="h-4 w-px bg-gray-300/70 dark:bg-neutral-700/70" aria-hidden="true"></span>
             <span className="inline-flex items-center gap-1.5">
               <span aria-hidden>⬇️</span>
-              <span className={`font-semibold transition ${pulseDownloads ? "animate-pulse text-green-600 dark:text-green-300" : ""}`}>{metrics.resume_downloads}</span>
+              <span className={`font-semibold transition ${pulseDownloads ? "animate-pulse text-green-600 dark:text-green-300 scale-110" : ""}`}>{metrics.resume_downloads}</span>
               <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400">downloads</span>
             </span>
           </div>
         </div>
         {/* Show hero section if not logged in */}
         {!session && (
-          <div className="z-10 flex flex-col items-center text-center mt-10">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white !leading-tight">
-              Build a <span className="text-blue-600">Professional</span> Resume <br /> in Minutes
-            </h1>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl">
-              Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
-            </p>
-            <div className="mt-8 flex items-center gap-4">
-              <button
-                aria-label="Get started building your resume"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105"
-                onClick={() => setShowLogin(true)}
-              >
-                Get Started for Free
-              </button>
-              <BuyMeCoffee />
+          <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mt-10 w-full max-w-6xl">
+            {/* Left Column: Hero Text */}
+            <div className="text-center md:text-left">
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white !leading-tight">
+                Build a <span className="text-blue-600">Professional</span> Resume <br /> in Minutes
+              </h1>
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto md:mx-0">
+                Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
+              </p>
+              <div className="mt-8 flex items-center gap-4 justify-center md:justify-start">
+                <button
+                  aria-label="Get started building your resume"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105"
+                  onClick={() => setShowLogin(true)}
+                >
+                  Get Started for Free
+                </button>
+                <BuyMeCoffee />
+                <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
+              </div>
             </div>
-            <div className="mt-16 w-full max-w-5xl">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {FEATURES.slice(0, 3).map((f) => (
-                  <div key={f.id} className="p-6 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
-                    <div className="text-2xl mb-3">{f.icon ?? "✔️"}</div>
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-200">{f.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{f.description}</p>
+
+            {/* Right Column: Features */}
+            <div className="p-6 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
+              <div className="flex flex-col gap-5">
+                {FEATURES.slice(0, 5).map((f) => (
+                  <div key={f.id} className="flex items-start gap-4">
+                    <div className="text-2xl mt-1">{f.icon ?? "✔️"}</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-200">{f.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{f.description}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -573,7 +600,19 @@ export default function Home() {
               <input type="url" name="website" placeholder="Website URL" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.website} onChange={handleFieldChange} />
               <input type="url" name="linkedin" placeholder="LinkedIn URL" className="sm:col-span-2 bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.linkedin} onChange={handleFieldChange} />
             </div>
-            <textarea name="summary" placeholder="Professional Summary" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[80px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.summary} onChange={handleFieldChange} />
+            
+            {/* Professional Summary */}
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Professional Summary</h3>
+              <div className="space-y-2">
+                <textarea name="summary" placeholder="Brief overview of your professional background and key strengths" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[80px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.summary} onChange={handleFieldChange} />
+                <AIRewriter
+                  text={formData.summary}
+                  type="summary"
+                  onRewrite={(rewritten) => setFormData(prev => ({ ...prev, summary: rewritten }))}
+                />
+              </div>
+            </div>
 
             {/* Work Experience */}
             <div className="mt-4">
@@ -595,7 +634,14 @@ export default function Home() {
                           <span>Current role</span>
                         </label>
                       </div>
-                      <textarea placeholder={"2-3 bullet lines (use line breaks). Include quantifiable impact, e.g., 'Increased X by 25%'."} className="sm:col-span-2 bg-white/50 dark:bg-black/20 border-gray-300/50 dark:border-neutral-700/50 rounded-md px-3 py-2 text-sm min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={exp.details} onChange={(e) => handleExperienceChange(idx, "details", (e.target as HTMLTextAreaElement).value)} />
+                      <div className="sm:col-span-2 space-y-2">
+                        <textarea placeholder={"2-3 bullet lines (use line breaks). Include quantifiable impact, e.g., 'Increased X by 25%'."} className="w-full bg-white/50 dark:bg-black/20 border-gray-300/50 dark:border-neutral-700/50 rounded-md px-3 py-2 text-sm min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={exp.details} onChange={(e) => handleExperienceChange(idx, "details", (e.target as HTMLTextAreaElement).value)} />
+                        <AIRewriter
+                          text={exp.details}
+                          type="experience"
+                          onRewrite={(rewritten) => handleExperienceChange(idx, "details", rewritten)}
+                        />
+                      </div>
                     </div>
                     <div className="mt-2 flex justify-end">
                       <button type="button" onClick={() => removeExperience(idx)} className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-500 font-medium">Remove</button>
@@ -606,7 +652,10 @@ export default function Home() {
             </div>
 
             {/* Education */}
-            <textarea name="education" placeholder="Education" className="mt-2 bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.education} onChange={handleFieldChange} />
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Education</h3>
+              <textarea name="education" placeholder="Education" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[60px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.education} onChange={handleFieldChange} />
+            </div>
 
             {/* Skills */}
             <div className="mt-2">
@@ -628,10 +677,23 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Optional Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-              <textarea name="certifications" placeholder="Certifications (optional)" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.certifications} onChange={handleFieldChange} />
-              <textarea name="projects" placeholder="Projects (optional)" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.projects} onChange={handleFieldChange} />
+            {/* Certifications */}
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Certifications</h3>
+              <textarea name="certifications" placeholder="Certifications (optional)" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.certifications} onChange={handleFieldChange} />
+            </div>
+
+            {/* Projects */}
+            <div className="mt-4">
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">Projects</h3>
+              <div className="space-y-2">
+                <textarea name="projects" placeholder="Projects (optional)" className="w-full bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 min-h-[40px] focus:ring-2 focus:ring-blue-400 outline-none" value={formData.projects} onChange={handleFieldChange} />
+                <AIRewriter
+                  text={formData.projects}
+                  type="projects"
+                  onRewrite={(rewritten) => setFormData(prev => ({ ...prev, projects: rewritten }))}
+                />
+              </div>
             </div>
             <div>
               <label className="block mb-1 font-medium text-sm text-gray-800 dark:text-gray-200">Profile Picture</label>
@@ -699,25 +761,20 @@ export default function Home() {
               className="border border-gray-300 dark:border-neutral-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <div className="flex flex-col gap-2 mt-2">
-              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Quick Check</label>
-              <div className="flex items-center justify-between text-sm bg-gray-100 dark:bg-neutral-800 px-3 py-2 rounded">
-                <span className="font-mono select-none">{captchaQuestion}</span>
-                <button type="button" onClick={generateCaptcha} className="text-xs text-blue-600 hover:underline">Refresh</button>
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Answer"
-                value={captchaInput}
-                onChange={(e) => setCaptchaInput(e.target.value)}
-                className="border border-gray-300 dark:border-neutral-700 rounded px-3 py-2 text-sm"
+              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Security Check</label>
+              <TurnstileWrapper
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                onVerify={handleTurnstileVerify}
+                onError={handleTurnstileError}
+                theme="auto"
+                size="compact"
               />
-              {captchaError && <p className="text-xs text-red-600">{captchaError}</p>}
+              {turnstileError && <p className="text-xs text-red-600">{turnstileError}</p>}
             </div>
             <button
               className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded transition flex items-center justify-center gap-2"
               onClick={handleLogin}
-              disabled={isSendingLoginLink || !captchaInput}
+              disabled={isSendingLoginLink || !turnstileToken}
             >
               {isSendingLoginLink ? (
                 <>

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
 import { getRedis } from "@/utils/redis";
+import { getBaseUrl } from "@/utils/baseUrl";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
@@ -149,9 +150,7 @@ export async function POST(req: NextRequest) {
     const page = await browser.newPage();
     log.debug("pdf.page_created");
 
-    const origin =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const origin = getBaseUrl(req.headers);
     
     // Store payload temporarily and get an ID to avoid URL length limits
     const tempId = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getBaseUrl } from "@/utils/baseUrl";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl =
-    process.env.APP_BASE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const baseUrl = getBaseUrl();
 
   return [
     {

@@ -4,8 +4,9 @@
 A fast, privacy‑first resume builder with three professional templates, structured inputs, a gamified editor, carbon footprint scoring, server PDF export, and lightweight metrics.
 
 ### Highlights
-- 3 templates: Minimalist, Onyx, AwesomeCV
+- 4 templates: Minimalist, Onyx, AwesomeCV, SubtleElegant
 - Structured Experience + Skills (with sliders)
+- **AI-powered text rewriting** (Groq integration)
 - PDF Export (server‑side)
 - Gamified Builder (score, badges, challenges)
 - Carbon Footprint Score per template
@@ -18,8 +19,7 @@ A fast, privacy‑first resume builder with three professional templates, struct
 ## Planned Enhancements
 See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming improvements, including:
 - Rate limiting for login
-- Optional Turnstile / hCaptcha via env flag
-- Accessibility upgrades (aria-live captcha feedback)
+- Accessibility upgrades (aria-live Turnstile feedback)
 - Remember last email option
 
 ### New Content & Docs
@@ -33,7 +33,7 @@ See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming im
 
 If you find this project helpful, consider buying me a coffee! ☕
 
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/yourusername)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/sevaverse)
 
 Your support helps keep this project free and open source.
 
@@ -64,6 +64,15 @@ SMTP_USER=your_user
 SMTP_PASS=your_pass
 SMTP_FROM="Resume Builder <no-reply@example.com>"
 
+# AI Text Rewriting (Groq) - Get free API key from https://console.groq.com
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.1-70b-versatile
+ENABLE_AI_REWRITER=true
+
+# Cloudflare Turnstile (Security) - Get keys from https://dash.cloudflare.com/
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key_here
+TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
+
 # Public origin used by server PDF export
 # If deploying to Vercel, VERCEL_URL is used automatically when set.
 APP_BASE_URL=http://localhost:3000
@@ -86,10 +95,48 @@ npm start
 ## Features in Detail
 
 ### Templates
-Three templates live under `src/components/`:
+Four templates live under `src/components/`:
 - `MinimalistTemplate.tsx` (simple, print‑friendly)
 - `OnyxTemplate.tsx` (modern, with skill meters)
 - `AwesomeCVTemplate.tsx` (timeline, colored sections, meters)
+- `SubtleElegantTemplate.tsx` (clean, professional design)
+
+### AI-Powered Text Rewriting
+**Zero-cost AI enhancement using Groq's free tier**
+- Smart text optimization for all resume sections
+- Professional summary refinement
+- Experience bullet point enhancement  
+- Education and project descriptions
+- Maintains user control with suggestion/accept workflow
+- 14,400+ free API calls per day via Groq
+
+Setup:
+1. Get free API key from [Groq Console](https://console.groq.com)
+2. Add to `.env`: `GROQ_API_KEY=your_key_here`
+3. Optional: `ENABLE_AI_REWRITER=true` (enabled by default)
+
+Features:
+- **Resume-specific prompts** for each content type
+- **Conciseness focus** with character count optimization
+- **ATS-friendly** rewriting suggestions
+- **Rate limiting** (20 requests/minute per IP)
+- **Error handling** with graceful fallbacks
+
+### Security (Cloudflare Turnstile)
+The application uses Cloudflare Turnstile for bot protection on the login form - a privacy-friendly, often invisible CAPTCHA alternative.
+
+Setup:
+1. Create free Cloudflare account at https://dash.cloudflare.com
+2. Navigate to Turnstile and create a new site widget
+3. Add site key and secret to `.env`: 
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key_here`
+   - `TURNSTILE_SECRET_KEY=your_secret_key_here`
+
+Features:
+- **Privacy-first** (no personal data collection)
+- **Often invisible** to legitimate users
+- **Server-side verification** via `/api/verify-turnstile`
+- **Graceful fallback** if keys are not configured
 
 ### Editor
 The editor (`src/app/page.tsx`) supports:
@@ -137,6 +184,7 @@ When configured, `/api/metrics` will read/write counters in Redis. When not conf
 ## API Routes
 - `POST /api/export-pdf` → returns PDF (application/pdf)
 - `POST /api/send-login-link` → sends a magic link via SMTP (optional)
+- `POST /api/rewrite` → AI text rewriting (Groq integration)
 - `GET/POST /api/metrics` → read/update counters
 
 ---
