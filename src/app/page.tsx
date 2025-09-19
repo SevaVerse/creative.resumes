@@ -104,6 +104,7 @@ import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
 import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
+import TurnstileWrapper from "../components/Turnstile";
 
 // Carbon footprint scoring function based on template color usage
 function computeCarbonScore(templateId: string): number {
@@ -148,29 +149,28 @@ const BASE_CHALLENGES: Challenge[] = [
 export default function Home() {
   const [session, setSession] = useState<{ email: string } | null>(null);
   const [showLogin, setShowLogin] = useState(false);
-  // Captcha state
-  const [captchaQuestion, setCaptchaQuestion] = useState<string>("");
-  const [captchaExpected, setCaptchaExpected] = useState<number | null>(null);
-  const [captchaInput, setCaptchaInput] = useState<string>("");
-  const [captchaError, setCaptchaError] = useState<string>("");
+  // Turnstile state
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [turnstileError, setTurnstileError] = useState<string>("");
   const [isSendingLoginLink, setIsSendingLoginLink] = useState(false);
   // TODO(future): Add in-memory rate limiting for login link requests (env configurable)
-  // TODO(future): Swap math captcha with Turnstile/hCaptcha behind CAPTCHA_PROVIDER env
-  // TODO(future): Add aria-live polite region for captcha errors & new challenge announcements
+  // TODO(future): Add aria-live polite region for turnstile errors & new challenge announcements
   // TODO(future): Persist last email (localStorage) with opt-in remember checkbox
 
-  function generateCaptcha() {
-    const a = Math.floor(Math.random() * 6) + 2; // 2..7
-    const b = Math.floor(Math.random() * 6) + 2; // 2..7
-    setCaptchaQuestion(`${a} + ${b} = ?`);
-    setCaptchaExpected(a + b);
-    setCaptchaInput("");
-    setCaptchaError("");
-  }
+  const handleTurnstileVerify = (token: string) => {
+    setTurnstileToken(token);
+    setTurnstileError("");
+  };
+
+  const handleTurnstileError = () => {
+    setTurnstileError("Security verification failed. Please try again.");
+    setTurnstileToken("");
+  };
 
   useEffect(() => {
     if (showLogin) {
-      generateCaptcha();
+      setTurnstileToken("");
+      setTurnstileError("");
     }
   }, [showLogin]);
 
@@ -178,26 +178,39 @@ export default function Home() {
     if (isSendingLoginLink) return;
     const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
     if (!emailInput || !emailInput.value) return;
-    if (captchaExpected === null) {
-      generateCaptcha();
+    
+    if (!turnstileToken) {
+      setTurnstileError("Please complete the security verification.");
       return;
     }
-    const numeric = Number(captchaInput.trim());
-    if (Number.isNaN(numeric) || numeric !== captchaExpected) {
-      setCaptchaError("Incorrect answer. Try again.");
-      generateCaptcha();
-      return;
-    }
-    setCaptchaError("");
+
     try {
       setIsSendingLoginLink(true);
+      setTurnstileError("");
+
+      // First verify the Turnstile token
+      const verifyResponse = await fetch("/api/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+
+      if (!verifyResponse.ok) {
+        setTurnstileError("Security verification failed. Please try again.");
+        return;
+      }
+
+      // If verification successful, send login link
       await fetch("/api/send-login-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailInput.value }),
       });
+      
       setShowLogin(false);
       alert("A login link has been sent to your email (check smtp4dev).");
+    } catch {
+      setTurnstileError("An error occurred. Please try again.");
     } finally {
       setIsSendingLoginLink(false);
     }
@@ -748,25 +761,20 @@ export default function Home() {
               className="border border-gray-300 dark:border-neutral-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
             <div className="flex flex-col gap-2 mt-2">
-              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Quick Check</label>
-              <div className="flex items-center justify-between text-sm bg-gray-100 dark:bg-neutral-800 px-3 py-2 rounded">
-                <span className="font-mono select-none">{captchaQuestion}</span>
-                <button type="button" onClick={generateCaptcha} className="text-xs text-blue-600 hover:underline">Refresh</button>
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Answer"
-                value={captchaInput}
-                onChange={(e) => setCaptchaInput(e.target.value)}
-                className="border border-gray-300 dark:border-neutral-700 rounded px-3 py-2 text-sm"
+              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Security Check</label>
+              <TurnstileWrapper
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                onVerify={handleTurnstileVerify}
+                onError={handleTurnstileError}
+                theme="auto"
+                size="compact"
               />
-              {captchaError && <p className="text-xs text-red-600">{captchaError}</p>}
+              {turnstileError && <p className="text-xs text-red-600">{turnstileError}</p>}
             </div>
             <button
               className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded transition flex items-center justify-center gap-2"
               onClick={handleLogin}
-              disabled={isSendingLoginLink || !captchaInput}
+              disabled={isSendingLoginLink || !turnstileToken}
             >
               {isSendingLoginLink ? (
                 <>

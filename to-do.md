@@ -72,7 +72,7 @@ Review and either implement or remove:
 ### TODO Comments (Update Status)
 
 - [ ] **Rate limiting for login links** - Already implemented, update TODO
-- [ ] **Captcha provider switching** - Still pending
+- [x] **Captcha provider switching** - Completed: Implemented Cloudflare Turnstile
 - [ ] **ARIA live regions for accessibility** - Still pending
 - [ ] **Email persistence in localStorage** - Still pending
 

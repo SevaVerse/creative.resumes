@@ -10,11 +10,14 @@ const isProd = process.env.NODE_ENV === 'production';
 // Consider hashing inline scripts if any are introduced later.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js-agent.newrelic.com", // Next.js + New Relic + inline JSON-LD
-  "style-src 'self' 'unsafe-inline'", // Tailwind injects styles
-  "img-src 'self' data: blob:",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js-agent.newrelic.com https://challenges.cloudflare.com https://*.cloudflare.com", // Next.js + New Relic + Turnstile + inline JSON-LD
+  "style-src 'self' 'unsafe-inline' https://challenges.cloudflare.com", // Tailwind injects styles + Turnstile styles
+  "img-src 'self' data: blob: https://challenges.cloudflare.com", // Include Turnstile images
   "font-src 'self' data:",
-  "connect-src 'self' https://*.newrelic.com", // New Relic data collection
+  "connect-src 'self' https://*.newrelic.com https://challenges.cloudflare.com https://*.cloudflare.com", // New Relic data collection + Turnstile verification
+  "frame-src https://challenges.cloudflare.com https://*.cloudflare.com", // Turnstile iframe
+  "child-src https://challenges.cloudflare.com", // Additional for Turnstile
+  "form-action 'self' https://challenges.cloudflare.com", // Turnstile form submissions
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",

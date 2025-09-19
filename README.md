@@ -19,8 +19,7 @@ A fast, privacy‑first resume builder with three professional templates, struct
 ## Planned Enhancements
 See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming improvements, including:
 - Rate limiting for login
-- Optional Turnstile / hCaptcha via env flag
-- Accessibility upgrades (aria-live captcha feedback)
+- Accessibility upgrades (aria-live Turnstile feedback)
 - Remember last email option
 
 ### New Content & Docs
@@ -70,6 +69,10 @@ GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL=llama-3.1-70b-versatile
 ENABLE_AI_REWRITER=true
 
+# Cloudflare Turnstile (Security) - Get keys from https://dash.cloudflare.com/
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key_here
+TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
+
 # Public origin used by server PDF export
 # If deploying to Vercel, VERCEL_URL is used automatically when set.
 APP_BASE_URL=http://localhost:3000
@@ -118,6 +121,22 @@ Features:
 - **ATS-friendly** rewriting suggestions
 - **Rate limiting** (20 requests/minute per IP)
 - **Error handling** with graceful fallbacks
+
+### Security (Cloudflare Turnstile)
+The application uses Cloudflare Turnstile for bot protection on the login form - a privacy-friendly, often invisible CAPTCHA alternative.
+
+Setup:
+1. Create free Cloudflare account at https://dash.cloudflare.com
+2. Navigate to Turnstile and create a new site widget
+3. Add site key and secret to `.env`: 
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key_here`
+   - `TURNSTILE_SECRET_KEY=your_secret_key_here`
+
+Features:
+- **Privacy-first** (no personal data collection)
+- **Often invisible** to legitimate users
+- **Server-side verification** via `/api/verify-turnstile`
+- **Graceful fallback** if keys are not configured
 
 ### Editor
 The editor (`src/app/page.tsx`) supports:
