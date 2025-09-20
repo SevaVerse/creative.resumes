@@ -73,6 +73,10 @@ ENABLE_AI_REWRITER=true
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key_here
 TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
 
+# Magic Link Authentication (HMAC-signed tokens)
+# Generate a random 32+ char value: e.g. `openssl rand -hex 32`
+MAGIC_LINK_SECRET=replace_with_random_hex_string
+
 # Public origin used by server PDF export
 # If deploying to Vercel, VERCEL_URL is used automatically when set.
 APP_BASE_URL=http://localhost:3000
@@ -183,9 +187,31 @@ When configured, `/api/metrics` will read/write counters in Redis. When not conf
 
 ## API Routes
 - `POST /api/export-pdf` → returns PDF (application/pdf)
-- `POST /api/send-login-link` → sends a magic link via SMTP (optional)
+- `POST /api/send-login-link` → sends an HMAC-signed magic link (email optional)
+- `POST /api/verify-login-token` → verifies the magic link token & sets session cookie
 - `POST /api/rewrite` → AI text rewriting (Groq integration)
 - `GET/POST /api/metrics` → read/update counters
+
+### Magic Link Security (Simplified Variant)
+This project uses a lightweight, stateless HMAC token instead of placing raw emails in the URL:
+- Token contains: email (lowercased), issued time, expiry (15m), random nonce
+- Signed with `MAGIC_LINK_SECRET` (HS256 style)
+- Frontend exchanges `?token=` via `/api/verify-login-token` then stores email locally
+
+Benefits:
+- Email not exposed directly in link parameters
+- Tamper detection via HMAC signature
+- Automatic expiry enforcement
+
+Trade‑offs (Accepted for MVP):
+- No server-side single-use revocation (replay within 15m possible)
+- No device/IP binding
+- Session is basic (opaque cookie + local email cache)
+
+Future hardening ideas (optional):
+- Redis-backed one-time token invalidation (jti blacklist)
+- Bind partial user-agent hash in payload
+- Shorter expiry (e.g., 5m) + refresh mechanism
 
 ---
 

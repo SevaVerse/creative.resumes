@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { loginLimiter, buildKey } from "@/utils/rateLimit";
+import { generateMagicToken } from "@/utils/magicLink";
 import { logger, extractRequestId } from "@/utils/logger";
 import { getBaseUrl } from "@/utils/baseUrl";
 
@@ -59,8 +60,9 @@ export async function POST(req: NextRequest) {
       secure: false,
       auth: user && pass ? { user, pass } : undefined,
     });
-  const baseUrl = getBaseUrl(req.headers);
-    const loginLink = `${baseUrl}/?login=${encodeURIComponent(email)}`;
+    const baseUrl = getBaseUrl(req.headers);
+    const token = generateMagicToken(email);
+    const loginLink = `${baseUrl}/verify?token=${encodeURIComponent(token)}`;
     await transporter.sendMail({
       from: process.env.SMTP_FROM || "Resume Builder <no-reply@resumebuilder.local>",
       to: email,
