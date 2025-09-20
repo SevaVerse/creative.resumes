@@ -149,6 +149,7 @@ const BASE_CHALLENGES: Challenge[] = [
 export default function Home() {
   const [session, setSession] = useState<{ email: string } | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [turnstileError, setTurnstileError] = useState<string>("");
@@ -260,6 +261,8 @@ export default function Home() {
       if (stored && !session) {
         setSession({ email: stored });
       }
+      const dismissed = localStorage.getItem('rb_support_dismissed_v1');
+      if (!dismissed) setShowSupport(true);
     } catch {}
   }, [session]);
 
@@ -511,6 +514,27 @@ export default function Home() {
                 <BuyMeCoffee />
                 <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
               </div>
+              {showSupport && (
+                <div className="mt-6 relative mx-auto md:mx-0 max-w-xl">
+                  <div className="group p-4 rounded-lg border border-blue-200/60 dark:border-blue-800/50 bg-blue-50/70 dark:bg-blue-900/30 backdrop-blur supports-[backdrop-filter]:bg-blue-50/50 dark:supports-[backdrop-filter]:bg-blue-900/25 text-sm text-blue-900 dark:text-blue-200 leading-relaxed shadow-sm">
+                    <p>
+                      If this saves you time and you can afford it, a small contribution helps keep it <strong>free & privacy‑first</strong> for everyone.
+                      <button
+                        onClick={() => {
+                          const el = document.querySelector('[data-bmc]') as HTMLElement | null;
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); else window.open('https://www.buymeacoffee.com/sevaverse', '_blank');
+                        }}
+                        className="ml-1 underline decoration-dotted font-medium hover:text-blue-700 dark:hover:text-blue-300"
+                      >Support the project</button>.
+                    </p>
+                    <button
+                      aria-label="Dismiss support message"
+                      onClick={() => { try { localStorage.setItem('rb_support_dismissed_v1','1'); } catch {}; setShowSupport(false); }}
+                      className="absolute -top-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow"
+                    >×</button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right Column: Features */}
@@ -798,10 +822,18 @@ export default function Home() {
           </div>
         </div>
       )}
-      <footer className="mt-16 w-full max-w-6xl flex items-center justify-center gap-4 text-gray-500 dark:text-gray-400 text-xs py-8">
-        <span className="text-sm">Made with ❤️ by Seva</span>
-        <span className="text-sm">|</span>
-        <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
+      <footer className="mt-16 w-full max-w-6xl flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400 text-xs py-8">
+        <div className="flex items-center flex-wrap gap-3 justify-center">
+          <span className="text-sm">Made with ❤️ by Seva</span>
+          <span className="hidden sm:inline">•</span>
+          <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
+        </div>
+        {!showSupport && !session && (
+          <button
+            onClick={() => { try { localStorage.removeItem('rb_support_dismissed_v1'); } catch {}; setShowSupport(true); }}
+            className="text-[11px] underline decoration-dotted hover:text-blue-600 dark:hover:text-blue-300"
+          >Show support message</button>
+        )}
       </footer>
     </div>
   );
