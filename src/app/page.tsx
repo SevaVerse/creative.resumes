@@ -209,7 +209,7 @@ export default function Home() {
       });
       
       setShowLogin(false);
-      alert("A login link has been sent to your email (check smtp4dev).");
+      alert("A login link has been sent to your email.");
     } catch {
       setTurnstileError("An error occurred. Please try again.");
     } finally {
@@ -525,7 +525,8 @@ export default function Home() {
                           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); else window.open('https://www.buymeacoffee.com/sevaverse', '_blank');
                         }}
                         className="ml-1 underline decoration-dotted font-medium hover:text-blue-700 dark:hover:text-blue-300"
-                      >Support the project</button>.
+                      >
+                      </button>
                     </p>
                     <button
                       aria-label="Dismiss support message"
