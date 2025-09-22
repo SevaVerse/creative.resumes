@@ -4,6 +4,7 @@ import Script from "next/script";
 import Head from "./head";
 import "./globals.css";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -104,7 +105,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Script>
         )}
       </head>
-      <body>{children}</body>
+      <body>
+        <SpeedInsights />
+        {children}
+      </body>
     </html>
   );
 }
