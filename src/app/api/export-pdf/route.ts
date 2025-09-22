@@ -61,7 +61,8 @@ async function launchBrowser(log: SimpleLogger = logger) {
     // Optional dependencies resolved dynamically (names as variables to avoid TS resolution at build time)
     const chromiumModuleName = "@sparticuz/chromium" as string;
     const puppeteerCoreModuleName = "puppeteer-core" as string;
-    const chromium = (await import(chromiumModuleName)) as unknown as ChromiumModule;
+    const chromiumModule = await import(chromiumModuleName);
+    const chromium = chromiumModule.default || chromiumModule;
     const puppeteerCore = (await import(puppeteerCoreModuleName)) as unknown as PuppeteerCoreModule;
     const executablePath = await chromium.executablePath();
     log.info("pdf.launch.main", { path: executablePath, args: chromium.args });
