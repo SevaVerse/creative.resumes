@@ -1,116 +1,229 @@
-## Resume Builder (Next.js + TypeScript)
+# Creative Resumes - A Privacy-First, AI-Powered Resume Builder## Resume Builder (Next.js + TypeScript)
 
-<!-- जय श्री राम -->
+
+
+![Creative Resumes Hero Image](https://raw.githubusercontent.com/SevaVerse/creative.resumes/develop/public/og-image.png)<!-- जय श्री राम -->
+
 A fast, privacy‑first resume builder with three professional templates, structured inputs, a gamified editor, carbon footprint scoring, server PDF export, and lightweight metrics.
 
+Build a professional, polished resume in minutes. No ads, no trackers, just your data and our tools. This is a free, open-source resume builder focused on privacy, speed, and a great user experience.
+
 ### Highlights
-- 4 templates: Minimalist, Onyx, AwesomeCV, SubtleElegant
+
+**[Live Demo](https://your-live-url.com)**- 4 templates: Minimalist, Onyx, AwesomeCV, SubtleElegant
+
 - Structured Experience + Skills (with sliders)
-- **AI-powered text rewriting** (Groq integration)
+
+---- **AI-powered text rewriting** (Groq integration)
+
 - PDF Export (server‑side)
-- Gamified Builder (score, badges, challenges)
+
+## ✨ Features- Gamified Builder (score, badges, challenges)
+
 - Carbon Footprint Score per template
-- Privacy‑first (no ads/trackers; server renders PDF only on export)
-- Forever free (no trials, no paywalls)
-- Lightweight metrics: Page Hits and Resumes Downloaded
 
----
+*   **Privacy-First by Design:** No user tracking, no ads, and no data selling. PDF generation happens on your device.- Privacy‑first (no ads/trackers; server renders PDF only on export)
 
-## Planned Enhancements
-See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming improvements, including:
+*   **Four Professional Templates:** Choose from four beautifully designed templates: Minimalist, Onyx, AwesomeCV, and Subtle & Elegant.- Forever free (no trials, no paywalls)
+
+*   **AI-Powered Rewrites:** Enhance your resume summary, experience, and project descriptions with integrated AI assistance.- Lightweight metrics: Page Hits and Resumes Downloaded
+
+*   **Secure Magic Link Authentication:** No passwords to remember. Secure, one-time login links are sent to your email.
+
+*   **Modern Bot Protection:** Uses Cloudflare Turnstile, a privacy-respecting alternative to traditional CAPTCHAs.---
+
+*   **One-Click PDF Export:** Download a print-ready, optimized PDF of your resume with a single click.
+
+*   **Gamified Resume Score:** Get instant feedback on your resume's completeness and quality to improve your chances.## Planned Enhancements
+
+*   **Eco-Friendly Carbon Score:** Each template has a "Carbon Score" to help you make an environmentally conscious choice.See the evolving roadmap in [`docs/roadmap.md`](docs/roadmap.md) for upcoming improvements, including:
+
 - Rate limiting for login
-- Accessibility upgrades (aria-live Turnstile feedback)
+
+## ☕ Support The Project- Accessibility upgrades (aria-live Turnstile feedback)
+
 - Remember last email option
 
+If this project saves you time or helps you land your next job, please consider supporting its development. Your support helps keep the servers running and the project free and open-source for everyone.
+
 ### New Content & Docs
-- Short announcement: [`docs/blog-announcement.md`](docs/blog-announcement.md)
-- Full how‑to guide: [`docs/blog-how-to-resume-builder.md`](docs/blog-how-to-resume-builder.md)
-- Live MDX preview page (dev runtime): `/blog/privacy-first-resume-builder`
 
----
+<a href="https://www.buymeacoffee.com/sevaverse" target="_blank">- Short announcement: [`docs/blog-announcement.md`](docs/blog-announcement.md)
 
-## Support
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >- Full how‑to guide: [`docs/blog-how-to-resume-builder.md`](docs/blog-how-to-resume-builder.md)
 
-If you find this project helpful, consider buying me a coffee! ☕
+</a>- Live MDX preview page (dev runtime): `/blog/privacy-first-resume-builder`
 
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/sevaverse)
+
+
+## 🚀 Getting Started---
+
+
+
+Follow these instructions to set up the project locally for development and testing.## Support
+
+
+
+### 1. PrerequisitesIf you find this project helpful, consider buying me a coffee! ☕
+
+
+
+*   [Node.js](https://nodejs.org/) (v18.x or later recommended)[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/sevaverse)
+
+*   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
 Your support helps keep this project free and open source.
 
+### 2. Clone the Repository
+
 ---
 
-## Tech Stack
-- Next.js 15 (App Router) + React 19 + TypeScript
-- Tailwind CSS 4
+```bash
+
+git clone https://github.com/SevaVerse/creative.resumes.git## Tech Stack
+
+cd creative.resumes- Next.js 15 (App Router) + React 19 + TypeScript
+
+```- Tailwind CSS 4
+
 - ESLint (flat config)
-- Puppeteer (local), puppeteer‑core + @sparticuz/chromium (serverless)
+
+### 3. Install Dependencies- Puppeteer (local), puppeteer‑core + @sparticuz/chromium (serverless)
+
 - Nodemailer (SMTP; Mailtrap‑friendly)
 
----
+```bash
+
+npm install---
+
+```
 
 ## Getting Started
 
-1) Install dependencies
-```bash
-npm install
-```
+### 4. Set Up Environment Variables
 
-2) Create `.env.local` (optional, for email/PDF origin)
-```bash
-# SMTP (optional: email login link route)
-SMTP_HOST=sandbox.smtp.mailtrap.io
-SMTP_PORT=2525
+1) Install dependencies
+
+Create a new file named `.env.local` in the root of your project and add the following environment variables.```bash
+
+npm install
+
+```env```
+
+# --- Security ---
+
+# A 32-character secret string for signing magic link tokens2) Create `.env.local` (optional, for email/PDF origin)
+
+MAGIC_LINK_SECRET=```bash
+
+# Cloudflare Turnstile keys (get from https://dash.cloudflare.com/)# SMTP (optional: email login link route)
+
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=SMTP_HOST=sandbox.smtp.mailtrap.io
+
+TURNSTILE_SECRET_KEY=SMTP_PORT=2525
+
 SMTP_USER=your_user
-SMTP_PASS=your_pass
-SMTP_FROM="Resume Builder <no-reply@example.com>"
+
+# --- Services ---SMTP_PASS=your_pass
+
+# Groq API Key for AI rewrites (get from https://console.groq.com/keys)SMTP_FROM="Resume Builder <no-reply@example.com>"
+
+GROQ_API_KEY=
 
 # AI Text Rewriting (Groq) - Get free API key from https://console.groq.com
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=llama-3.1-70b-versatile
-ENABLE_AI_REWRITER=true
 
-# Cloudflare Turnstile (Security) - Get keys from https://dash.cloudflare.com/
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key_here
-TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
+# --- Email (Nodemailer) ---GROQ_API_KEY=your_groq_api_key_here
 
-# Magic Link Authentication (HMAC-signed tokens)
-# Generate a random 32+ char value: e.g. `openssl rand -hex 32`
-MAGIC_LINK_SECRET=replace_with_random_hex_string
+# Use a service like smtp4dev for local testing or your production SMTP providerGROQ_MODEL=llama-3.1-70b-versatile
+
+SMTP_HOST=ENABLE_AI_REWRITER=true
+
+SMTP_PORT=
+
+SMTP_USER=# Cloudflare Turnstile (Security) - Get keys from https://dash.cloudflare.com/
+
+SMTP_PASS=NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key_here
+
+SMTP_FROM_EMAIL="noreply@yourdomain.com"TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
+
+
+
+# --- Application ---# Magic Link Authentication (HMAC-signed tokens)
+
+# The base URL of your deployed application (e.g., http://localhost:3000 for dev)# Generate a random 32+ char value: e.g. `openssl rand -hex 32`
+
+APP_BASE_URL=http://localhost:3000MAGIC_LINK_SECRET=replace_with_random_hex_string
+
+```
 
 # Public origin used by server PDF export
-# If deploying to Vercel, VERCEL_URL is used automatically when set.
+
+**Note:** For local development, you can use the public Turnstile "test keys" and a local SMTP server like [smtp4dev](https://github.com/rnwood/smtp4dev).# If deploying to Vercel, VERCEL_URL is used automatically when set.
+
 APP_BASE_URL=http://localhost:3000
+
+### 5. Run the Development Server```
+
+
+
+```bash3) Run the dev server
+
+npm run dev```bash
+
+```npm run dev
+
 ```
 
-3) Run the dev server
+The application should now be running at [http://localhost:3000](http://localhost:3000).Open http://localhost:3000 (dev may fall back to 3001 if 3000 is busy).
+
+
+
+## 🛠️ Tech Stack4) Production build (optional)
+
 ```bash
-npm run dev
-```
-Open http://localhost:3000 (dev may fall back to 3001 if 3000 is busy).
 
-4) Production build (optional)
-```bash
-npm run build
-npm start
-```
+*   **Framework:** [Next.js](https://nextjs.org/) (App Router)npm run build
 
----
+*   **Language:** [TypeScript](https://www.typescriptlang.org/)npm start
 
-## Features in Detail
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)```
 
-### Templates
+*   **AI:** [Groq API](https://groq.com/)
+
+*   **Authentication:** Magic Links (HMAC-signed JWTs)---
+
+*   **Database:** None! It's database-free for maximum privacy.
+
+*   **Deployment:** Vercel, Netlify, or any Node.js-compatible host.## Features in Detail
+
+
+
+## 🤝 Contributing### Templates
+
 Four templates live under `src/components/`:
-- `MinimalistTemplate.tsx` (simple, print‑friendly)
-- `OnyxTemplate.tsx` (modern, with skill meters)
-- `AwesomeCVTemplate.tsx` (timeline, colored sections, meters)
-- `SubtleElegantTemplate.tsx` (clean, professional design)
 
-### AI-Powered Text Rewriting
-**Zero-cost AI enhancement using Groq's free tier**
+Contributions are welcome! If you have a feature request, find a bug, or want to improve the code, please open an issue or submit a pull request.- `MinimalistTemplate.tsx` (simple, print‑friendly)
+
+- `OnyxTemplate.tsx` (modern, with skill meters)
+
+1.  Fork the repository.- `AwesomeCVTemplate.tsx` (timeline, colored sections, meters)
+
+2.  Create your feature branch (`git checkout -b feature/YourAmazingFeature`).- `SubtleElegantTemplate.tsx` (clean, professional design)
+
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+
+4.  Push to the branch (`git push origin feature/YourAmazingFeature`).### AI-Powered Text Rewriting
+
+5.  Open a Pull Request.**Zero-cost AI enhancement using Groq's free tier**
+
 - Smart text optimization for all resume sections
-- Professional summary refinement
+
+## 📄 License- Professional summary refinement
+
 - Experience bullet point enhancement  
-- Education and project descriptions
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.- Education and project descriptions
+
 - Maintains user control with suggestion/accept workflow
 - 14,400+ free API calls per day via Groq
 
