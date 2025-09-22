@@ -59,3 +59,8 @@ smtp4dev.db
 
 # sensitive files
 .env
+
+docs/*
+
+newrelic_agent.log
+to-do.md
