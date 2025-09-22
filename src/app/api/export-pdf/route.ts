@@ -64,6 +64,7 @@ async function launchBrowser(log: SimpleLogger = logger) {
     const chromium = (await import(chromiumModuleName)) as unknown as ChromiumModule;
     const puppeteerCore = (await import(puppeteerCoreModuleName)) as unknown as PuppeteerCoreModule;
     const executablePath = await chromium.executablePath();
+    log.info("pdf.launch.main", { path: executablePath, args: chromium.args });
     const browser = await puppeteerCore.default.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -72,7 +73,7 @@ async function launchBrowser(log: SimpleLogger = logger) {
     });
     return browser;
   } catch (error) {
-  log.warn("pdf.launch.fallback", { error: (error as Error).message });
+    log.warn("pdf.launch.fallback", { error: (error as Error).message });
 
     // Check if we're in production (Vercel) or development
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
@@ -80,6 +81,7 @@ async function launchBrowser(log: SimpleLogger = logger) {
     if (isProduction) {
       // For Vercel/serverless: Use minimal args optimized for serverless
       const puppeteer = (await import("puppeteer")) as unknown as PuppeteerModule;
+  log.warn("pdf.launch.vercel_fallback", { reason: "@sparticuz/chromium or puppeteer-core import failed" });
       const browser = await puppeteer.default.launch({
         args: [
           "--no-sandbox",
@@ -93,11 +95,11 @@ async function launchBrowser(log: SimpleLogger = logger) {
         ],
         headless: true
       });
-      log.info("pdf.launch.vercel_fallback");
       return browser;
     } else {
       // For local development (Windows): Use Windows-optimized args
       const puppeteer = (await import("puppeteer")) as unknown as PuppeteerModule;
+  log.warn("pdf.launch.local_fallback", { reason: "@sparticuz/chromium or puppeteer-core import failed" });
       const browser = await puppeteer.default.launch({
         args: [
           "--no-sandbox",
@@ -110,7 +112,6 @@ async function launchBrowser(log: SimpleLogger = logger) {
         ],
         headless: true
       });
-      log.info("pdf.launch.local_fallback");
       return browser;
     }
   }
