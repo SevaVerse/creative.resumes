@@ -49,7 +49,7 @@ coverage/
 
 # Vercel
 .vercel
-
+prod-package.json
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
