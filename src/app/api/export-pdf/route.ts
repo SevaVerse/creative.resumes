@@ -64,7 +64,17 @@ async function launchBrowser(log: SimpleLogger = logger) {
     const chromiumModule = await import(chromiumModuleName);
     const chromium = chromiumModule.default || chromiumModule;
     const puppeteerCore = (await import(puppeteerCoreModuleName)) as unknown as PuppeteerCoreModule;
-    const executablePath = await chromium.executablePath();
+    
+    // Try to get the executable path, but handle missing binaries gracefully
+    let executablePath: string;
+    try {
+      executablePath = await chromium.executablePath();
+    } catch (execError) {
+      log.warn("pdf.chromium.missing_binaries", { error: (execError as Error).message });
+      // Fall back to system Chrome/Chromium paths that might exist on Vercel
+      executablePath = '/usr/bin/google-chrome-stable';
+    }
+    
     log.info("pdf.launch.main", { path: executablePath, args: chromium.args });
     const browser = await puppeteerCore.default.launch({
       args: chromium.args,
