@@ -5,6 +5,7 @@ import Head from "./head";
 import "./globals.css";
 import { getBaseUrl } from "@/utils/baseUrl";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -107,6 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <SpeedInsights />
+        <Analytics />
         {children}
       </body>
     </html>
