@@ -3,6 +3,9 @@ import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
 import { getRedis } from "@/utils/redis";
 import { getBaseUrl } from "@/utils/baseUrl";
+import chromium from "@sparticuz/chromium-min";
+import puppeteerCore from "puppeteer-core";
+import puppeteer from "puppeteer";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
@@ -32,100 +35,50 @@ type Browser = {
   newPage: () => Promise<Page>;
   close: () => Promise<void>;
 };
-type ChromiumModule = {
-  args: string[];
-  headless: boolean | "new";
-  defaultViewport?: unknown;
-  executablePath: () => Promise<string>;
-};
-type PuppeteerCoreModule = {
-  default: {
-    launch: (options: {
-      args?: string[];
-      defaultViewport?: unknown;
-      executablePath?: string;
-      headless?: boolean | "new";
-    }) => Promise<Browser>;
-  };
-};
-type PuppeteerModule = {
-  default: {
-    launch: (options?: { args?: string[]; headless?: boolean }) => Promise<Browser>;
-  };
-};
+const remoteExecutablePath =
+  "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
+
+let browserInstance: Browser | null = null;
 
 type SimpleLogger = { info: (m:string,e?:Record<string,unknown>)=>void; warn: (m:string,e?:Record<string,unknown>)=>void; debug:(m:string,e?:Record<string,unknown>)=>void };
-async function launchBrowser(log: SimpleLogger = logger) {
-  // Prefer puppeteer-core + @sparticuz/chromium for serverless (Vercel)
-  try {
-    // Optional dependencies resolved dynamically (names as variables to avoid TS resolution at build time)
-    const chromiumModuleName = "@sparticuz/chromium" as string;
-    const puppeteerCoreModuleName = "puppeteer-core" as string;
-    const chromiumModule = await import(chromiumModuleName);
-    const chromium = chromiumModule.default || chromiumModule;
-    const puppeteerCore = (await import(puppeteerCoreModuleName)) as unknown as PuppeteerCoreModule;
-    
-    // Try to get the executable path, but handle missing binaries gracefully
-    let executablePath: string;
+
+async function getBrowser(log: SimpleLogger = logger) {
+  if (browserInstance) return browserInstance;
+
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  
+  if (isProduction) {
+    log.info("pdf.launch.production_mode");
     try {
-      executablePath = await chromium.executablePath();
-    } catch (execError) {
-      log.warn("pdf.chromium.missing_binaries", { error: (execError as Error).message });
-      // Fall back to system Chrome/Chromium paths that might exist on Vercel
-      executablePath = '/usr/bin/google-chrome-stable';
+      browserInstance = (await puppeteerCore.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(remoteExecutablePath),
+        headless: true,
+      })) as Browser;
+      log.info("pdf.launch.production_success");
+    } catch (error) {
+      log.warn("pdf.launch.production_failed", { error: (error as Error).message });
+      throw error;
     }
-    
-    log.info("pdf.launch.main", { path: executablePath, args: chromium.args });
-    const browser = await puppeteerCore.default.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath,
-      headless: chromium.headless,
-    });
-    return browser;
-  } catch (error) {
-    log.warn("pdf.launch.fallback", { error: (error as Error).message });
-
-    // Check if we're in production (Vercel) or development
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-
-    if (isProduction) {
-      // For Vercel/serverless: Use minimal args optimized for serverless
-      const puppeteer = (await import("puppeteer")) as unknown as PuppeteerModule;
-  log.warn("pdf.launch.vercel_fallback", { reason: "@sparticuz/chromium or puppeteer-core import failed" });
-      const browser = await puppeteer.default.launch({
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--disable-software-rasterizer",
-          "--disable-background-timer-throttling",
-          "--disable-backgrounding-occluded-windows",
-          "--disable-renderer-backgrounding"
-        ],
-        headless: true
-      });
-      return browser;
-    } else {
-      // For local development (Windows): Use Windows-optimized args
-      const puppeteer = (await import("puppeteer")) as unknown as PuppeteerModule;
-  log.warn("pdf.launch.local_fallback", { reason: "@sparticuz/chromium or puppeteer-core import failed" });
-      const browser = await puppeteer.default.launch({
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
-          "--no-first-run",
-          "--no-zygote",
-          "--disable-gpu"
-        ],
-        headless: true
-      });
-      return browser;
+  } else {
+    log.info("pdf.launch.development_mode");
+    try {
+      browserInstance = (await puppeteer.launch({
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        headless: true,
+      })) as Browser;
+      log.info("pdf.launch.development_success");
+    } catch (error) {
+      log.warn("pdf.launch.development_failed", { error: (error as Error).message });
+      throw error;
     }
   }
+  return browserInstance;
+}
+
+// Keep the old function name for compatibility
+async function launchBrowser(log: SimpleLogger = logger) {
+  return getBrowser(log);
 }
 
 export async function POST(req: NextRequest) {
@@ -157,6 +110,9 @@ export async function POST(req: NextRequest) {
     log.debug('pdf.payload', { selectedTemplate: payload?.selectedTemplate });
 
     const browser = await launchBrowser(log);
+    if (!browser) {
+      throw new Error("Failed to launch browser");
+    }
     log.info("pdf.browser_ready");
 
     const page = await browser.newPage();
