@@ -10,11 +10,15 @@ import { Analytics } from "@vercel/analytics/react";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap", // Prevent invisible text during font load
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap", // Prevent invisible text during font load
+  preload: true,
 });
 
 const baseUrl = getBaseUrl();
