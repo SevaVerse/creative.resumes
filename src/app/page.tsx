@@ -105,6 +105,13 @@ import ResumeTemplates from "../components/ResumeTemplates";
 import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
 import TurnstileWrapper from "../components/Turnstile";
+import { useAuth } from "@/components/AuthProvider";
+import { ResumeSaveButton } from "@/components/ResumeSaveButton";
+import { ResumeLoader } from "@/components/ResumeLoader";
+import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
+import { scheduleAutoSave, cancelAutoSave } from "@/lib/db/resumes";
+import { trackDownload, trackPageView } from "@/lib/analytics";
+import type { Resume } from "@/types/database";
 
 // Carbon footprint scoring function based on template color usage
 function computeCarbonScore(templateId: string): number {
@@ -147,6 +154,7 @@ const BASE_CHALLENGES: Challenge[] = [
 ];
 
 export default function Home() {
+  const { user } = useAuth(); // Supabase auth
   const [session, setSession] = useState<{ email: string } | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
@@ -254,6 +262,13 @@ export default function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [challenges, setChallenges] = useState(BASE_CHALLENGES);
 
+  // Resume persistence state
+  const [currentResumeId, setCurrentResumeId] = useState<string | undefined>(undefined);
+  const [currentResumeName, setCurrentResumeName] = useState<string | undefined>(undefined);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
+  const hasUnsavedChanges = useRef(false);
+
   // Initialize session from localStorage (set by /verify page after token exchange)
   useEffect(() => {
     try {
@@ -320,11 +335,80 @@ export default function Home() {
     }
   }, [session]);
 
+  // Track page view with Supabase analytics
+  useEffect(() => {
+    if (user) {
+      trackPageView();
+    }
+  }, [user]);
+
+  // Autosave logic - triggers 30 seconds after last change
+  useEffect(() => {
+    if (!user || !currentResumeId || !hasUnsavedChanges.current) {
+      return;
+    }
+
+    setSaveStatus('saving');
+    scheduleAutoSave(
+      currentResumeId,
+      formData,
+      () => {
+        setSaveStatus('saved');
+        setLastSaved(new Date());
+        hasUnsavedChanges.current = false;
+      },
+      30000 // 30 seconds
+    );
+
+    return () => cancelAutoSave();
+  }, [formData, currentResumeId, user]);
+
+  // Mark changes as unsaved when form data changes
+  useEffect(() => {
+    if (currentResumeId) {
+      hasUnsavedChanges.current = true;
+    }
+  }, [formData]);
+
+  // Warn user about unsaved changes before leaving
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges.current && currentResumeId) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentResumeId]);
+
   // Logout handler
   const handleLogout = () => {
     try { localStorage.removeItem('rb_email'); } catch {}
     setSession(null);
     setSelectedTemplate(null);
+  };
+
+  // Handle save success
+  const handleSaveSuccess = (resumeId: string, name: string) => {
+    setCurrentResumeId(resumeId);
+    setCurrentResumeName(name);
+    setSaveStatus('saved');
+    setLastSaved(new Date());
+    hasUnsavedChanges.current = false;
+  };
+
+  // Handle load resume
+  const handleLoadResume = (resume: Resume) => {
+    setCurrentResumeId(resume.id);
+    setCurrentResumeName(resume.name);
+    setSelectedTemplate(resume.template);
+    setFormData(resume.data as typeof formData);
+    setSaveStatus('saved');
+    setLastSaved(new Date(resume.last_edited_at));
+    hasUnsavedChanges.current = false;
+    setShowPreview(true); // Show preview after loading
   };
 
   // Handle form field changes
@@ -617,7 +701,29 @@ export default function Home() {
         {/* Right Column: Form */}
         <div className="md:col-span-2">
           <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
-            <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Enter Your Details</h2>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Enter Your Details</h2>
+              {user && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <AutosaveIndicator 
+                    status={saveStatus} 
+                    lastSaved={lastSaved} 
+                    resumeName={currentResumeName}
+                  />
+                  <ResumeLoader 
+                    onLoadResume={handleLoadResume}
+                    currentResumeId={currentResumeId}
+                  />
+                  <ResumeSaveButton
+                    currentResumeId={currentResumeId}
+                    currentResumeName={currentResumeName}
+                    template={selectedTemplate || 'minimalist'}
+                    data={formData}
+                    onSaveSuccess={handleSaveSuccess}
+                  />
+                </div>
+              )}
+            </div>
             {/* Basic Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input type="text" name="name" placeholder="Full Name" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" required value={formData.name} onChange={handleFieldChange} />
@@ -741,13 +847,25 @@ export default function Home() {
       onExport={async (tpl: string) => {
         setIsExporting(true);
         try {
+          // Get Supabase session token if available
+          let authToken: string | undefined;
+          if (user) {
+            const { createClient } = await import('@/utils/supabase/client');
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            authToken = session?.access_token;
+          }
+          
           const payload = {
             selectedTemplate: tpl,
             ...formData,
           };
           const res = await fetch("/api/export-pdf", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+            },
             body: JSON.stringify(payload),
           });
           if (res.ok) {
@@ -760,8 +878,12 @@ export default function Home() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+            
+            // Track download with Supabase analytics
+            await trackDownload(tpl, currentResumeId);
           } else {
-            alert("Failed to export PDF.");
+            const error = await res.json().catch(() => ({ error: 'Failed to export PDF' }));
+            alert(error.error || "Failed to export PDF.");
           }
         } finally {
           setIsExporting(false);

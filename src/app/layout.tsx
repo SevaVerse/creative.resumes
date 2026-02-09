@@ -6,6 +6,8 @@ import "./globals.css";
 import { getBaseUrl } from "@/utils/baseUrl";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
+import { AuthProvider } from "@/components/AuthProvider";
+import { LoginButton } from "@/components/LoginButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -107,9 +109,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
       </head>
       <body>
-        <SpeedInsights />
-        <Analytics />
-        {children}
+        <AuthProvider>
+          <header className="border-b border-gray-200 bg-white">
+            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+              <h1 className="text-xl font-bold text-gray-900">SecureCV</h1>
+              <LoginButton />
+            </div>
+          </header>
+          <SpeedInsights />
+          <Analytics />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
