@@ -38,9 +38,23 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
     setError('')
     
     try {
+      // Get Supabase session token if available
+      let authToken: string | undefined;
+      try {
+        const { createClient } = await import('@/utils/supabase/client');
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        authToken = session?.access_token;
+      } catch {
+        // Ignore auth errors, let API handle it
+      }
+      
       const response = await fetch('/api/rewrite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+        },
         body: JSON.stringify({ text: text.trim(), type })
       })
       

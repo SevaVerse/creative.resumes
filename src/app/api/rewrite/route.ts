@@ -2,14 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { rewriteText, type RewriteType, isAIRewriterEnabled, estimateTokens } from "@/utils/groq";
 import { logger, extractRequestId } from "@/utils/logger";
 import { createRateLimiter } from "@/utils/rateLimit";
+import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
 
-// Rate limiting for AI rewrite requests (per IP)
+// Rate limiting for AI rewrite requests (per user)
 const rewriteLimiter = createRateLimiter(60 * 1000, 20); // 20 requests per minute
+
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders(origin),
+  });
+}
 
 export async function POST(req: NextRequest) {
   const started = performance.now();
   const requestId = extractRequestId(req.headers);
   const log = logger.withRequest(requestId);
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
   
   try {
     // Check if AI rewriter is enabled
@@ -17,17 +29,34 @@ export async function POST(req: NextRequest) {
       log.warn('rewrite.disabled');
       return NextResponse.json(
         { error: "AI rewriter is not enabled" }, 
-        { status: 503 }
+        { 
+          status: 503,
+          headers: corsHeaders,
+        }
       );
     }
 
-    // Rate limiting check
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rlKey = `rewrite:${ip}`;
+    // Verify Supabase authentication
+    const authResult = await verifySupabaseAuth(req);
+    if (!authResult.authenticated) {
+      log.warn('rewrite.unauthorized', { error: authResult.error });
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in to use AI rewrite.' },
+        {
+          status: 401,
+          headers: corsHeaders,
+        }
+      );
+    }
+    
+    log.info('rewrite.authenticated', { userId: authResult.userId });
+
+    // Rate limiting check (per authenticated user)
+    const rlKey = `rewrite:${authResult.userId}`;
     const rl = rewriteLimiter.check(rlKey);
     
     if (!rl.allowed) {
-      log.warn('rewrite.rate_limited', { ip, retryAfterMs: rl.retryAfterMs });
+      log.warn('rewrite.rate_limited', { userId: authResult.userId, retryAfterMs: rl.retryAfterMs });
       return NextResponse.json(
         { 
           error: "Too many rewrite requests", 
@@ -39,6 +68,7 @@ export async function POST(req: NextRequest) {
             "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
             "RateLimit-Limit": "20",
             "RateLimit-Remaining": rl.remaining.toString(),
+            ...corsHeaders,
           }
         }
       );
@@ -136,6 +166,7 @@ export async function POST(req: NextRequest) {
       headers: {
         "RateLimit-Limit": "20",
         "RateLimit-Remaining": rl.remaining.toString(),
+        ...corsHeaders,
       }
     });
 
@@ -153,14 +184,14 @@ export async function POST(req: NextRequest) {
     if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
       return NextResponse.json(
         { error: "AI service configuration error" },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
     if (errorMessage.includes('quota') || errorMessage.includes('limit')) {
       return NextResponse.json(
         { error: "AI service quota exceeded. Please try again later." },
-        { status: 503 }
+        { status: 503, headers: corsHeaders }
       );
     }
 
@@ -169,7 +200,7 @@ export async function POST(req: NextRequest) {
         error: "Failed to rewrite text. Please try again.",
         requestId 
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
