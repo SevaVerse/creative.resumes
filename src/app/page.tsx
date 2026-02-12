@@ -480,14 +480,10 @@ export default function Home() {
               <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto md:mx-0">
                 Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
               </p>
-              <div className="mt-8 flex items-center gap-4 justify-center md:justify-start">
-                <button
-                  aria-label="Get started building your resume"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105"
-                  onClick={() => setShowLogin(true)}
-                >
-                  Get Started for Free
-                </button>
+              <p className="mt-6 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
+                👉 Sign in with Google or GitHub (top right) to get started
+              </p>
+              <div className="mt-6 flex items-center gap-4 justify-center md:justify-start">
                 <BuyMeCoffee />
                 <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
               </div>
