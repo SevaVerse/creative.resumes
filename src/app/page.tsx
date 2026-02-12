@@ -200,17 +200,13 @@ export default function Home() {
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
   const hasUnsavedChanges = useRef(false);
 
-  // Initialize session from localStorage (set by /verify page after token exchange)
+  // Initialize support message visibility from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('rb_email');
-      if (stored && !session) {
-        setSession({ email: stored });
-      }
       const dismissed = localStorage.getItem('rb_support_dismissed_v1');
       if (!dismissed) setShowSupport(true);
     } catch {}
-  }, [session]);
+  }, []);
 
   // Fetch current metrics on mount and track page view
   useEffect(() => {
@@ -300,13 +296,6 @@ export default function Home() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [currentResumeId]);
-
-  // Logout handler
-  const handleLogout = () => {
-    try { localStorage.removeItem('rb_email'); } catch {}
-    setSession(null);
-    setSelectedTemplate(null);
-  };
 
   // Handle save success
   const handleSaveSuccess = (resumeId: string, name: string) => {
@@ -459,20 +448,6 @@ export default function Home() {
     <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-12 px-4">
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
-      {/* Top bar with email after login and logout button */}
-      {session && (
-        <div className="fixed top-0 right-0 p-4 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 z-40">
-          <Link href="/privacy" className="hover:underline">Privacy</Link>
-          <BuyMeCoffee />
-          <span>{session.email}</span>
-          <button
-            onClick={handleLogout}
-            className="ml-2 px-3 py-1 rounded bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 transition"
-          >
-            Logout
-          </button>
-        </div>
-      )}
       <main className="w-full max-w-6xl flex flex-col items-center gap-10">
         {/* Trust + Metrics summary */}
         <div className="w-full mt-2 flex items-center justify-end">
@@ -495,7 +470,7 @@ export default function Home() {
           </div>
         </div>
         {/* Show hero section if not logged in */}
-        {!session && (
+        {!user && (
           <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mt-10 w-full max-w-6xl">
             {/* Left Column: Hero Text */}
             <div className="text-center md:text-left">
@@ -558,13 +533,13 @@ export default function Home() {
         )}
 
         {/* After login: show template selection */}
-        {session && !selectedTemplate && (
+        {user && !selectedTemplate && (
           <ResumeTemplates onSelect={setSelectedTemplate} />
         )}
 
         {/* After template selection: show placeholder for form */}
         
-{session && selectedTemplate && !showPreview && (
+{user && selectedTemplate && !showPreview && (
   <div className="z-10 w-full max-w-4xl flex flex-col items-center gap-8">
     {/* Combined Form, Gamification, and Disclaimer Card */}
     <div className="w-full p-6 md:p-8 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
@@ -758,7 +733,7 @@ export default function Home() {
 )}
 
 {/* Show resume preview after form submit */}
-{session && selectedTemplate && showPreview && (
+{user && selectedTemplate && showPreview && (
   <div className="w-full mt-8 flex flex-col items-center">
     <TabsPreview
       formData={formData}
