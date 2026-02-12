@@ -68,9 +68,11 @@ function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPr
               Edit Details
             </button>
             <button
+              data-export-button
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition print:hidden disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:scale-105"
               onClick={() => onExport(tpl.id)}
               disabled={isExporting}
+              title="Download PDF (Ctrl+E)"
             >
               {isExporting ? (
                 <>
@@ -111,6 +113,7 @@ import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicat
 import { scheduleAutoSave, cancelAutoSave } from "@/lib/db/resumes";
 import { trackDownload, trackPageView } from "@/lib/analytics";
 import { Onboarding } from "@/components/Onboarding";
+import { ResumeProgress } from "@/components/ResumeProgress";
 import type { Resume } from "@/types/database";
 
 // Carbon footprint scoring function based on template color usage
@@ -297,6 +300,38 @@ export default function Home() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [currentResumeId]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (user && showPreview) {
+          // Trigger save by clicking the save button if it exists
+          const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement;
+          if (saveButton) {
+            saveButton.click();
+          }
+        }
+      }
+      
+      // Ctrl+E or Cmd+E to export
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        if (user && showPreview && selectedTemplate) {
+          // Trigger export by clicking the download button if it exists
+          const exportButton = document.querySelector('[data-export-button]') as HTMLButtonElement;
+          if (exportButton) {
+            exportButton.click();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [user, showPreview, selectedTemplate]);
 
   // Handle save success
   const handleSaveSuccess = (resumeId: string, name: string) => {
@@ -592,6 +627,7 @@ export default function Home() {
 
         {/* Right Column: Form */}
         <div className="md:col-span-2">
+          {user && <ResumeProgress formData={formData} />}
           <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Enter Your Details</h2>
