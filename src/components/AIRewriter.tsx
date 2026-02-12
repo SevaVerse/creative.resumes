@@ -15,6 +15,8 @@ interface RewriteResponse {
   original: string
   rewritten: string
   type: string
+  tone?: string
+  action?: string
   stats?: {
     originalLength: number
     rewrittenLength: number
@@ -24,12 +26,28 @@ interface RewriteResponse {
   error?: string
 }
 
+type Tone = 'professional' | 'casual' | 'technical'
+type Action = 'improve' | 'expand' | 'condense' | 'achievements'
+
 export function AIRewriter({ text, type, onRewrite, className = '', disabled = false }: AIRewriterProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [suggestion, setSuggestion] = useState<string>('')
   const [showSuggestion, setShowSuggestion] = useState(false)
   const [stats, setStats] = useState<RewriteResponse['stats'] | null>(null)
   const [error, setError] = useState<string>('')
+  const [tone, setTone] = useState<Tone>('professional')
+  const [action, setAction] = useState<Action>('improve')
+  const [showOptions, setShowOptions] = useState(false)
+
+  const copyToClipboard = async () => {
+    if (!suggestion) return
+    try {
+      await navigator.clipboard.writeText(suggestion)
+      // Could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
 
   const handleRewrite = async () => {
     if (!text?.trim() || isLoading || disabled) return
@@ -55,7 +73,12 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
           'Content-Type': 'application/json',
           ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
         },
-        body: JSON.stringify({ text: text.trim(), type })
+        body: JSON.stringify({ 
+          text: text.trim(), 
+          type,
+          tone,
+          action
+        })
       })
       
       const data: RewriteResponse = await response.json()
@@ -68,6 +91,7 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
         setSuggestion(data.rewritten)
         setStats(data.stats || null)
         setShowSuggestion(true)
+        setShowOptions(false)
       } else {
         throw new Error(data.error || 'No rewritten text received')
       }
@@ -111,15 +135,20 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
   if (showSuggestion) {
     return (
       <div className={`border rounded-lg p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800 ${className}`}>
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <div className="flex items-center gap-1">
             <span className="text-purple-600 dark:text-purple-400">✨</span>
             <span className="text-sm font-semibold text-purple-900 dark:text-purple-200">AI Suggestion</span>
           </div>
           {stats && (
-            <span className="text-xs text-purple-600 dark:text-purple-400 bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-full">
-              {stats.savedChars > 0 ? `-${stats.savedChars}` : `+${Math.abs(stats.savedChars)}`} chars
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-purple-600 dark:text-purple-400 bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-full">
+                {stats.originalLength} → {stats.rewrittenLength} chars
+              </span>
+              <span className="text-xs text-purple-600 dark:text-purple-400 bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-full">
+                {stats.savedChars > 0 ? `-${stats.savedChars}` : `+${Math.abs(stats.savedChars)}`}
+              </span>
+            </div>
           )}
         </div>
         
@@ -129,7 +158,14 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
           </p>
         </div>
         
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-end flex-wrap">
+          <button
+            onClick={copyToClipboard}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg transition-colors"
+            title="Copy to clipboard"
+          >
+            📋 Copy
+          </button>
           <button
             onClick={rejectSuggestion}
             className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg transition-colors"
@@ -149,38 +185,86 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
     )
   }
 
-  // Main rewrite button
+  // Main rewrite button with options
   return (
-    <button
-      onClick={handleRewrite}
-      disabled={isLoading || !text?.trim() || disabled}
-      className={`
-        inline-flex items-center gap-1.5 px-3 py-1.5 text-sm 
-        bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200
-        dark:from-purple-900/30 dark:to-blue-900/30 dark:hover:from-purple-900/50 dark:hover:to-blue-900/50
-        text-purple-700 dark:text-purple-300 
-        border border-purple-200 dark:border-purple-700
-        rounded-lg transition-all duration-200 
-        disabled:opacity-50 disabled:cursor-not-allowed
-        hover:scale-105 hover:shadow-sm
-        ${className}
-      `}
-      title={`Rewrite this ${type.replace('_', ' ')} using AI`}
-    >
-      {isLoading ? (
-        <>
-          <svg className="w-3.5 h-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-xs">Rewriting...</span>
-        </>
-      ) : (
-        <>
-          <span className="text-sm">✨</span>
-          <span className="text-xs font-medium">AI Rewrite</span>
-        </>
+    <div className={`inline-flex flex-col gap-2 ${className}`}>
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={handleRewrite}
+          disabled={isLoading || !text?.trim() || disabled}
+          className={`
+            inline-flex items-center gap-1.5 px-3 py-1.5 text-sm 
+            bg-gradient-to-r from-purple-100 to-blue-100 hover:from-purple-200 hover:to-blue-200
+            dark:from-purple-900/30 dark:to-blue-900/30 dark:hover:from-purple-900/50 dark:hover:to-blue-900/50
+            text-purple-700 dark:text-purple-300 
+            border border-purple-200 dark:border-purple-700
+            rounded-lg transition-all duration-200 
+            disabled:opacity-50 disabled:cursor-not-allowed
+            hover:scale-105 hover:shadow-sm
+          `}
+          title={`Rewrite this ${type.replace('_', ' ')} using AI`}
+        >
+          {isLoading ? (
+            <>
+              <svg className="w-3.5 h-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-xs">Rewriting...</span>
+            </>
+          ) : (
+            <>
+              <span className="text-sm">✨</span>
+              <span className="text-xs font-medium">AI Rewrite</span>
+            </>
+          )}
+        </button>
+        
+        <button
+          onClick={() => setShowOptions(!showOptions)}
+          className="px-2 py-1.5 text-xs text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded transition-colors"
+          title="Show options"
+        >
+          ⚙️
+        </button>
+      </div>
+
+      {showOptions && (
+        <div className="flex gap-2 flex-wrap items-center p-2 bg-gray-50 dark:bg-neutral-900/50 rounded border border-gray-200 dark:border-neutral-700">
+          <div className="flex items-center gap-1">
+            <label className="text-xs text-gray-600 dark:text-gray-400">Tone:</label>
+            <select
+              value={tone}
+              onChange={(e) => setTone(e.target.value as Tone)}
+              className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+            >
+              <option value="professional">Professional</option>
+              <option value="casual">Casual</option>
+              <option value="technical">Technical</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <label className="text-xs text-gray-600 dark:text-gray-400">Action:</label>
+            <select
+              value={action}
+              onChange={(e) => setAction(e.target.value as Action)}
+              className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300"
+            >
+              <option value="improve">Improve</option>
+              <option value="expand">Expand</option>
+              <option value="condense">Condense</option>
+              <option value="achievements">Suggest Achievements</option>
+            </select>
+          </div>
+        </div>
       )}
-    </button>
+      
+      {text && (
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {text.length} characters
+        </span>
+      )}
+    </div>
   )
 }

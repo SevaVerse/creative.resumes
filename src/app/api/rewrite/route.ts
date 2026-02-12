@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rewriteText, type RewriteType, isAIRewriterEnabled, estimateTokens } from "@/utils/groq";
+import { rewriteText, type RewriteType, type Tone, type Action, isAIRewriterEnabled, estimateTokens } from "@/utils/groq";
 import { logger, extractRequestId } from "@/utils/logger";
 import { createRateLimiter } from "@/utils/rateLimit";
 import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body = await req.json();
-    const { text, type } = body;
+    const { text, type, tone = 'professional', action = 'improve' } = body;
 
     // Validate input
     if (!text || typeof text !== 'string') {
@@ -129,20 +129,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate tone
+    const validTones: Tone[] = ['professional', 'casual', 'technical'];
+    if (!validTones.includes(tone as Tone)) {
+      log.warn('rewrite.invalid_tone', { tone, validTones });
+      return NextResponse.json(
+        { error: `Invalid tone. Must be one of: ${validTones.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validate action
+    const validActions: Action[] = ['improve', 'expand', 'condense', 'achievements'];
+    if (!validActions.includes(action as Action)) {
+      log.warn('rewrite.invalid_action', { action, validActions });
+      return NextResponse.json(
+        { error: `Invalid action. Must be one of: ${validActions.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     log.info('rewrite.start', { 
       type, 
+      tone,
+      action,
       originalLength: text.length,
       estimatedTokens: estimateTokens(text),
       remaining: rl.remaining
     });
 
     // Perform the rewrite
-    const rewrittenText = await rewriteText(text.trim(), type as RewriteType);
+    const rewrittenText = await rewriteText(text.trim(), type as RewriteType, tone as Tone, action as Action);
 
     const durationMs = +(performance.now() - started).toFixed(2);
 
     log.info('rewrite.success', {
       type,
+      tone,
+      action,
       originalLength: text.length,
       rewrittenLength: rewrittenText.length,
       savedChars: text.length - rewrittenText.length,
@@ -155,6 +179,8 @@ export async function POST(req: NextRequest) {
       original: text,
       rewritten: rewrittenText,
       type,
+      tone,
+      action,
       stats: {
         originalLength: text.length,
         rewrittenLength: rewrittenText.length,
