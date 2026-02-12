@@ -2,6 +2,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @deno-types="npm:@types/pdfjs-dist"
+import * as pdfjsLib from 'npm:pdfjs-dist@4.0.379'
+import mammoth from 'npm:mammoth@1.6.0'
 
 // CORS headers
 const corsHeaders = {
@@ -147,12 +150,42 @@ serve(async (req) => {
 
 // Helper function to extract text from PDF
 async function extractTextFromPDF(buffer: Uint8Array): Promise<string> {
-  // TODO: Implement actual PDF parsing
-  // For MVP, we'll use a simple approach or return a placeholder
-  // In production, you'd use a library like pdf-parse or pdfjs-dist
-  
-  // Placeholder: Return instructions for now
-  throw new Error('PDF parsing not yet implemented. Please use DOCX format or manual entry.')
+  try {
+    // Load PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: buffer })
+    const pdf = await loadingTask.promise
+    
+    let fullText = ''
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum)
+  try {
+    // Convert Uint8Array to Buffer for mammoth
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    )
+    
+    // Extract text using mammoth
+    const result = await mammoth.extractRawText({ arrayBuffer })
+    
+    if (!result.value) {
+      throw new Error('No text extracted from DOCX file')
+    }
+    
+    return result.value.trim()
+  } catch (error) {
+    console.error('DOCX parsing error:', error)
+    throw new Error(`Failed to parse DOCX: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+    }
+    
+    return fullText.trim()
+  } catch (error) {
+    console.error('PDF parsing error:', error)
+    throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
 }
 
 // Helper function to extract text from DOCX

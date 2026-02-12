@@ -114,6 +114,7 @@ import { scheduleAutoSave, cancelAutoSave } from "@/lib/db/resumes";
 import { trackDownload, trackPageView } from "@/lib/analytics";
 import { Onboarding } from "@/components/Onboarding";
 import { ResumeProgress } from "@/components/ResumeProgress";
+import ResumeUploader from "@/components/ResumeUploader";
 import type { Resume } from "@/types/database";
 
 // Carbon footprint scoring function based on template color usage
@@ -203,6 +204,9 @@ export default function Home() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
   const hasUnsavedChanges = useRef(false);
+
+  // Resume upload state
+  const [showUploader, setShowUploader] = useState(false);
 
   // Initialize support message visibility from localStorage
   useEffect(() => {
@@ -652,6 +656,56 @@ export default function Home() {
                 </div>
               )}
             </div>
+            
+            {/* Resume Upload Section */}
+            {user && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowUploader(!showUploader)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900 dark:text-white">Import from Existing Resume</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Upload a PDF or DOCX file to auto-fill your details</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-gray-500 transition-transform ${showUploader ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showUploader && (
+                  <div className="mt-4 p-6 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-lg">
+                    <ResumeUploader 
+                      onResumeImported={(parsedResume) => {
+                        setFormData({
+                          name: parsedResume.name || formData.name,
+                          email: parsedResume.email || formData.email,
+                          phone: parsedResume.phone || formData.phone,
+                          website: parsedResume.website || formData.website,
+                          linkedin: parsedResume.linkedin || formData.linkedin,
+                          summary: parsedResume.summary || formData.summary,
+                          experiences: parsedResume.experiences?.length ? parsedResume.experiences : formData.experiences,
+                          education: parsedResume.education || formData.education,
+                          skills: parsedResume.skills?.length ? parsedResume.skills : formData.skills,
+                          certifications: parsedResume.certifications || formData.certifications,
+                          projects: parsedResume.projects || formData.projects,
+                          profilePicture: formData.profilePicture,
+                          profilePictureUrl: formData.profilePictureUrl,
+                        });
+                        hasUnsavedChanges.current = true;
+                        setShowUploader(false);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             {/* Basic Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input type="text" name="name" placeholder="Full Name" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" required value={formData.name} onChange={handleFieldChange} />
