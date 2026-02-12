@@ -110,6 +110,7 @@ import { ResumeLoader } from "@/components/ResumeLoader";
 import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
 import { scheduleAutoSave, cancelAutoSave } from "@/lib/db/resumes";
 import { trackDownload, trackPageView } from "@/lib/analytics";
+import { Onboarding } from "@/components/Onboarding";
 import type { Resume } from "@/types/database";
 
 // Carbon footprint scoring function based on template color usage
@@ -448,6 +449,8 @@ export default function Home() {
     <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-12 px-4">
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
+      <Onboarding />
+      <Onboarding />
       <main className="w-full max-w-6xl flex flex-col items-center gap-10">
         {/* Trust + Metrics summary */}
         <div className="w-full mt-2 flex items-center justify-end">
