@@ -4,7 +4,6 @@ import Script from "next/script";
 import Head from "./head";
 import "./globals.css";
 import { getBaseUrl } from "@/utils/baseUrl";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LoginButton } from "@/components/LoginButton";
@@ -116,7 +115,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <LoginButton />
             </div>
           </header>
-          <SpeedInsights />
           <Analytics />
           {children}
         </AuthProvider>
