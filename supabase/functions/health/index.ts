@@ -22,7 +22,7 @@ serve(async (req) => {
       checks: {
         groq_api: !!Deno.env.get('GROQ_API_KEY'),
         supabase_url: !!Deno.env.get('SUPABASE_URL'),
-        supabase_key: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+        supabase_key: !!Deno.env.get('SERVICE_ROLE_KEY'),
       }
     }
 

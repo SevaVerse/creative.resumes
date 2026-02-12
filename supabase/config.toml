@@ -18,7 +18,7 @@ max_rows = 1000
 port = 54322
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 15
+major_version = 17
 
 [studio]
 # Port to use for Supabase Studio.
@@ -56,14 +56,5 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 
-# Edge Functions
-[functions]
-# Deno version for Edge Functions
-deno_version = "1.40.2"
-# Default Edge Function runtime
-runtime = "deno"
-
-# Secrets for Edge Functions (use .env.local for actual values)
-[functions.secrets]
-GROQ_API_KEY = "env(GROQ_API_KEY)"
-SUPABASE_SERVICE_ROLE_KEY = "env(SUPABASE_SERVICE_ROLE_KEY)"
+# Edge Functions Configuration
+# Note: Secrets should be set via CLI: npx supabase secrets set KEY=value

@@ -115,7 +115,7 @@ supabase functions deploy health
 ### Set Secrets
 ```bash
 supabase secrets set GROQ_API_KEY=your_groq_api_key
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+supabase secrets set SERVICE_ROLE_KEY=your_service_role_key
 ```
 
 ### Local Development
@@ -164,7 +164,7 @@ curl -i --location --request POST \
 
 **Required in Supabase Dashboard → Settings → Edge Functions:**
 - `GROQ_API_KEY` - Groq API key for LLM
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
+- `SERVICE_ROLE_KEY` - Service role key for admin operations (Note: Cannot start with SUPABASE_ prefix)
 
 **Note:** `SUPABASE_URL` and `SUPABASE_ANON_KEY` are automatically injected.
 
