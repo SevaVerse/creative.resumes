@@ -128,14 +128,14 @@ export default function ResumeTemplates({ onSelect }: { onSelect: (id: string) =
     <>
       <div className="flex flex-col gap-4 mt-8">
         <h2 className="text-lg font-semibold text-foreground mb-2">Choose a Resume Template</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
           {templates.map((tpl) => (
-            <div key={tpl.id} className="border border-gray-300 dark:border-neutral-700 rounded-lg p-4 hover:border-blue-400 dark:hover:border-blue-500 transition-all group">
-              <div className="mb-3">
+            <div key={tpl.id} className="flex flex-col border border-gray-300 dark:border-neutral-700 rounded-lg p-4 hover:border-blue-400 dark:hover:border-blue-500 transition-all group">
+              <div className="flex-grow mb-3">
                 <div className="font-bold text-foreground mb-1">{tpl.name}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">{tpl.description}</div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-auto">
                 <button
                   onClick={() => onSelect(tpl.id)}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
