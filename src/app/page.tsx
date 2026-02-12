@@ -212,25 +212,22 @@ export default function Home() {
     } catch {}
   }, [session]);
 
-  // Fire a page hit and pull current metrics on mount
+  // Fetch current metrics on mount and track page view
   useEffect(() => {
     const metricsDisabled =
       process.env.ENABLE_METRICS === "false" ||
       process.env.NEXT_PUBLIC_ENABLE_METRICS === "false";
     if (metricsDisabled) return;
+    
     const fire = async () => {
-      // Guard: only count once per session/tab
+      // Track page view (Supabase analytics)
       const key = "rb_page_hit_once";
       if (!sessionStorage.getItem(key)) {
-        try {
-          await fetch("/api/metrics", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "page_hit" }),
-          });
-          sessionStorage.setItem(key, "1");
-        } catch {}
+        trackPageView();
+        sessionStorage.setItem(key, "1");
       }
+      
+      // Fetch current metrics for display
       try {
         const res = await fetch("/api/metrics");
         if (res.ok) {
@@ -261,12 +258,7 @@ export default function Home() {
 
 
 
-  // Track page view with Supabase analytics
-  useEffect(() => {
-    if (user) {
-      trackPageView();
-    }
-  }, [user]);
+
 
   // Autosave logic - triggers 30 seconds after last change
   useEffect(() => {

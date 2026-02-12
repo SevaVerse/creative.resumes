@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
-import { getRedis } from "@/utils/redis";
 import { getBaseUrl } from "@/utils/baseUrl";
 import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
 import chromium from "@sparticuz/chromium-min";
@@ -180,14 +179,6 @@ export async function POST(req: NextRequest) {
     log.info("pdf.generated", { bytes: pdf.length });
 
     await browser.close();
-
-    // Best-effort increment of download metric (non-blocking)
-    try {
-      const redis = getRedis();
-      if (redis) {
-        await redis.incr("resume_downloads");
-      }
-    } catch {}
 
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);

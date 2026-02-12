@@ -1,55 +1,50 @@
-import { NextRequest } from "next/server";
-import { getRedis } from "@/utils/redis";
+import { createClient } from '@/utils/supabase/server';
 
-// Fallback in-memory counters (used when Redis is not configured)
-const counters = {
-  page_hits: 0,
-  resume_downloads: 0,
-};
-
+/**
+ * GET /api/metrics
+ * Returns aggregated analytics from Supabase
+ */
 export async function GET() {
-  const redis = getRedis();
-  if (redis) {
-    const [page_hits, resume_downloads] = await Promise.all([
-      redis.get<number>("page_hits").then((v: unknown) => Number((v as number) ?? 0)),
-      redis.get<number>("resume_downloads").then((v: unknown) => Number((v as number) ?? 0)),
-    ]);
-    return Response.json({ page_hits, resume_downloads });
-  }
-  return Response.json({
-    page_hits: counters.page_hits,
-    resume_downloads: counters.resume_downloads,
-  });
-}
-
-export async function POST(req: NextRequest) {
   try {
-    const { type } = await req.json();
-    if (type !== "page_hit" && type !== "resume_download") {
-      return new Response("Invalid metric type", { status: 400 });
-    }
+    const supabase = await createClient();
 
-    const redis = getRedis();
-    if (redis) {
-      const key = type === "page_hit" ? "page_hits" : "resume_downloads";
-      await redis.incr(key);
-      const [page_hits, resume_downloads] = await Promise.all([
-        redis.get<number>("page_hits").then((v: unknown) => Number((v as number) ?? 0)),
-        redis.get<number>("resume_downloads").then((v: unknown) => Number((v as number) ?? 0)),
-      ]);
-      return Response.json({ ok: true, page_hits, resume_downloads });
-    }
+    // Get total page views
+    const { count: pageViews } = await supabase
+      .from('analytics')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_type', 'page_view');
 
-    // Fallback to in-memory when Redis not configured
-    if (type === "page_hit") counters.page_hits += 1;
-    else counters.resume_downloads += 1;
+    // Get total downloads
+    const { count: downloads } = await supabase
+      .from('analytics')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_type', 'resume_download');
+
+    // Get downloads by template (optional, for future use)
+    const { data: byTemplate } = await supabase
+      .from('analytics')
+      .select('metadata')
+      .eq('event_type', 'resume_download');
+
+    const templateCounts = byTemplate?.reduce((acc: Record<string, number>, row) => {
+      const template = row.metadata?.template || 'unknown';
+      acc[template] = (acc[template] || 0) + 1;
+      return acc;
+    }, {});
 
     return Response.json({
-      ok: true,
-      page_hits: counters.page_hits,
-      resume_downloads: counters.resume_downloads,
+      page_hits: pageViews || 0,
+      resume_downloads: downloads || 0,
+      by_template: templateCounts || {},
     });
-  } catch {
-    return new Response("Bad Request", { status: 400 });
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    // Return zeros on error to avoid breaking the UI
+    return Response.json({
+      page_hits: 0,
+      resume_downloads: 0,
+      by_template: {},
+    });
   }
 }
+
