@@ -7,6 +7,7 @@ export function Onboarding() {
   const { user } = useAuth()
   const [show, setShow] = useState(false)
   const [step, setStep] = useState(0)
+  const [isCompleting, setIsCompleting] = useState(false)
 
   useEffect(() => {
     // Check if user has seen onboarding
@@ -19,8 +20,11 @@ export function Onboarding() {
   }, [user])
 
   const handleComplete = () => {
+    if (isCompleting) return
+    setIsCompleting(true)
     localStorage.setItem('hasSeenOnboarding', 'true')
     setShow(false)
+    setStep(0) // Reset for next time
   }
 
   const handleSkip = () => {
