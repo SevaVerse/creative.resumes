@@ -229,7 +229,7 @@ export default function PrivacyPage() {
             </div>
           </section>
 
-          {/* Email Login */}
+          {/* OAuth Authentication */}
           <section className="p-6 md:p-8 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 bg-indigo-500/20 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400 rounded-lg flex items-center justify-center border border-indigo-300/50 dark:border-indigo-800/50">
@@ -238,23 +238,21 @@ export default function PrivacyPage() {
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Optional Email Login
+                Optional OAuth Login
               </h2>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              If you choose to log in via email, we send a magic link using your
-              configured SMTP server (e.g., Mailtrap for testing).
+              If you choose to log in, we use OAuth via Supabase (Google or GitHub).
+              This allows you to save and sync your resumes across devices.
             </p>
             <div className="bg-indigo-50/50 dark:bg-indigo-900/30 p-4 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50">
               <p className="text-indigo-800 dark:text-indigo-200 text-sm">
-                <strong>Privacy Note:</strong> We do not store email addresses on
-                the server. The email is used only to send the login link and is
-                not retained.
+                <strong>Privacy Note:</strong> We only store your user ID and email from the OAuth provider.
+                Your resume data is protected by row-level security policies—only you can access your saved resumes.
               </p>
             </div>
           </section>

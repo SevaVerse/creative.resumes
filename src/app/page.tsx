@@ -104,7 +104,6 @@ import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
 import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
-import TurnstileWrapper from "../components/Turnstile";
 import { useAuth } from "@/components/AuthProvider";
 import { ResumeSaveButton } from "@/components/ResumeSaveButton";
 import { ResumeLoader } from "@/components/ResumeLoader";
@@ -155,79 +154,11 @@ const BASE_CHALLENGES: Challenge[] = [
 
 export default function Home() {
   const { user } = useAuth(); // Supabase auth
-  const [session, setSession] = useState<{ email: string } | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
-  // Turnstile state
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
-  const [turnstileError, setTurnstileError] = useState<string>("");
-  const [isSendingLoginLink, setIsSendingLoginLink] = useState(false);
-  // TODO(future): Add in-memory rate limiting for login link requests (env configurable)
-  // TODO(future): Add aria-live polite region for turnstile errors & new challenge announcements
-  // TODO(future): Persist last email (localStorage) with opt-in remember checkbox
-
-  const handleTurnstileVerify = (token: string) => {
-    setTurnstileToken(token);
-    setTurnstileError("");
-  };
-
-  const handleTurnstileError = () => {
-    setTurnstileError("Security verification failed. Please try again.");
-    setTurnstileToken("");
-  };
-
-  useEffect(() => {
-    if (showLogin) {
-      setTurnstileToken("");
-      setTurnstileError("");
-    }
-  }, [showLogin]);
-
-  const handleLogin = async () => {
-    if (isSendingLoginLink) return;
-    const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
-    if (!emailInput || !emailInput.value) return;
-    
-    if (!turnstileToken) {
-      setTurnstileError("Please complete the security verification.");
-      return;
-    }
-
-    try {
-      setIsSendingLoginLink(true);
-      setTurnstileError("");
-
-      // First verify the Turnstile token
-      const verifyResponse = await fetch("/api/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: turnstileToken }),
-      });
-
-      if (!verifyResponse.ok) {
-        setTurnstileError("Security verification failed. Please try again.");
-        return;
-      }
-
-      // If verification successful, send login link
-      await fetch("/api/send-login-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput.value }),
-      });
-      
-      setShowLogin(false);
-      alert("A login link has been sent to your email.");
-    } catch {
-      setTurnstileError("An error occurred. Please try again.");
-    } finally {
-      setIsSendingLoginLink(false);
-    }
-  };
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    email: session?.email || "",
+    email: "",
     phone: "",
     website: "",
     linkedin: "",
@@ -328,12 +259,7 @@ export default function Home() {
     prevMetrics.current = metrics;
   }, [metrics]);
 
-  // Sync email into form once session established
-  useEffect(() => {
-    if (session?.email) {
-      setFormData((prev) => ({ ...prev, email: prev.email || session.email }));
-    }
-  }, [session]);
+
 
   // Track page view with Supabase analytics
   useEffect(() => {
@@ -898,60 +824,14 @@ export default function Home() {
 
       </main>
 
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 z-50 flex bg-black/40 items-center justify-center">
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-8 w-full max-w-sm flex flex-col gap-4">
-            <input
-              id="login-email"
-              type="email"
-              placeholder="Enter your email"
-              className="border border-gray-300 dark:border-neutral-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <div className="flex flex-col gap-2 mt-2">
-              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Security Check</label>
-              <TurnstileWrapper
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-                onVerify={handleTurnstileVerify}
-                onError={handleTurnstileError}
-                theme="auto"
-                size="compact"
-              />
-              {turnstileError && <p className="text-xs text-red-600">{turnstileError}</p>}
-            </div>
-            <button
-              className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded transition flex items-center justify-center gap-2"
-              onClick={handleLogin}
-              disabled={isSendingLoginLink || !turnstileToken}
-            >
-              {isSendingLoginLink ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Sending...
-                </>
-              ) : (
-                'Continue'
-              )}
-            </button>
-            <button
-              className="mt-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
-              onClick={() => setShowLogin(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+
       <footer className="mt-16 w-full max-w-6xl flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400 text-xs py-8">
         <div className="flex items-center flex-wrap gap-3 justify-center">
           <span className="text-sm">Made with ❤️ by Seva</span>
           <span className="hidden sm:inline">•</span>
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
         </div>
-        {!showSupport && !session && (
+        {!showSupport && (
           <button
             onClick={() => { try { localStorage.removeItem('rb_support_dismissed_v1'); } catch {}; setShowSupport(true); }}
             className="text-[11px] underline decoration-dotted hover:text-blue-600 dark:hover:text-blue-300"
