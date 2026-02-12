@@ -49,7 +49,7 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
     }
   }
 
-  const handleRewrite = async () => {
+  const handleRewrite = async (forceVercel = false) => {
     if (!text?.trim() || isLoading || disabled) return
     
     setIsLoading(true)
@@ -66,8 +66,16 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
       } catch {
         // Ignore auth errors, let API handle it
       }
+
+      // Try Edge Function first (90% cost savings) unless forced to use Vercel
+      const useEdgeFunction = !forceVercel && process.env.NEXT_PUBLIC_SUPABASE_URL && authToken;
+      const endpoint = useEdgeFunction
+        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-rewrite`
+        : '/api/rewrite';
       
-      const response = await fetch('/api/rewrite', {
+      console.log(`Using ${useEdgeFunction ? 'Edge Function' : 'Vercel'} for AI rewrite`);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -84,6 +92,11 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
       const data: RewriteResponse = await response.json()
       
       if (!response.ok) {
+        // If Edge Function fails with server error and we haven't tried Vercel yet, fallback
+        if (useEdgeFunction && response.status >= 500) {
+          console.warn('Edge Function failed, falling back to Vercel endpoint');
+          return handleRewrite(true); // Retry with Vercel
+        }
         throw new Error(data.error || `HTTP ${response.status}`)
       }
       
@@ -190,7 +203,7 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
     <div className={`inline-flex flex-col gap-2 ${className}`}>
       <div className="flex items-center gap-2 flex-wrap">
         <button
-          onClick={handleRewrite}
+          onClick={() => handleRewrite()}
           disabled={isLoading || !text?.trim() || disabled}
           className={`
             inline-flex items-center gap-1.5 px-3 py-1.5 text-sm 
