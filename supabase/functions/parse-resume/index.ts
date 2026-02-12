@@ -206,7 +206,7 @@ async function structureResumeData(text: string, apiKey: string): Promise<Parsed
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-70b-versatile',
+      model: Deno.env.get('GROQ_MODEL') || 'llama-3.1-70b-versatile',
       messages: [
         {
           role: 'system',
