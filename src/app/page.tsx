@@ -485,14 +485,14 @@ export default function Home() {
 
 
   return (
-    <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-12 px-4">
+    <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-6 px-4">
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
       <Onboarding />
       <Onboarding />
-      <main className="w-full max-w-6xl flex flex-col items-center gap-10">
+      <main className="w-full max-w-6xl flex flex-col items-center gap-6">
         {/* Trust + Metrics summary */}
-        <div className="w-full mt-2 flex items-center justify-end">
+        <div className="w-full flex items-center justify-end">
           <div
             aria-label="Site metrics"
             className="inline-flex items-center gap-3 px-3 py-2 rounded-full border border-gray-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm shadow-sm text-gray-700 dark:text-gray-200 text-sm"
@@ -513,24 +513,24 @@ export default function Home() {
         </div>
         {/* Show hero section if not logged in */}
         {!user && (
-          <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mt-10 w-full max-w-6xl">
+          <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-4 w-full max-w-6xl">
             {/* Left Column: Hero Text */}
             <div className="text-center md:text-left">
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white !leading-tight">
+              <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white !leading-tight">
                 Build a <span className="text-blue-600">Professional</span> Resume <br /> in Minutes
               </h1>
-              <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto md:mx-0">
+              <p className="mt-3 text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto md:mx-0">
                 Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
               </p>
-              <p className="mt-6 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
+              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
                 👉 Sign in with Google or GitHub (top right) to get started
               </p>
-              <div className="mt-6 flex items-center gap-4 justify-center md:justify-start">
+              <div className="mt-4 flex items-center gap-4 justify-center md:justify-start">
                 <BuyMeCoffee />
                 <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
               </div>
               {showSupport && (
-                <div className="mt-6 relative mx-auto md:mx-0 max-w-xl">
+                <div className="mt-4 relative mx-auto md:mx-0 max-w-xl">
                   <div className="group p-4 rounded-lg border border-blue-200/60 dark:border-blue-800/50 bg-blue-50/70 dark:bg-blue-900/30 backdrop-blur supports-[backdrop-filter]:bg-blue-50/50 dark:supports-[backdrop-filter]:bg-blue-900/25 text-sm text-blue-900 dark:text-blue-200 leading-relaxed shadow-sm">
                     <p>
                       If this saves you time and you can afford it, a small contribution helps keep it <strong>free & privacy‑first</strong> for everyone.
