@@ -81,13 +81,13 @@ export function ResumeSaveButton({
       </button>
 
       {showDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowDialog(false)}>
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 max-w-md w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               {currentResumeId ? 'Update Resume' : 'Save Resume'}
             </h2>
             <div className="mb-4">
-              <label htmlFor="resume-name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="resume-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Resume Name
               </label>
               <input
@@ -97,7 +97,7 @@ export function ResumeSaveButton({
                 value={resumeName}
                 onChange={(e) => setResumeName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !saving && handleSave()}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 autoFocus
                 disabled={saving}
               />
