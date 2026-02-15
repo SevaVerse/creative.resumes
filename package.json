@@ -27,7 +27,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "groq-sdk": "^0.32.0",
     "newrelic": "^13.3.2",
-    "next": "15.5.2",
+    "next": "15.5.9",
     "nodemailer": "^7.0.6",
     "puppeteer": "^24.20.0",
     "puppeteer-core": "^24.20.0",
