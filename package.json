@@ -34,16 +34,16 @@
     "react-confetti": "^6.4.0",
     "react-dom": "19.1.0",
     "sharp": "^0.33.5",
-    "tailwindcss": "^4"
-  },
-  "devDependencies": {
+    "tailwindcss": "^4",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19",
-    "cross-env": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "typescript": "^5"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0"
   }
 }
