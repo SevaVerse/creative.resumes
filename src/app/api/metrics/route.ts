@@ -1,12 +1,17 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 /**
  * GET /api/metrics
  * Returns aggregated analytics from Supabase
+ * Uses service role key to bypass RLS for reading aggregated metrics
  */
 export async function GET() {
   try {
-    const supabase = await createClient();
+    // Use service role key to read analytics (bypasses RLS)
+    const supabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Get total page views
     const { count: pageViews } = await supabase
