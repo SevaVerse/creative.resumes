@@ -115,29 +115,23 @@ export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps
       reader.readAsDataURL(file)
       const base64Content = await base64Promise
 
-      // Call Edge Function
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/parse-resume`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fileContent: base64Content,
-            fileName: file.name,
-            contentType: file.type,
-          }),
-        }
-      )
+      // Call Edge Function via Supabase client (handles auth automatically)
+      const { data: result, error: fnError } = await supabase.functions.invoke('parse-resume', {
+        body: {
+          fileContent: base64Content,
+          fileName: file.name,
+          contentType: file.type,
+        },
+      })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to parse resume')
+      if (fnError) {
+        throw new Error(fnError.message || 'Failed to parse resume')
       }
 
-      const result = await response.json()
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to parse resume')
+      }
+
       setParsedData(result.data)
     } catch (err) {
       console.error('Parse error:', err)

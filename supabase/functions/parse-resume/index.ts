@@ -151,34 +151,18 @@ serve(async (req) => {
 // Helper function to extract text from PDF
 async function extractTextFromPDF(buffer: Uint8Array): Promise<string> {
   try {
-    // Load PDF document
     const loadingTask = pdfjsLib.getDocument({ data: buffer })
     const pdf = await loadingTask.promise
     
     let fullText = ''
     
-    // Extract text from each page
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum)
-  try {
-    // Convert Uint8Array to Buffer for mammoth
-    const arrayBuffer = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    )
-    
-    // Extract text using mammoth
-    const result = await mammoth.extractRawText({ arrayBuffer })
-    
-    if (!result.value) {
-      throw new Error('No text extracted from DOCX file')
-    }
-    
-    return result.value.trim()
-  } catch (error) {
-    console.error('DOCX parsing error:', error)
-    throw new Error(`Failed to parse DOCX: ${error instanceof Error ? error.message : 'Unknown error'}`)
-  }
+      const textContent = await page.getTextContent()
+      const pageText = textContent.items
+        .map((item: { str?: string }) => item.str || '')
+        .join(' ')
+      fullText += pageText + '\n'
     }
     
     return fullText.trim()
@@ -190,11 +174,23 @@ async function extractTextFromPDF(buffer: Uint8Array): Promise<string> {
 
 // Helper function to extract text from DOCX
 async function extractTextFromDOCX(buffer: Uint8Array): Promise<string> {
-  // TODO: Implement actual DOCX parsing
-  // For MVP, use mammoth.js or similar library
-  
-  // Placeholder
-  throw new Error('DOCX parsing not yet implemented. Please use manual entry.')
+  try {
+    const arrayBuffer = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    )
+    
+    const result = await mammoth.extractRawText({ arrayBuffer })
+    
+    if (!result.value) {
+      throw new Error('No text extracted from DOCX file')
+    }
+    
+    return result.value.trim()
+  } catch (error) {
+    console.error('DOCX parsing error:', error)
+    throw new Error(`Failed to parse DOCX: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
 }
 
 // Helper function to structure resume data using Groq LLM
