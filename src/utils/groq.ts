@@ -8,6 +8,23 @@ const groq = new Groq({
 
 // Define supported text rewrite types for resume content
 export type RewriteType = 'job_summary' | 'experience' | 'skill_description' | 'summary' | 'projects';
+export type Tone = 'professional' | 'casual' | 'technical';
+export type Action = 'improve' | 'expand' | 'condense' | 'achievements';
+
+// Tone modifiers
+const TONE_MODIFIERS: Record<Tone, string> = {
+  professional: 'Use formal, corporate language with industry-standard terminology.',
+  casual: 'Use conversational, friendly language while maintaining professionalism.',
+  technical: 'Use precise technical terminology and emphasize technical skills and methodologies.'
+};
+
+// Action-specific instructions
+const ACTION_INSTRUCTIONS: Record<Action, string> = {
+  improve: 'Enhance clarity, impact, and professionalism. Use strong action verbs and quantify results.',
+  expand: 'Add more detail and context. Elaborate on achievements, responsibilities, and technologies used. Aim for 50% more content.',
+  condense: 'Make it more concise and punchy. Remove redundancy and focus on key points. Aim for 30% shorter.',
+  achievements: 'Transform this into achievement-focused bullet points. Emphasize quantifiable results, impact, and value delivered. Start each point with a strong action verb.'
+};
 
 // Resume-specific prompts for different content types
 const REWRITE_PROMPTS: Record<RewriteType, string> = {
@@ -26,9 +43,16 @@ const REWRITE_PROMPTS: Record<RewriteType, string> = {
  * Rewrite text using Groq's Llama model with resume-specific prompts
  * @param text - The original text to rewrite
  * @param type - The type of content being rewritten
+ * @param tone - The tone to use (professional, casual, technical)
+ * @param action - The action to perform (improve, expand, condense, achievements)
  * @returns Promise<string> - The rewritten text
  */
-export async function rewriteText(text: string, type: RewriteType): Promise<string> {
+export async function rewriteText(
+  text: string, 
+  type: RewriteType,
+  tone: Tone = 'professional',
+  action: Action = 'improve'
+): Promise<string> {
   if (!process.env.GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY not configured');
   }
@@ -40,12 +64,18 @@ export async function rewriteText(text: string, type: RewriteType): Promise<stri
   // Log the rewrite attempt
   logger.info('groq.rewrite.start', { 
     type, 
+    tone,
+    action,
     originalLength: text.length,
     originalPreview: text.substring(0, 50) + (text.length > 50 ? '...' : '')
   });
 
   try {
-    const prompt = REWRITE_PROMPTS[type];
+    const basePrompt = REWRITE_PROMPTS[type];
+    const toneModifier = TONE_MODIFIERS[tone];
+    const actionInstruction = ACTION_INSTRUCTIONS[action];
+    
+    const fullPrompt = `${basePrompt}\n\nTone: ${toneModifier}\n\nAction: ${actionInstruction}\n\nOriginal text: "${text}"`;
     
     const response = await groq.chat.completions.create({
       messages: [
@@ -55,12 +85,12 @@ export async function rewriteText(text: string, type: RewriteType): Promise<stri
         },
         {
           role: 'user',
-          content: `${prompt}\n\nOriginal text: "${text}"`
+          content: fullPrompt
         }
       ],
       model: process.env.GROQ_MODEL || 'llama-3.1-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 200,
+      temperature: action === 'achievements' ? 0.8 : 0.7,
+      max_tokens: action === 'expand' ? 300 : action === 'condense' ? 150 : 200,
       top_p: 0.9
     });
 
@@ -73,6 +103,8 @@ export async function rewriteText(text: string, type: RewriteType): Promise<stri
     // Log successful rewrite
     logger.info('groq.rewrite.success', {
       type,
+      tone,
+      action,
       originalLength: text.length,
       rewrittenLength: rewrittenText.length,
       savedChars: text.length - rewrittenText.length,
@@ -86,6 +118,8 @@ export async function rewriteText(text: string, type: RewriteType): Promise<stri
     
     logger.error('groq.rewrite.error', {
       type,
+      tone,
+      action,
       originalLength: text.length,
       error: errorMessage
     });

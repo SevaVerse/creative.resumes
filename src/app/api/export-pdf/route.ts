@@ -1,14 +1,23 @@
 import { NextRequest } from "next/server";
 import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
-import { getRedis } from "@/utils/redis";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
 import chromium from "@sparticuz/chromium-min";
 import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
+
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders(origin),
+  });
+}
 
 // Add type declaration for global temp storage
 declare global {
@@ -85,13 +94,34 @@ export async function POST(req: NextRequest) {
   const started = performance.now();
   const requestId = extractRequestId(req.headers);
   const log = logger.withRequest(requestId);
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   try {
+    // Verify Supabase authentication
+    const authResult = await verifySupabaseAuth(req);
+    if (!authResult.authenticated) {
+      log.warn('pdf.unauthorized', { error: authResult.error });
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized. Please sign in to export PDFs.' }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+    
+    log.info('pdf.authenticated', { userId: authResult.userId });
+    
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    // Perform rate limit check early (per IP only – could include template if desired)
-    const rlKey = buildKey(["pdf", ip]);
+    // Perform rate limit check (per authenticated user, not IP)
+    const rlKey = buildKey(["pdf", authResult.userId!]);
     const rl = pdfLimiter.check(rlKey);
     if (!rl.allowed) {
-      log.warn('pdf.rate_limited', { ip, retryAfterMs: rl.retryAfterMs });
+      log.warn('pdf.rate_limited', { userId: authResult.userId, retryAfterMs: rl.retryAfterMs });
       return new Response(
         JSON.stringify({ error: "Too many export requests", retryAfterMs: rl.retryAfterMs }),
         {
@@ -101,6 +131,7 @@ export async function POST(req: NextRequest) {
             "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
             "RateLimit-Limit": "10",
             "RateLimit-Remaining": "0",
+            ...corsHeaders,
           },
         }
       );
@@ -149,20 +180,9 @@ export async function POST(req: NextRequest) {
 
     await browser.close();
 
-    // Best-effort increment of download metric (non-blocking)
-    try {
-      const redis = getRedis();
-      if (redis) {
-        await redis.incr("resume_downloads");
-      } else {
-        // Fire-and-forget to the in-app metrics endpoint as a fallback (optional)
-        // Skipped here to avoid circular calls in server context.
-      }
-    } catch {}
-
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);
-    log.info('pdf.success', { durationMs });
+    log.info('pdf.success', { durationMs, userId: authResult.userId });
     return new Response(new Uint8Array(pdf), {
       status: 200,
       headers: {
@@ -171,6 +191,7 @@ export async function POST(req: NextRequest) {
         "RateLimit-Limit": "10",
         "RateLimit-Remaining": rl.remaining.toString(),
         "x-request-id": requestId || '',
+        ...corsHeaders,
       },
     });
   } catch (error) {
@@ -179,7 +200,10 @@ export async function POST(req: NextRequest) {
     logger.error("pdf.error", { error: errorMessage, durationMs, requestId });
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
     });
   }
 }

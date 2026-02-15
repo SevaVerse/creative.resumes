@@ -68,9 +68,11 @@ function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPr
               Edit Details
             </button>
             <button
+              data-export-button
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition print:hidden disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:scale-105"
               onClick={() => onExport(tpl.id)}
               disabled={isExporting}
+              title="Download PDF (Ctrl+E)"
             >
               {isExporting ? (
                 <>
@@ -104,7 +106,16 @@ import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
 import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
-import TurnstileWrapper from "../components/Turnstile";
+import { useAuth } from "@/components/AuthProvider";
+import { ResumeSaveButton } from "@/components/ResumeSaveButton";
+import { ResumeLoader } from "@/components/ResumeLoader";
+import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
+import { scheduleAutoSave, cancelAutoSave } from "@/lib/db/resumes";
+import { trackDownload, trackPageView } from "@/lib/analytics";
+import { Onboarding } from "@/components/Onboarding";
+import { ResumeProgress } from "@/components/ResumeProgress";
+import ResumeUploader from "@/components/ResumeUploader";
+import type { Resume } from "@/types/database";
 
 // Carbon footprint scoring function based on template color usage
 function computeCarbonScore(templateId: string): number {
@@ -147,79 +158,12 @@ const BASE_CHALLENGES: Challenge[] = [
 ];
 
 export default function Home() {
-  const [session, setSession] = useState<{ email: string } | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
+  const { user } = useAuth(); // Supabase auth
   const [showSupport, setShowSupport] = useState(false);
-  // Turnstile state
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
-  const [turnstileError, setTurnstileError] = useState<string>("");
-  const [isSendingLoginLink, setIsSendingLoginLink] = useState(false);
-  // TODO(future): Add in-memory rate limiting for login link requests (env configurable)
-  // TODO(future): Add aria-live polite region for turnstile errors & new challenge announcements
-  // TODO(future): Persist last email (localStorage) with opt-in remember checkbox
-
-  const handleTurnstileVerify = (token: string) => {
-    setTurnstileToken(token);
-    setTurnstileError("");
-  };
-
-  const handleTurnstileError = () => {
-    setTurnstileError("Security verification failed. Please try again.");
-    setTurnstileToken("");
-  };
-
-  useEffect(() => {
-    if (showLogin) {
-      setTurnstileToken("");
-      setTurnstileError("");
-    }
-  }, [showLogin]);
-
-  const handleLogin = async () => {
-    if (isSendingLoginLink) return;
-    const emailInput = document.getElementById('login-email') as HTMLInputElement | null;
-    if (!emailInput || !emailInput.value) return;
-    
-    if (!turnstileToken) {
-      setTurnstileError("Please complete the security verification.");
-      return;
-    }
-
-    try {
-      setIsSendingLoginLink(true);
-      setTurnstileError("");
-
-      // First verify the Turnstile token
-      const verifyResponse = await fetch("/api/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: turnstileToken }),
-      });
-
-      if (!verifyResponse.ok) {
-        setTurnstileError("Security verification failed. Please try again.");
-        return;
-      }
-
-      // If verification successful, send login link
-      await fetch("/api/send-login-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailInput.value }),
-      });
-      
-      setShowLogin(false);
-      alert("A login link has been sent to your email.");
-    } catch {
-      setTurnstileError("An error occurred. Please try again.");
-    } finally {
-      setIsSendingLoginLink(false);
-    }
-  };
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    email: session?.email || "",
+    email: "",
     phone: "",
     website: "",
     linkedin: "",
@@ -254,37 +198,40 @@ export default function Home() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [challenges, setChallenges] = useState(BASE_CHALLENGES);
 
-  // Initialize session from localStorage (set by /verify page after token exchange)
+  // Resume persistence state
+  const [currentResumeId, setCurrentResumeId] = useState<string | undefined>(undefined);
+  const [currentResumeName, setCurrentResumeName] = useState<string | undefined>(undefined);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
+  const hasUnsavedChanges = useRef(false);
+
+  // Resume upload state
+  const [showUploader, setShowUploader] = useState(false);
+
+  // Initialize support message visibility from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('rb_email');
-      if (stored && !session) {
-        setSession({ email: stored });
-      }
       const dismissed = localStorage.getItem('rb_support_dismissed_v1');
       if (!dismissed) setShowSupport(true);
     } catch {}
-  }, [session]);
+  }, []);
 
-  // Fire a page hit and pull current metrics on mount
+  // Fetch current metrics on mount and track page view
   useEffect(() => {
     const metricsDisabled =
       process.env.ENABLE_METRICS === "false" ||
       process.env.NEXT_PUBLIC_ENABLE_METRICS === "false";
     if (metricsDisabled) return;
+    
     const fire = async () => {
-      // Guard: only count once per session/tab
+      // Track page view (Supabase analytics)
       const key = "rb_page_hit_once";
       if (!sessionStorage.getItem(key)) {
-        try {
-          await fetch("/api/metrics", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "page_hit" }),
-          });
-          sessionStorage.setItem(key, "1");
-        } catch {}
+        trackPageView();
+        sessionStorage.setItem(key, "1");
       }
+      
+      // Fetch current metrics for display
       try {
         const res = await fetch("/api/metrics");
         if (res.ok) {
@@ -313,18 +260,102 @@ export default function Home() {
     prevMetrics.current = metrics;
   }, [metrics]);
 
-  // Sync email into form once session established
-  useEffect(() => {
-    if (session?.email) {
-      setFormData((prev) => ({ ...prev, email: prev.email || session.email }));
-    }
-  }, [session]);
 
-  // Logout handler
-  const handleLogout = () => {
-    try { localStorage.removeItem('rb_email'); } catch {}
-    setSession(null);
-    setSelectedTemplate(null);
+
+
+
+  // Autosave logic - triggers 30 seconds after last change
+  useEffect(() => {
+    if (!user || !currentResumeId || !hasUnsavedChanges.current) {
+      return;
+    }
+
+    setSaveStatus('saving');
+    scheduleAutoSave(
+      currentResumeId,
+      formData,
+      () => {
+        setSaveStatus('saved');
+        setLastSaved(new Date());
+        hasUnsavedChanges.current = false;
+      },
+      30000 // 30 seconds
+    );
+
+    return () => cancelAutoSave();
+  }, [formData, currentResumeId, user]);
+
+  // Mark changes as unsaved when form data changes
+  useEffect(() => {
+    if (currentResumeId) {
+      hasUnsavedChanges.current = true;
+    }
+  }, [formData]);
+
+  // Warn user about unsaved changes before leaving
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges.current && currentResumeId) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentResumeId]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (user && showPreview) {
+          // Trigger save by clicking the save button if it exists
+          const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement;
+          if (saveButton) {
+            saveButton.click();
+          }
+        }
+      }
+      
+      // Ctrl+E or Cmd+E to export
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        if (user && showPreview && selectedTemplate) {
+          // Trigger export by clicking the download button if it exists
+          const exportButton = document.querySelector('[data-export-button]') as HTMLButtonElement;
+          if (exportButton) {
+            exportButton.click();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [user, showPreview, selectedTemplate]);
+
+  // Handle save success
+  const handleSaveSuccess = (resumeId: string, name: string) => {
+    setCurrentResumeId(resumeId);
+    setCurrentResumeName(name);
+    setSaveStatus('saved');
+    setLastSaved(new Date());
+    hasUnsavedChanges.current = false;
+  };
+
+  // Handle load resume
+  const handleLoadResume = (resume: Resume) => {
+    setCurrentResumeId(resume.id);
+    setCurrentResumeName(resume.name);
+    setSelectedTemplate(resume.template);
+    setFormData(resume.data as typeof formData);
+    setSaveStatus('saved');
+    setLastSaved(new Date(resume.last_edited_at));
+    hasUnsavedChanges.current = false;
+    setShowPreview(true); // Show preview after loading
   };
 
   // Handle form field changes
@@ -457,20 +488,8 @@ export default function Home() {
     <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-12 px-4">
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
-      {/* Top bar with email after login and logout button */}
-      {session && (
-        <div className="fixed top-0 right-0 p-4 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 z-40">
-          <Link href="/privacy" className="hover:underline">Privacy</Link>
-          <BuyMeCoffee />
-          <span>{session.email}</span>
-          <button
-            onClick={handleLogout}
-            className="ml-2 px-3 py-1 rounded bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 transition"
-          >
-            Logout
-          </button>
-        </div>
-      )}
+      <Onboarding />
+      <Onboarding />
       <main className="w-full max-w-6xl flex flex-col items-center gap-10">
         {/* Trust + Metrics summary */}
         <div className="w-full mt-2 flex items-center justify-end">
@@ -493,7 +512,7 @@ export default function Home() {
           </div>
         </div>
         {/* Show hero section if not logged in */}
-        {!session && (
+        {!user && (
           <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mt-10 w-full max-w-6xl">
             {/* Left Column: Hero Text */}
             <div className="text-center md:text-left">
@@ -503,14 +522,10 @@ export default function Home() {
               <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto md:mx-0">
                 Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
               </p>
-              <div className="mt-8 flex items-center gap-4 justify-center md:justify-start">
-                <button
-                  aria-label="Get started building your resume"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105"
-                  onClick={() => setShowLogin(true)}
-                >
-                  Get Started for Free
-                </button>
+              <p className="mt-6 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
+                👉 Sign in with Google or GitHub (top right) to get started
+              </p>
+              <div className="mt-6 flex items-center gap-4 justify-center md:justify-start">
                 <BuyMeCoffee />
                 <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
               </div>
@@ -556,13 +571,13 @@ export default function Home() {
         )}
 
         {/* After login: show template selection */}
-        {session && !selectedTemplate && (
+        {user && !selectedTemplate && (
           <ResumeTemplates onSelect={setSelectedTemplate} />
         )}
 
         {/* After template selection: show placeholder for form */}
         
-{session && selectedTemplate && !showPreview && (
+{user && selectedTemplate && !showPreview && (
   <div className="z-10 w-full max-w-4xl flex flex-col items-center gap-8">
     {/* Combined Form, Gamification, and Disclaimer Card */}
     <div className="w-full p-6 md:p-8 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
@@ -616,8 +631,81 @@ export default function Home() {
 
         {/* Right Column: Form */}
         <div className="md:col-span-2">
+          {user && <ResumeProgress formData={formData} />}
           <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
-            <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Enter Your Details</h2>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Enter Your Details</h2>
+              {user && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <AutosaveIndicator 
+                    status={saveStatus} 
+                    lastSaved={lastSaved} 
+                    resumeName={currentResumeName}
+                  />
+                  <ResumeLoader 
+                    onLoadResume={handleLoadResume}
+                    currentResumeId={currentResumeId}
+                  />
+                  <ResumeSaveButton
+                    currentResumeId={currentResumeId}
+                    currentResumeName={currentResumeName}
+                    template={selectedTemplate || 'minimalist'}
+                    data={formData}
+                    onSaveSuccess={handleSaveSuccess}
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Resume Upload Section */}
+            {user && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowUploader(!showUploader)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900 dark:text-white">Import from Existing Resume</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Upload a PDF or DOCX file to auto-fill your details</p>
+                    </div>
+                  </div>
+                  <svg className={`w-5 h-5 text-gray-500 transition-transform ${showUploader ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showUploader && (
+                  <div className="mt-4 p-6 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-lg">
+                    <ResumeUploader 
+                      onResumeImported={(parsedResume) => {
+                        setFormData({
+                          name: parsedResume.name || formData.name,
+                          email: parsedResume.email || formData.email,
+                          phone: parsedResume.phone || formData.phone,
+                          website: parsedResume.website || formData.website,
+                          linkedin: parsedResume.linkedin || formData.linkedin,
+                          summary: parsedResume.summary || formData.summary,
+                          experiences: parsedResume.experiences?.length ? parsedResume.experiences : formData.experiences,
+                          education: parsedResume.education || formData.education,
+                          skills: parsedResume.skills?.length ? parsedResume.skills : formData.skills,
+                          certifications: parsedResume.certifications || formData.certifications,
+                          projects: parsedResume.projects || formData.projects,
+                          profilePicture: formData.profilePicture,
+                          profilePictureUrl: formData.profilePictureUrl,
+                        });
+                        hasUnsavedChanges.current = true;
+                        setShowUploader(false);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             {/* Basic Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input type="text" name="name" placeholder="Full Name" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" required value={formData.name} onChange={handleFieldChange} />
@@ -734,20 +822,32 @@ export default function Home() {
 )}
 
 {/* Show resume preview after form submit */}
-{session && selectedTemplate && showPreview && (
+{user && selectedTemplate && showPreview && (
   <div className="w-full mt-8 flex flex-col items-center">
     <TabsPreview
       formData={formData}
       onExport={async (tpl: string) => {
         setIsExporting(true);
         try {
+          // Get Supabase session token if available
+          let authToken: string | undefined;
+          if (user) {
+            const { createClient } = await import('@/utils/supabase/client');
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            authToken = session?.access_token;
+          }
+          
           const payload = {
             selectedTemplate: tpl,
             ...formData,
           };
           const res = await fetch("/api/export-pdf", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+            },
             body: JSON.stringify(payload),
           });
           if (res.ok) {
@@ -760,8 +860,12 @@ export default function Home() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+            
+            // Track download with Supabase analytics
+            await trackDownload(tpl, currentResumeId);
           } else {
-            alert("Failed to export PDF.");
+            const error = await res.json().catch(() => ({ error: 'Failed to export PDF' }));
+            alert(error.error || "Failed to export PDF.");
           }
         } finally {
           setIsExporting(false);
@@ -776,60 +880,14 @@ export default function Home() {
 
       </main>
 
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 z-50 flex bg-black/40 items-center justify-center">
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-8 w-full max-w-sm flex flex-col gap-4">
-            <input
-              id="login-email"
-              type="email"
-              placeholder="Enter your email"
-              className="border border-gray-300 dark:border-neutral-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <div className="flex flex-col gap-2 mt-2">
-              <label className="text-xs text-gray-600 dark:text-gray-300 font-medium">Security Check</label>
-              <TurnstileWrapper
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-                onVerify={handleTurnstileVerify}
-                onError={handleTurnstileError}
-                theme="auto"
-                size="compact"
-              />
-              {turnstileError && <p className="text-xs text-red-600">{turnstileError}</p>}
-            </div>
-            <button
-              className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded transition flex items-center justify-center gap-2"
-              onClick={handleLogin}
-              disabled={isSendingLoginLink || !turnstileToken}
-            >
-              {isSendingLoginLink ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Sending...
-                </>
-              ) : (
-                'Continue'
-              )}
-            </button>
-            <button
-              className="mt-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
-              onClick={() => setShowLogin(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+
       <footer className="mt-16 w-full max-w-6xl flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400 text-xs py-8">
         <div className="flex items-center flex-wrap gap-3 justify-center">
           <span className="text-sm">Made with ❤️ by Seva</span>
           <span className="hidden sm:inline">•</span>
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
         </div>
-        {!showSupport && !session && (
+        {!showSupport && (
           <button
             onClick={() => { try { localStorage.removeItem('rb_support_dismissed_v1'); } catch {}; setShowSupport(true); }}
             className="text-[11px] underline decoration-dotted hover:text-blue-600 dark:hover:text-blue-300"

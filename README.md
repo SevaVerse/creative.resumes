@@ -23,7 +23,6 @@ If this tool helps you, please consider supporting its development. Your contrib
 *   **Privacy-First by Design:** No user tracking, ads, or data selling. PDF generation is handled securely.
 *   **Four Professional Templates:** Choose from Minimalist, Onyx, AwesomeCV, and Subtle & Elegant designs.
 *   **AI-Powered Rewrites:** Enhance your resume summary, experience, and project descriptions with integrated AI assistance from Groq.
-*   **Secure Magic Link Login:** No passwords to remember. Secure, one-time login links are sent to your email.
 *   **Modern Bot Protection:** Uses Cloudflare Turnstile, a privacy-respecting CAPTCHA alternative.
 *   **One-Click PDF Export:** Download a print-ready, optimized PDF of your resume instantly.
 *   **Gamified Resume Score:** Get instant feedback on your resume's quality to improve your chances with recruiters.
@@ -43,11 +42,43 @@ If this tool helps you, please consider supporting its development. Your contrib
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-Follow these instructions to set up the project for local development.
+### Prerequisites
+* Node.js (v18.x or later)
+* npm or yarn
 
-### 1. Prerequisites
+### Installation
+
+```bash
+git clone https://github.com/SevaVerse/creative.resumes.git
+cd creative.resumes
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+---
+
+## 📚 Documentation
+
+For detailed documentation, see the [`docs/`](./docs/) directory:
+
+- **[Setup Guide](./docs/README.md)** - Complete installation and configuration
+- **[Architecture](./docs/ARCHITECTURE.md)** - Technical architecture and deployment
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! If you have a feature request, find a bug, or want to improve the code, please open an issue or submit a pull request.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 *   Node.js (v18.x or later)
 *   npm or yarn
