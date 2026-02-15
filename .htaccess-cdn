@@ -1,0 +1,275 @@
+# ==============================================================================
+# SecureCV - Apache Configuration for Cloudflare CDN + Spaceship Hosting
+# ==============================================================================
+# This file gets copied to out/.htaccess during build
+# Optimized for static Next.js export with Cloudflare in front
+# Last Updated: February 15, 2026
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. HTTPS Redirect (if not already handled by Cloudflare)
+# ------------------------------------------------------------------------------
+# Cloudflare handles most HTTPS redirects, but this acts as backup
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect HTTP to HTTPS (if Cloudflare didn't already)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 2. Security Headers
+# ------------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Strict Transport Security (force HTTPS for 1 year)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+    
+    # Prevent clickjacking attacks
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Enable XSS protection in older browsers
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Referrer Policy - send referrer only for same origin
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Permissions Policy - restrict access to sensitive APIs
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+    
+    # Content Security Policy (adjust as needed for your app)
+    # Note: This is a starting point - test thoroughly and adjust
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.groq.com https://*.vercel.app; frame-src 'self' https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 3. Compression (Cloudflare handles most, but good to have as backup)
+# ------------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    # Compress HTML, CSS, JavaScript, Text, XML and fonts
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+    AddOutputFilterByType DEFLATE application/x-font-ttf
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/x-web-app-manifest+json
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE font/opentype
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+    
+    # Remove browser bugs (old IE and Netscape)
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    Header append Vary User-Agent
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 4. Caching Headers
+# ------------------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    
+    # HTML - 1 hour (pages may update frequently)
+    ExpiresByType text/html "access plus 1 hour"
+    
+    # CSS and JavaScript - 1 year (with cache busting via Next.js hashes)
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    
+    # Images - 1 year
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType image/vnd.microsoft.icon "access plus 1 year"
+    
+    # Fonts - 1 year
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType font/otf "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    
+    # Data - 1 hour
+    ExpiresByType application/json "access plus 1 hour"
+    ExpiresByType application/xml "access plus 1 hour"
+    ExpiresByType text/xml "access plus 1 hour"
+    
+    # Manifest - 1 week
+    ExpiresByType application/manifest+json "access plus 1 week"
+</IfModule>
+
+# Alternative cache control headers (if mod_expires not available)
+<IfModule mod_headers.c>
+    # Cache static assets for 1 year
+    <FilesMatch "\.(ico|jpg|jpeg|png|gif|svg|webp|js|css|woff|woff2|ttf|otf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    
+    # Cache HTML for 1 hour
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "public, max-age=3600, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 5. MIME Types (ensure correct content types)
+# ------------------------------------------------------------------------------
+<IfModule mod_mime.c>
+    # JavaScript
+    AddType application/javascript js mjs
+    AddType text/javascript js mjs
+    
+    # JSON
+    AddType application/json json map
+    
+    # Fonts
+    AddType font/ttf ttf
+    AddType font/otf otf
+    AddType font/woff woff
+    AddType font/woff2 woff2
+    AddType application/font-woff woff
+    AddType application/font-woff2 woff2
+    
+    # Images
+    AddType image/svg+xml svg svgz
+    AddType image/webp webp
+    
+    # Manifest
+    AddType application/manifest+json webmanifest
+    
+    # Other
+    AddType text/plain txt
+    AddType text/xml xml
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 6. ETags (for efficient caching)
+# ------------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Remove ETags (we use Cache-Control instead)
+    Header unset ETag
+</IfModule>
+FileETag None
+
+# ------------------------------------------------------------------------------
+# 7. CORS Headers (if needed for API calls from other domains)
+# ------------------------------------------------------------------------------
+# Uncomment if you need CORS support
+# <IfModule mod_headers.c>
+#     Header set Access-Control-Allow-Origin "*"
+#     Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+#     Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+# </IfModule>
+
+# ------------------------------------------------------------------------------
+# 8. Next.js Static Export Routing (SPA-style)
+# ------------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Don't rewrite files or directories that exist
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Handle trailing slashes (Next.js exports with trailing slashes)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !(.*)/$
+    RewriteRule ^(.*)$ $1/ [L,R=301]
+    
+    # Rewrite all other URLs to index.html (for client-side routing)
+    # Note: Next.js static export generates separate HTML files for each route
+    # This rule is mainly for 404 handling
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 9. Error Pages
+# ------------------------------------------------------------------------------
+# Next.js generates 404.html and 500.html
+ErrorDocument 404 /404.html
+ErrorDocument 500 /500.html
+
+# ------------------------------------------------------------------------------
+# 10. Disable Directory Browsing
+# ------------------------------------------------------------------------------
+Options -Indexes
+
+# ------------------------------------------------------------------------------
+# 11. Protect Sensitive Files
+# ------------------------------------------------------------------------------
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "(deployment-manifest\.json|package\.json|\.DS_Store|Thumbs\.db)$">
+    Require all denied
+</FilesMatch>
+
+# ------------------------------------------------------------------------------
+# 12. Performance: Preload Important Resources
+# ------------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Preload critical CSS/JS (adjust paths based on your build)
+    # Example: Header add Link "</path/to/critical.css>; rel=preload; as=style"
+    # Note: Next.js handles this automatically in HTML head
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 13. Charset
+# ------------------------------------------------------------------------------
+AddDefaultCharset utf-8
+<IfModule mod_mime.c>
+    AddCharset utf-8 .html .css .js .xml .json .rss .atom
+</IfModule>
+
+# ==============================================================================
+# Additional Notes:
+# ==============================================================================
+# 
+# Cloudflare Configuration (complementary to this file):
+# - Cloudflare Page Rules handle most caching at the CDN level
+# - SSL/TLS mode: Full (strict)
+# - Auto Minify: JS, CSS, HTML
+# - Brotli compression
+# - HTTP/3 enabled
+# 
+# This .htaccess file provides:
+# - Fallback for when Cloudflare is bypassed
+# - Origin server security headers
+# - Proper MIME types and caching
+# - SPA routing support
+# 
+# Testing:
+# - Test locally: npx serve out -p 3001
+# - Check headers: curl -I https://securecv.co.in
+# - Verify caching: Check browser DevTools Network tab
+# - SSL test: https://www.ssllabs.com/ssltest/
+# 
+# ==============================================================================

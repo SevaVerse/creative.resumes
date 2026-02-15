@@ -8,6 +8,7 @@
     "dev:win": "set \"NODE_OPTIONS=--require ./newrelic.js\" && next dev --turbopack",
     "dev:unix": "NODE_OPTIONS=\"--require ./newrelic.js\" next dev --turbopack",
     "build": "next build --turbopack",
+    "build:static": "node scripts/build-static.mjs",
     "start": "next start",
     "start:nr": "cross-env NODE_OPTIONS=\"--require ./newrelic.js\" next start",
     "start:win": "set \"NODE_OPTIONS=--require ./newrelic.js\" && next start",
