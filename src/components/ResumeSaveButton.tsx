@@ -42,7 +42,7 @@ export function ResumeSaveButton({
         // Update existing resume
         await updateResume(currentResumeId, { 
           name: resumeName.trim(), 
-          template: template as 'minimalist' | 'onyx' | 'awesome-cv' | 'subtle-elegant', 
+          template: template as 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant', 
           data 
         })
         await trackResumeSave(currentResumeId, false)

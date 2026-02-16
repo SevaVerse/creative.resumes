@@ -1,15 +1,17 @@
 import { NextRequest } from "next/server";
 import { pdfLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
-import { getBaseUrl } from "@/utils/baseUrl";
 import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
 import chromium from "@sparticuz/chromium-min";
 import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
+import React from "react";
+import { renderToString } from "react-dom/server";
+import PrintResume from "@/components/PrintResume";
+import type { PrintPayload } from "@/components/PrintResume";
 
 // जय श्री राम - May this PDF generation be blessed
 export const runtime = "nodejs"; // Puppeteer requires Node runtime (not Edge)
-
 // Handle CORS preflight requests
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get('origin');
@@ -19,25 +21,16 @@ export async function OPTIONS(req: NextRequest) {
   });
 }
 
-// Add type declaration for global temp storage
-declare global {
-  var tempPdfData: Map<string, string> | undefined;
-}
-
 // Minimal runtime types to avoid using `any`
-type GotoOptions = {
-  waitUntil?: "load" | "domcontentloaded" | "networkidle0" | "networkidle2";
-  timeout?: number;
-};
 type PdfOptions = {
   format?: string;
   printBackground?: boolean;
   margin?: { top?: string; right?: string; bottom?: string; left?: string };
 };
 type Page = {
-  goto: (url: string, options?: GotoOptions) => Promise<void>;
+  goto: (url: string, options?: Record<string, unknown>) => Promise<void>;
   pdf: (options?: PdfOptions) => Promise<Buffer>;
-  setContent: (html: string, options?: { waitUntil?: string }) => Promise<void>;
+  setContent: (html: string, options?: Record<string, unknown>) => Promise<void>;
   evaluate: (pageFunction: (html: string) => void, html: string) => Promise<void>;
 };
 type Browser = {
@@ -116,7 +109,6 @@ export async function POST(req: NextRequest) {
     
     log.info('pdf.authenticated', { userId: authResult.userId });
     
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     // Perform rate limit check (per authenticated user, not IP)
     const rlKey = buildKey(["pdf", authResult.userId!]);
     const rl = pdfLimiter.check(rlKey);
@@ -149,26 +141,45 @@ export async function POST(req: NextRequest) {
     const page = await browser.newPage();
     log.debug("pdf.page_created");
 
-    const origin = getBaseUrl(req.headers);
-    
-    // Store payload temporarily and get an ID to avoid URL length limits
-    const tempId = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const tempData = JSON.stringify(payload);
-    
-    // Store in memory (in production, use Redis/database)
-    globalThis.tempPdfData = globalThis.tempPdfData || new Map();
-    globalThis.tempPdfData.set(tempId, tempData);
-    
-    // Clean up after 5 minutes
-    setTimeout(() => {
-      globalThis.tempPdfData?.delete(tempId);
-    }, 5 * 60 * 1000);
-    
-    const url = `${origin}/print?id=${tempId}`;
-    
-    log.debug("pdf.url", { tempId, dataSize: tempData.length });
+    // Render the resume template to HTML server-side
+    const printPayload: PrintPayload = {
+      selectedTemplate: payload.selectedTemplate,
+      name: payload.name || '',
+      email: payload.email || '',
+      phone: payload.phone || '',
+      website: payload.website || '',
+      linkedin: payload.linkedin || '',
+      summary: payload.summary || '',
+      experiences: payload.experiences || [],
+      education: payload.education || '',
+      skills: payload.skills || [],
+      certifications: payload.certifications || '',
+      projects: payload.projects || '',
+      profilePictureUrl: payload.profilePictureUrl || '',
+    };
 
-    await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
+    const resumeHtml = renderToString(React.createElement(PrintResume, printPayload));
+    
+    // Build a complete self-contained HTML page with inline Tailwind-like styles
+    const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; }
+    .resume-container { width: 100%; max-width: 100%; }
+  </style>
+</head>
+<body>
+  <div style="min-height: 100vh; background: white; display: flex; align-items: flex-start; justify-content: center; padding: 24px;">
+    ${resumeHtml}
+  </div>
+</body>
+</html>`;
+
+    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
     log.info("pdf.page_loaded");
 
     const pdf = await page.pdf({

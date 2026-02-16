@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS resumes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  template TEXT NOT NULL CHECK (template IN ('minimalist', 'onyx', 'awesome-cv', 'subtle-elegant')),
+  template TEXT NOT NULL CHECK (template IN ('minimalist', 'onyx', 'awesomecv', 'subtleelegant')),
   data JSONB NOT NULL,
   last_edited_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()

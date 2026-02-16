@@ -9,7 +9,7 @@ export interface Database {
           id: string
           user_id: string
           name: string
-          template: 'minimalist' | 'onyx' | 'awesome-cv' | 'subtle-elegant'
+          template: 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant'
           data: Record<string, unknown>
           last_edited_at: string
           created_at: string
@@ -18,7 +18,7 @@ export interface Database {
           id?: string
           user_id: string
           name: string
-          template: 'minimalist' | 'onyx' | 'awesome-cv' | 'subtle-elegant'
+          template: 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant'
           data: Record<string, unknown>
           last_edited_at?: string
           created_at?: string
@@ -27,7 +27,7 @@ export interface Database {
           id?: string
           user_id?: string
           name?: string
-          template?: 'minimalist' | 'onyx' | 'awesome-cv' | 'subtle-elegant'
+          template?: 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant'
           data?: Record<string, unknown>
           last_edited_at?: string
           created_at?: string

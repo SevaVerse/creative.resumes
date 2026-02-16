@@ -47,35 +47,18 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication (optional - allow anonymous users)
-    const authHeader = req.headers.get('Authorization')
-    const apiKeyHeader = req.headers.get('apikey')
+    // Get environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SERVICE_ROLE_KEY')
     
-    if (!authHeader && !apiKeyHeader) {
+    if (!supabaseUrl || !serviceRoleKey) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization or apikey header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Server configuration error - missing environment variables' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseKey = Deno.env.get('SERVICE_ROLE_KEY') ?? ''
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // Optional: Verify user authentication if auth token is provided
-    let user = null
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '')
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token)
-      
-      if (authError) {
-        console.warn('Auth verification failed:', authError)
-        // Continue anyway - allow anonymous access
-      } else {
-        user = authUser
-      }
-    }
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // Parse request body
     const body: ParseRequest = await req.json()
@@ -180,14 +163,16 @@ async function extractTextFromPDF(buffer: Uint8Array): Promise<string> {
 // Helper function to extract text from DOCX
 async function extractTextFromDOCX(buffer: Uint8Array): Promise<string> {
   try {
-    const arrayBuffer = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    )
     
-    const result = await mammoth.extractRawText({ arrayBuffer })
+    // mammoth's Node.js API expects {buffer: Buffer} — not {arrayBuffer}
+    // In Deno with npm: imports, we get the Node.js version of mammoth
+    // Use Buffer.from() which Deno supports via Node.js compat
+    const { Buffer } = await import('node:buffer')
+    const nodeBuffer = Buffer.from(buffer)
     
-    if (!result.value) {
+    const result = await mammoth.extractRawText({ buffer: nodeBuffer })
+    
+    if (!result?.value) {
       throw new Error('No text extracted from DOCX file')
     }
     
