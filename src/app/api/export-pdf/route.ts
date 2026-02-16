@@ -5,9 +5,6 @@ import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
 import chromium from "@sparticuz/chromium-min";
 import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
-import React from "react";
-import { renderToString } from "react-dom/server";
-import PrintResume from "@/components/PrintResume";
 import type { PrintPayload } from "@/components/PrintResume";
 
 // जय श्री राम - May this PDF generation be blessed
@@ -158,6 +155,10 @@ export async function POST(req: NextRequest) {
       profilePictureUrl: payload.profilePictureUrl || '',
     };
 
+    // Dynamic imports to avoid Turbopack restriction on react-dom/server in route handlers
+    const React = (await import('react')).default;
+    const { renderToString } = await import('react-dom/server');
+    const { default: PrintResume } = await import('@/components/PrintResume');
     const resumeHtml = renderToString(React.createElement(PrintResume, printPayload));
     
     // Build a complete self-contained HTML page with inline Tailwind-like styles
