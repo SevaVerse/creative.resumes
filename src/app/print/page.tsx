@@ -1,5 +1,10 @@
 import React from "react";
+import type { Metadata } from "next";
 import PrintResume, { PrintPayload } from "@/components/PrintResume";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 // Server component that fetches data from API using temporary ID
 export default async function PrintPage({

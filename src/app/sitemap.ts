@@ -12,10 +12,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${baseUrl}/print`,
-      lastModified: new Date(),
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date("2025-09-18"),
       changeFrequency: "monthly",
-      priority: 0.3,
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/blog/privacy-first-resume-builder`,
+      lastModified: new Date("2025-06-01"),
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
   ];
 }

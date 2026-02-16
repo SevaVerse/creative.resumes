@@ -1,0 +1,17 @@
+{
+  "name": "SecureCV — Free AI Resume Builder",
+  "short_name": "SecureCV",
+  "description": "Build a professional resume for free with AI rewrite, 4 pro templates, carbon score calculator, and instant PDF export. Privacy-first by design.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}

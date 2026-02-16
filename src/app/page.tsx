@@ -886,6 +886,8 @@ export default function Home() {
           <span className="text-sm">Made with ❤️ by Seva</span>
           <span className="hidden sm:inline">•</span>
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
+          <span className="hidden sm:inline">•</span>
+          <Link href="/blog/privacy-first-resume-builder" className="text-sm hover:underline">Blog</Link>
         </div>
         {!showSupport && (
           <button
