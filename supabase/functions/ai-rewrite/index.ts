@@ -51,11 +51,13 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
+    // Verify authentication (optional - allow anonymous users)
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    const apiKeyHeader = req.headers.get('apikey')
+    
+    if (!authHeader && !apiKeyHeader) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
+        JSON.stringify({ error: 'Missing authorization or apikey header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -65,15 +67,18 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SERVICE_ROLE_KEY') ?? ''
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Verify user authentication
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Optional: Verify user authentication if auth token is provided
+    let user = null
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token)
+      
+      if (authError) {
+        console.warn('Auth verification failed:', authError)
+        // Continue anyway - allow anonymous access
+      } else {
+        user = authUser
+      }
     }
 
     // Parse request body
