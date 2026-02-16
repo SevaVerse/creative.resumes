@@ -4,20 +4,21 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy & Transparency",
   description:
-    "Privacy‑first resume builder: no ads or trackers, no persistent storage—learn exactly what minimal data is processed during PDF export.",
+    "SecureCV is privacy-first: no ads, no trackers, no persistent storage. Learn exactly what minimal data is processed during PDF export and AI features.",
   alternates: { canonical: "/privacy" },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Privacy & Transparency | Resume Builder",
+    title: "Privacy & Transparency | SecureCV",
     description:
-      "Zero tracking, zero persistent storage. See how our privacy‑first resume builder handles your data.",
+      "Zero tracking, zero ads. See how SecureCV's privacy-first resume builder handles your data.",
     url: "/privacy",
     type: "article",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "SecureCV Privacy & Transparency" }],
   },
   twitter: {
-    title: "Privacy & Transparency | Resume Builder",
+    title: "Privacy & Transparency | SecureCV",
     description:
-      "No trackers. No ads. Your data stays in your browser—learn the details.",
+      "No trackers. No ads. Your data stays in your browser — learn the details.",
     card: "summary",
   },
 };

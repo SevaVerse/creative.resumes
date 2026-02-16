@@ -56,6 +56,33 @@ export interface Database {
           created_at?: string
         }
       }
+      profiles: {
+        Row: {
+          id: string
+          email: string | null
+          full_name: string | null
+          avatar_url: string | null
+          provider: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email?: string | null
+          full_name?: string | null
+          avatar_url?: string | null
+          provider?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          email?: string | null
+          full_name?: string | null
+          avatar_url?: string | null
+          provider?: string | null
+          updated_at?: string
+        }
+      }
     }
   }
 }
@@ -65,3 +92,4 @@ export type ResumeInsert = Database['public']['Tables']['resumes']['Insert']
 export type ResumeUpdate = Database['public']['Tables']['resumes']['Update']
 export type AnalyticsEvent = Database['public']['Tables']['analytics']['Row']
 export type AnalyticsInsert = Database['public']['Tables']['analytics']['Insert']
+export type Profile = Database['public']['Tables']['profiles']['Row']
