@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { pdfLimiter, buildKey } from "@/utils/rateLimit";
+import { pdfLimiter, createRateLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
 import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
 import chromium from "@sparticuz/chromium-min";
@@ -38,6 +38,7 @@ const remoteExecutablePath =
   "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
 
 let browserInstance: Browser | null = null;
+const anonymousPdfLimiter = createRateLimiter(60_000, 3);
 
 type SimpleLogger = { info: (m:string,e?:Record<string,unknown>)=>void; warn: (m:string,e?:Record<string,unknown>)=>void; debug:(m:string,e?:Record<string,unknown>)=>void };
 
@@ -88,29 +89,47 @@ export async function POST(req: NextRequest) {
   const corsHeaders = getCorsHeaders(origin);
   
   try {
-    // Verify Supabase authentication
-    const authResult = await verifySupabaseAuth(req);
-    if (!authResult.authenticated) {
-      log.warn('pdf.unauthorized', { error: authResult.error });
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized. Please sign in to export PDFs.' }),
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
-        }
-      );
+    const authHeader = req.headers.get('authorization');
+    let userId: string | undefined;
+    let rateLimitHeaderValue = '3';
+    let rateLimitRemainingValue = '0';
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const authResult = await verifySupabaseAuth(req);
+      if (!authResult.authenticated) {
+        log.warn('pdf.unauthorized', { error: authResult.error });
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized. Please sign in again to export PDFs.' }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          }
+        );
+      }
+
+      userId = authResult.userId;
+      log.info('pdf.authenticated', { userId });
+    } else {
+      log.info('pdf.anonymous_request');
     }
-    
-    log.info('pdf.authenticated', { userId: authResult.userId });
-    
-    // Perform rate limit check (per authenticated user, not IP)
-    const rlKey = buildKey(["pdf", authResult.userId!]);
-    const rl = pdfLimiter.check(rlKey);
+
+    const anonymousKey = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || req.headers.get('user-agent')
+      || 'anonymous';
+
+    const rl = userId
+      ? pdfLimiter.check(buildKey(["pdf", userId]))
+      : anonymousPdfLimiter.check(buildKey(["pdf", "anonymous", anonymousKey]));
+
+    rateLimitHeaderValue = userId ? '10' : '3';
+    rateLimitRemainingValue = rl.remaining.toString();
+
     if (!rl.allowed) {
-      log.warn('pdf.rate_limited', { userId: authResult.userId, retryAfterMs: rl.retryAfterMs });
+      log.warn('pdf.rate_limited', { userId, retryAfterMs: rl.retryAfterMs, anonymous: !userId });
       return new Response(
         JSON.stringify({ error: "Too many export requests", retryAfterMs: rl.retryAfterMs }),
         {
@@ -118,7 +137,7 @@ export async function POST(req: NextRequest) {
           headers: {
             "Content-Type": "application/json",
             "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
-            "RateLimit-Limit": "10",
+            "RateLimit-Limit": rateLimitHeaderValue,
             "RateLimit-Remaining": "0",
             ...corsHeaders,
           },
@@ -194,14 +213,14 @@ export async function POST(req: NextRequest) {
 
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);
-    log.info('pdf.success', { durationMs, userId: authResult.userId });
+    log.info('pdf.success', { durationMs, userId, anonymous: !userId });
     return new Response(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="resume.pdf"`,
-        "RateLimit-Limit": "10",
-        "RateLimit-Remaining": rl.remaining.toString(),
+        "RateLimit-Limit": rateLimitHeaderValue,
+        "RateLimit-Remaining": rateLimitRemainingValue,
         "x-request-id": requestId || '',
         ...corsHeaders,
       },

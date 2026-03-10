@@ -26,7 +26,7 @@ This file is the implementation source of truth going forward.
 Goal: reduce first-visit friction and improve activation.
 
 ### Story E1-S1: Public builder access without auth
-- Status: `todo`
+- Status: `in-progress`
 - Priority: `P0`
 - Owner: Frontend
 - Description: Unauthenticated visitors can choose templates, fill form data, and generate preview.
@@ -37,7 +37,7 @@ Goal: reduce first-visit friction and improve activation.
 - Dependencies: none
 
 ### Story E1-S2: Keep save/load cloud features auth-gated
-- Status: `todo`
+- Status: `in-progress`
 - Priority: `P0`
 - Owner: Frontend
 - Description: Preserve `ResumeSaveButton` and `ResumeLoader` only for authenticated users.
@@ -58,7 +58,7 @@ Goal: reduce first-visit friction and improve activation.
 - Dependencies: E1-S1
 
 ### Story E1-S4: Local draft persistence for logged-out users
-- Status: `todo`
+- Status: `in-progress`
 - Priority: `P0`
 - Owner: Frontend
 - Description: Save draft locally and restore on refresh for unauthenticated users.
@@ -79,10 +79,11 @@ Goal: reduce first-visit friction and improve activation.
 - Dependencies: E1-S4
 
 ### Story E1-S6: Export policy alignment
-- Status: `todo`
+- Status: `in-progress`
 - Priority: `P0`
 - Owner: Product + Backend
 - Description: Decide and implement whether first PDF export is allowed without login.
+- Policy: Allow anonymous PDF export with stricter per-client rate limits than authenticated export.
 - Acceptance criteria:
 1. Policy is documented in this file.
 2. API and UI behavior match policy exactly.
@@ -292,3 +293,4 @@ Goal: create reliable decision-making instrumentation from acquisition to activa
 ## Change Log
 
 - 2026-03-11: Initial consolidation from specs 01-04 into single backlog file.
+- 2026-03-11: Started Epic E1 implementation for anonymous builder access, local drafts, and anonymous export policy.

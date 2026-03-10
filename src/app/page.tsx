@@ -25,6 +25,13 @@ type FormData = {
   profilePicture?: File;
   profilePictureUrl: string;
 };
+
+type LocalDraft = {
+  selectedTemplate: string | null;
+  formData: FormData;
+  showPreview: boolean;
+  savedAt: string;
+};
 type TabsPreviewProps = {
   formData: FormData;
   onExport: (tpl: string) => void | Promise<void>;
@@ -157,11 +164,10 @@ const BASE_CHALLENGES: Challenge[] = [
   { id: "creativity", text: "Mention creative projects", completed: false },
 ];
 
-export default function Home() {
-  const { user } = useAuth(); // Supabase auth
-  const [showSupport, setShowSupport] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+const LOCAL_DRAFT_KEY = "rb_local_resume_draft_v1";
+
+function createEmptyFormData(): FormData {
+  return {
     name: "",
     email: "",
     phone: "",
@@ -170,17 +176,55 @@ export default function Home() {
     summary: "",
     experiences: [
       { company: "", title: "", startDate: "", endDate: "", current: false, details: "" },
-    ] as ExperienceItem[],
+    ],
     education: "",
     skills: [
-      // example initial row for UX; can be removed by user
       { name: "", level: 60 },
-    ] as SkillItem[],
+    ],
     certifications: "",
     projects: "",
-    profilePicture: undefined as File | undefined,
+    profilePicture: undefined,
     profilePictureUrl: "",
-  });
+  };
+}
+
+function toSerializableFormData(formData: FormData): FormData {
+  return {
+    ...formData,
+    profilePicture: undefined,
+  };
+}
+
+function hasDraftContent(selectedTemplate: string | null, formData: FormData): boolean {
+  return Boolean(
+    selectedTemplate ||
+    formData.name.trim() ||
+    formData.email.trim() ||
+    formData.phone.trim() ||
+    formData.website.trim() ||
+    formData.linkedin.trim() ||
+    formData.summary.trim() ||
+    formData.education.trim() ||
+    formData.certifications.trim() ||
+    formData.projects.trim() ||
+    formData.profilePictureUrl ||
+    formData.experiences.some((experience) =>
+      experience.company.trim() ||
+      experience.title.trim() ||
+      experience.startDate.trim() ||
+      (experience.endDate || "").trim() ||
+      experience.details.trim()
+    ) ||
+    formData.skills.some((skill) => skill.name.trim())
+  );
+}
+
+export default function Home() {
+  const { user, loading } = useAuth(); // Supabase auth
+  const [showSupport, setShowSupport] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>(createEmptyFormData);
   const [showPreview, setShowPreview] = useState(false);
   // Metrics state
   const [metrics, setMetrics] = useState<{ page_hits: number; resume_downloads: number }>({ page_hits: 0, resume_downloads: 0 });
@@ -204,6 +248,8 @@ export default function Home() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
   const hasUnsavedChanges = useRef(false);
+  const [hasLocalDraft, setHasLocalDraft] = useState(false);
+  const [localDraftSavedAt, setLocalDraftSavedAt] = useState<string | null>(null);
 
   // Resume upload state
   const [showUploader, setShowUploader] = useState(false);
@@ -243,6 +289,71 @@ export default function Home() {
     };
     fire();
   }, []);
+
+  useEffect(() => {
+    if (loading || user) return;
+
+    try {
+      const rawDraft = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!rawDraft) {
+        setHasLocalDraft(false);
+        setLocalDraftSavedAt(null);
+        return;
+      }
+
+      const draft = JSON.parse(rawDraft) as Partial<LocalDraft>;
+      if (!draft.formData) {
+        localStorage.removeItem(LOCAL_DRAFT_KEY);
+        setHasLocalDraft(false);
+        setLocalDraftSavedAt(null);
+        return;
+      }
+
+      setFormData({
+        ...createEmptyFormData(),
+        ...draft.formData,
+        profilePicture: undefined,
+        profilePictureUrl: draft.formData.profilePictureUrl || "",
+      });
+      const restoredTemplate = typeof draft.selectedTemplate === "string" ? draft.selectedTemplate : null;
+      setSelectedTemplate(restoredTemplate);
+      setShowPreview(Boolean(draft.showPreview && draft.selectedTemplate));
+      setShowBuilder(Boolean(restoredTemplate));
+      setHasLocalDraft(true);
+      setLocalDraftSavedAt(typeof draft.savedAt === "string" ? draft.savedAt : null);
+    } catch {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+      setHasLocalDraft(false);
+      setLocalDraftSavedAt(null);
+    }
+  }, [loading, user]);
+
+  useEffect(() => {
+    if (loading || user) return;
+
+    try {
+      if (!hasDraftContent(selectedTemplate, formData)) {
+        localStorage.removeItem(LOCAL_DRAFT_KEY);
+        setHasLocalDraft(false);
+        setLocalDraftSavedAt(null);
+        return;
+      }
+
+      const savedAt = new Date().toISOString();
+      const draft: LocalDraft = {
+        selectedTemplate,
+        formData: toSerializableFormData(formData),
+        showPreview,
+        savedAt,
+      };
+
+      localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(draft));
+      setHasLocalDraft(true);
+      setLocalDraftSavedAt(savedAt);
+    } catch {
+      // Ignore local storage write failures.
+    }
+  }, [loading, user, selectedTemplate, formData, showPreview]);
 
   // Trigger a subtle pulse when metrics values change
   useEffect(() => {
@@ -290,7 +401,7 @@ export default function Home() {
     if (currentResumeId) {
       hasUnsavedChanges.current = true;
     }
-  }, [formData]);
+  }, [currentResumeId, formData]);
 
   // Warn user about unsaved changes before leaving
   useEffect(() => {
@@ -323,7 +434,7 @@ export default function Home() {
       // Ctrl+E or Cmd+E to export
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault();
-        if (user && showPreview && selectedTemplate) {
+        if (showPreview && selectedTemplate) {
           // Trigger export by clicking the download button if it exists
           const exportButton = document.querySelector('[data-export-button]') as HTMLButtonElement;
           if (exportButton) {
@@ -350,6 +461,7 @@ export default function Home() {
   const handleLoadResume = (resume: Resume) => {
     setCurrentResumeId(resume.id);
     setCurrentResumeName(resume.name);
+    setShowBuilder(true);
     setSelectedTemplate(resume.template);
     setFormData(resume.data as typeof formData);
     setSaveStatus('saved');
@@ -482,6 +594,29 @@ export default function Home() {
     setShowPreview(true);
   };
 
+  const startBuilder = () => {
+    setShowBuilder(true);
+  };
+
+  const goToLanding = () => {
+    setShowBuilder(false);
+  };
+
+  const clearLocalDraft = () => {
+    try {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+    } catch {
+      // Ignore local storage cleanup failures.
+    }
+
+    setSelectedTemplate(null);
+    setFormData(createEmptyFormData());
+    setShowPreview(false);
+    setShowBuilder(false);
+    setHasLocalDraft(false);
+    setLocalDraftSavedAt(null);
+  };
+
 
 
   return (
@@ -489,9 +624,9 @@ export default function Home() {
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
       <Onboarding />
-      <Onboarding />
       <main className="w-full max-w-6xl flex flex-col items-center gap-6">
         {/* Trust + Metrics summary */}
+        {showBuilder && (
         <div className="w-full flex items-center justify-end">
           <div
             aria-label="Site metrics"
@@ -511,8 +646,9 @@ export default function Home() {
             </span>
           </div>
         </div>
-        {/* Show hero section if not logged in */}
-        {!user && (
+        )}
+        {/* Landing page */}
+        {!showBuilder && (
           <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-4 w-full max-w-6xl">
             {/* Left Column: Hero Text */}
             <div className="text-center md:text-left">
@@ -523,8 +659,31 @@ export default function Home() {
                 Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
               </p>
               <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
-                👉 Sign in with Google or GitHub (top right) to get started
+                👉 Start now without signing up. Sign in later to save and sync across devices.
               </p>
+              <div className="mt-5 flex items-center gap-3 justify-center md:justify-start">
+                <button
+                  type="button"
+                  onClick={startBuilder}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-transform hover:scale-105 shadow-lg"
+                >
+                  {hasLocalDraft ? "Continue Building" : "Start Building"}
+                </button>
+                {hasLocalDraft && (
+                  <button
+                    type="button"
+                    onClick={clearLocalDraft}
+                    className="px-4 py-3 rounded-lg border border-gray-300/80 text-gray-700 hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800 text-sm"
+                  >
+                    Start Fresh
+                  </button>
+                )}
+              </div>
+              {hasLocalDraft && (
+                <p className="mt-3 text-xs text-amber-700 dark:text-amber-300 max-w-2xl mx-auto md:mx-0">
+                  Draft found on this browser{localDraftSavedAt ? ` • last updated ${new Date(localDraftSavedAt).toLocaleString()}` : ""}.
+                </p>
+              )}
               <div className="mt-4 flex items-center gap-4 justify-center md:justify-start">
                 <BuyMeCoffee />
                 <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
@@ -570,14 +729,26 @@ export default function Home() {
           </div>
         )}
 
-        {/* After login: show template selection */}
-        {user && !selectedTemplate && (
+        {/* Template selection */}
+        {showBuilder && (
+          <div className="w-full max-w-6xl flex justify-start">
+            <button
+              type="button"
+              onClick={goToLanding}
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-300 hover:underline"
+            >
+              ← Back to landing page
+            </button>
+          </div>
+        )}
+
+        {showBuilder && !selectedTemplate && (
           <ResumeTemplates onSelect={setSelectedTemplate} />
         )}
 
-        {/* After template selection: show placeholder for form */}
+        {/* After template selection: show builder */}
         
-{user && selectedTemplate && !showPreview && (
+      {showBuilder && selectedTemplate && !showPreview && (
   <div className="z-10 w-full max-w-4xl flex flex-col items-center gap-8">
     {/* Combined Form, Gamification, and Disclaimer Card */}
     <div className="w-full p-6 md:p-8 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
@@ -631,7 +802,7 @@ export default function Home() {
 
         {/* Right Column: Form */}
         <div className="md:col-span-2">
-          {user && <ResumeProgress formData={formData} />}
+          <ResumeProgress formData={formData} />
           <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Enter Your Details</h2>
@@ -653,6 +824,22 @@ export default function Home() {
                     data={formData}
                     onSaveSuccess={handleSaveSuccess}
                   />
+                </div>
+              )}
+              {!user && (
+                <div className="flex items-center gap-2 flex-wrap justify-end text-xs">
+                  <span className="rounded-full border border-amber-200/80 bg-amber-50/80 px-3 py-1.5 text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/30 dark:text-amber-200">
+                    Saved only in this browser{localDraftSavedAt ? ` • updated ${new Date(localDraftSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}. Sign in to sync across devices.
+                  </span>
+                  {hasLocalDraft && (
+                    <button
+                      type="button"
+                      onClick={clearLocalDraft}
+                      className="rounded-lg border border-gray-300/80 px-3 py-1.5 text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800"
+                    >
+                      Clear local draft
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -724,6 +911,7 @@ export default function Home() {
                   text={formData.summary}
                   type="summary"
                   onRewrite={(rewritten) => setFormData(prev => ({ ...prev, summary: rewritten }))}
+                  disabled={!user}
                 />
               </div>
             </div>
@@ -754,6 +942,7 @@ export default function Home() {
                           text={exp.details}
                           type="experience"
                           onRewrite={(rewritten) => handleExperienceChange(idx, "details", rewritten)}
+                          disabled={!user}
                         />
                       </div>
                     </div>
@@ -806,6 +995,7 @@ export default function Home() {
                   text={formData.projects}
                   type="projects"
                   onRewrite={(rewritten) => setFormData(prev => ({ ...prev, projects: rewritten }))}
+                  disabled={!user}
                 />
               </div>
             </div>
@@ -822,7 +1012,7 @@ export default function Home() {
 )}
 
 {/* Show resume preview after form submit */}
-{user && selectedTemplate && showPreview && (
+{showBuilder && selectedTemplate && showPreview && (
   <div className="w-full mt-8 flex flex-col items-center">
     <TabsPreview
       formData={formData}

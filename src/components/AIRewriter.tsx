@@ -235,6 +235,7 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
         
         <button
           onClick={() => setShowOptions(!showOptions)}
+          disabled={disabled}
           className="px-2 py-1.5 text-xs text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded transition-colors"
           title="Show options"
         >
@@ -242,7 +243,7 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
         </button>
       </div>
 
-      {showOptions && (
+      {showOptions && !disabled && (
         <div className="flex gap-2 flex-wrap items-center p-2 bg-gray-50 dark:bg-neutral-900/50 rounded border border-gray-200 dark:border-neutral-700">
           <div className="flex items-center gap-1">
             <label className="text-xs text-gray-600 dark:text-gray-400">Tone:</label>
@@ -276,6 +277,11 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
       {text && (
         <span className="text-xs text-gray-500 dark:text-gray-400">
           {text.length} characters
+        </span>
+      )}
+      {disabled && (
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          Sign in to use AI rewrite.
         </span>
       )}
     </div>
