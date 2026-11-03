@@ -29,6 +29,10 @@ Icon?
 # Env
 .env
 .env.*
+!.env.example
+
+# Local SQLite database (dev fallback when TURSO_DATABASE_URL is unset)
+.data/
 
 # VSCode
 .vscode/

@@ -42,7 +42,7 @@ export function Onboarding() {
     },
     {
       title: 'Choose Your Template 🎨',
-      description: 'Pick from 4 professionally designed templates. Switch anytime without losing your progress!',
+      description: 'Pick from 7 professionally designed templates (including fresher-friendly ones). Switch anytime without losing your progress!',
       icon: '📄',
     },
     {

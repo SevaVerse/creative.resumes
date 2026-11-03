@@ -4,21 +4,45 @@
   "buildCommand": "next build --turbopack",
   "installCommand": "npm ci",
   "outputDirectory": ".next",
-  "regions": ["bom1"],
+  "regions": [
+    "bom1"
+  ],
   "functions": {
     "src/app/api/export-pdf/route.ts": {
       "memory": 1024,
       "maxDuration": 60
+    },
+    "src/app/api/cron/jobs/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/parse-resume/route.ts": {
+      "memory": 1024,
+      "maxDuration": 30
     }
   },
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/jobs/",
+      "schedule": "30 1 * * 1"
     }
   ]
 }

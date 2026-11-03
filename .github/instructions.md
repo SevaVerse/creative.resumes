@@ -5,23 +5,25 @@ This file defines repository-specific guidance for AI coding agents working in t
 ## 1. Project Context
 
 - Stack: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4.
-- Purpose: Privacy-first resume builder with resume editing, template rendering, AI rewrite, and PDF export.
+- Purpose: Privacy-first resume builder with resume editing, template rendering, AI rewrite, PDF export, and a weekly fresher jobs board (`/jobs`).
 - Key integrations:
-  - Supabase (Auth, DB, Edge Functions)
-  - Groq (AI rewrite)
+  - Auth.js v5 (`next-auth`) for Google/GitHub OAuth with JWT sessions (`src/auth.ts`)
+  - Turso / libSQL database (`@libsql/client`; local SQLite file fallback in dev)
+  - Groq (AI rewrite, resume import)
   - Puppeteer + `@sparticuz/chromium(-min)` for server-side PDF generation
+  - Job sources for `/jobs`: Adzuna, Greenhouse, Lever, RSS/Atom feeds, curated list
 - Runtime split:
-  - Next.js app + API routes under `src/app`
-  - Supabase Edge Functions under `supabase/functions`
+  - Single Next.js app: pages + API routes under `src/app`, weekly Vercel Cron (`/api/cron/jobs/`)
 
 ## 2. Important Paths
 
 - App routes and API endpoints: `src/app/**`
 - UI components: `src/components/**`
 - Shared utilities: `src/utils/**`
-- Supabase helpers: `src/utils/supabase/**`
-- DB access helpers: `src/lib/db/**`
-- SQL schema: `supabase-schema.sql`
+- Auth: `src/auth.ts`, session helper `src/utils/auth/session.ts`
+- DB client, schema, repositories: `src/lib/db/**` (server-only)
+- Template registry (single source of truth): `src/components/templates/registry.ts`
+- Jobs pipeline: `src/lib/jobs/**`, curated data `src/data/jobs/**`
 - Docs: `docs/README.md`, `docs/ARCHITECTURE.md`
 
 ## 3. Working Agreements
@@ -35,11 +37,13 @@ This file defines repository-specific guidance for AI coding agents working in t
 
 ## 4. API and Security Rules
 
-- Protected API routes should verify Supabase auth (see `src/utils/supabase/jwt.ts` patterns).
+- Protected API routes must resolve the user with `getSessionUserId()` (`src/utils/auth/session.ts`); never trust user ids from the client.
+- Every resume query must be scoped by `user_id` in `src/lib/db/resumes.ts` (this replaces Supabase RLS).
 - Respect existing CORS handling for API routes that are browser-called cross-origin.
 - Preserve or improve rate limiting behavior (see `src/utils/rateLimit.ts`).
 - Validate/sanitize untrusted input in route handlers and Edge Functions.
-- Do not remove security headers, auth checks, or RLS assumptions.
+- Do not remove security headers, auth checks, or user-scoped query constraints.
+- Keep `/api/cron/jobs` protected by `CRON_SECRET`.
 
 ## 5. Logging and Observability
 
@@ -90,3 +94,4 @@ npm run thumbnails
 - Check `docs/ARCHITECTURE.md` for deployment/runtime constraints.
 - Check `docs/README.md` and root `README.md` for setup expectations.
 - Ask for clarification before making schema-level or auth-flow-breaking changes.
+- Schema changes go in `src/lib/db/schema.ts` and must be idempotent (`IF NOT EXISTS`).

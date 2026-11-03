@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { rewriteText, type RewriteType, type Tone, type Action, isAIRewriterEnabled, estimateTokens } from "@/utils/groq";
 import { logger, extractRequestId } from "@/utils/logger";
 import { createRateLimiter } from "@/utils/rateLimit";
-import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
+import { getCorsHeaders } from "@/utils/cors";
+import { getSessionUserId } from "@/utils/auth/session";
 
 // Rate limiting for AI rewrite requests (per user)
 const rewriteLimiter = createRateLimiter(60 * 1000, 20); // 20 requests per minute
@@ -36,10 +37,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify Supabase authentication
-    const authResult = await verifySupabaseAuth(req);
-    if (!authResult.authenticated) {
-      log.warn('rewrite.unauthorized', { error: authResult.error });
+    // Verify Auth.js session
+    const userId = await getSessionUserId();
+    if (!userId) {
+      log.warn('rewrite.unauthorized');
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in to use AI rewrite.' },
         {
@@ -49,14 +50,14 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    log.info('rewrite.authenticated', { userId: authResult.userId });
+    log.info('rewrite.authenticated', { userId: userId });
 
     // Rate limiting check (per authenticated user)
-    const rlKey = `rewrite:${authResult.userId}`;
+    const rlKey = `rewrite:${userId}`;
     const rl = rewriteLimiter.check(rlKey);
     
     if (!rl.allowed) {
-      log.warn('rewrite.rate_limited', { userId: authResult.userId, retryAfterMs: rl.retryAfterMs });
+      log.warn('rewrite.rate_limited', { userId: userId, retryAfterMs: rl.retryAfterMs });
       return NextResponse.json(
         { 
           error: "Too many rewrite requests", 

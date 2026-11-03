@@ -49,7 +49,7 @@ export default function PrivacyPage() {
             </h1>
           </div>
           <p className="text-gray-600 dark:text-gray-300 text-lg">
-            Updated: September 18, 2025
+            Updated: November 3, 2026
           </p>
         </div>
 
@@ -247,13 +247,13 @@ export default function PrivacyPage() {
               </h2>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              If you choose to log in, we use OAuth via Supabase (Google or GitHub).
+              If you choose to log in, we use OAuth (Google or GitHub) via the open-source Auth.js library.
               This allows you to save and sync your resumes across devices.
             </p>
             <div className="bg-indigo-50/50 dark:bg-indigo-900/30 p-4 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50">
               <p className="text-indigo-800 dark:text-indigo-200 text-sm">
-                <strong>Privacy Note:</strong> We only store your user ID and email from the OAuth provider.
-                Your resume data is protected by row-level security policies—only you can access your saved resumes.
+                <strong>Privacy Note:</strong> We only store your name, email and avatar URL from the OAuth provider.
+                Every saved-resume request is checked server-side against your signed-in account—only you can access your saved resumes.
               </p>
             </div>
           </section>

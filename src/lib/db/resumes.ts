@@ -1,109 +1,85 @@
-import { createClient } from '@/utils/supabase/client'
-import type { Resume, ResumeUpdate } from '@/types/database'
+import "server-only";
+import type { Row } from "@libsql/client";
+import { getDb, nowIso } from "./client";
+import type { Resume, ResumeUpdate } from "@/types/database";
+import { isTemplateId } from "@/types/resume";
 
-export async function saveResume(
-  userId: string,
-  name: string,
-  template: string,
-  data: Record<string, unknown>
-): Promise<Resume> {
-  const supabase = createClient()
-  
-  const { data: resume, error } = await supabase
-    .from('resumes')
-    .insert({
-      user_id: userId,
-      name,
-      template,
-      data,
-    })
-    .select()
-    .single()
+// Every query is scoped by user_id: this replaces Supabase Row Level Security.
 
-  if (error) throw error
-  return resume
-}
-
-export async function updateResume(
-  resumeId: string,
-  updates: Partial<ResumeUpdate>
-): Promise<Resume> {
-  const supabase = createClient()
-  
-  const { data: resume, error } = await supabase
-    .from('resumes')
-    .update(updates)
-    .eq('id', resumeId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return resume
-}
-
-export async function loadResume(resumeId: string): Promise<Resume> {
-  const supabase = createClient()
-  
-  const { data: resume, error } = await supabase
-    .from('resumes')
-    .select('*')
-    .eq('id', resumeId)
-    .single()
-
-  if (error) throw error
-  return resume
+function toResume(row: Row): Resume {
+  let data: Record<string, unknown> = {};
+  try {
+    data = JSON.parse(String(row.data)) as Record<string, unknown>;
+  } catch {
+    data = {};
+  }
+  const template = isTemplateId(row.template) ? row.template : "minimalist";
+  return {
+    id: String(row.id),
+    user_id: String(row.user_id),
+    name: String(row.name),
+    template,
+    data,
+    last_edited_at: String(row.last_edited_at),
+    created_at: String(row.created_at),
+  };
 }
 
 export async function listResumes(userId: string): Promise<Resume[]> {
-  const supabase = createClient()
-  
-  const { data: resumes, error } = await supabase
-    .from('resumes')
-    .select('*')
-    .eq('user_id', userId)
-    .order('last_edited_at', { ascending: false })
-
-  if (error) throw error
-  return resumes || []
+  const db = await getDb();
+  const rs = await db.execute({
+    sql: "SELECT * FROM resumes WHERE user_id = ? ORDER BY last_edited_at DESC LIMIT 100",
+    args: [userId],
+  });
+  return rs.rows.map(toResume);
 }
 
-export async function deleteResume(resumeId: string): Promise<void> {
-  const supabase = createClient()
-  
-  const { error } = await supabase
-    .from('resumes')
-    .delete()
-    .eq('id', resumeId)
-
-  if (error) throw error
+export async function getResume(userId: string, id: string): Promise<Resume | null> {
+  const db = await getDb();
+  const rs = await db.execute({
+    sql: "SELECT * FROM resumes WHERE id = ? AND user_id = ?",
+    args: [id, userId],
+  });
+  return rs.rows[0] ? toResume(rs.rows[0]) : null;
 }
 
-// Debounced autosave implementation
-let autosaveTimeout: NodeJS.Timeout | null = null
-
-export function scheduleAutoSave(
-  resumeId: string,
-  data: Record<string, unknown>,
-  onSave: () => void,
-  delay: number = 30000
-): void {
-  if (autosaveTimeout) {
-    clearTimeout(autosaveTimeout)
-  }
-
-  autosaveTimeout = setTimeout(async () => {
-    try {
-      await updateResume(resumeId, { data })
-      onSave()
-    } catch (error) {
-      console.error('Autosave failed:', error)
-    }
-  }, delay)
+export async function createResume(
+  userId: string,
+  input: Required<Pick<Resume, "name" | "template" | "data">>
+): Promise<Resume> {
+  const db = await getDb();
+  const id = crypto.randomUUID();
+  const now = nowIso();
+  await db.execute({
+    sql: `INSERT INTO resumes (id, user_id, name, template, data, last_edited_at, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [id, userId, input.name, input.template, JSON.stringify(input.data), now, now],
+  });
+  return { id, user_id: userId, ...input, last_edited_at: now, created_at: now };
 }
 
-export function cancelAutoSave(): void {
-  if (autosaveTimeout) {
-    clearTimeout(autosaveTimeout)
-    autosaveTimeout = null
-  }
+export async function updateResume(userId: string, id: string, updates: ResumeUpdate): Promise<Resume | null> {
+  const db = await getDb();
+  const sets: string[] = [];
+  const args: (string | null)[] = [];
+  if (updates.name !== undefined) { sets.push("name = ?"); args.push(updates.name); }
+  if (updates.template !== undefined) { sets.push("template = ?"); args.push(updates.template); }
+  if (updates.data !== undefined) { sets.push("data = ?"); args.push(JSON.stringify(updates.data)); }
+  sets.push("last_edited_at = ?");
+  args.push(nowIso());
+
+  const rs = await db.execute({
+    sql: `UPDATE resumes SET ${sets.join(", ")} WHERE id = ? AND user_id = ? RETURNING *`,
+    args: [...args, id, userId],
+  });
+  return rs.rows[0] ? toResume(rs.rows[0]) : null;
+}
+
+export async function deleteResume(userId: string, id: string): Promise<boolean> {
+  const db = await getDb();
+  const rs = await db.execute({
+    sql: "DELETE FROM resumes WHERE id = ? AND user_id = ?",
+    args: [id, userId],
+  });
+  return rs.rowsAffected > 0;
 }

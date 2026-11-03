@@ -2,7 +2,7 @@
 
 - Status: `active`
 - Owner: Product + Engineering
-- Last updated: 2026-03-11
+- Last updated: 2026-11-03
 - Source consolidation: `01-no-login-quick-mode.md`, `02-ats-checker-and-job-match.md`, `03-programmatic-seo-landing-pages.md`, `04-funnel-analytics-and-experiments.md`
 
 This file is the implementation source of truth going forward.
@@ -260,6 +260,42 @@ Goal: create reliable decision-making instrumentation from acquisition to activa
 2. Weekly winner/loser decision template is documented and used.
 - Dependencies: E4-S2
 
+## Epic E5: Platform Cost Exit, Templates and Fresher Jobs
+
+Goal: remove Supabase free-tier limits, strengthen the builder, and add a weekly fresher jobs board for traffic.
+
+### Story E5-S1: Replace Supabase with Auth.js + Turso
+- Status: `done`
+- Priority: `P0`
+- Owner: Engineering
+- Description: Auth.js v5 (Google/GitHub, JWT) and Turso/libSQL; server API routes replace browser-side DB access and Edge Functions.
+- Acceptance criteria:
+1. No Supabase SDK or env vars are required at build or runtime.
+2. Saved resumes are only readable/writable by their owner (server-side checks).
+3. Migration script copies existing profiles/resumes/analytics; users are linked by email on next sign-in.
+- Dependencies: none
+
+### Story E5-S2: New templates and builder UX
+- Status: `done`
+- Priority: `P0`
+- Owner: Frontend
+- Description: Campus (fresher), ATS Classic and Modern templates; template registry; gallery thumbnails with filters; live split-screen preview; fresher example data; `?template=` deep link.
+- Acceptance criteria:
+1. All templates render in gallery, live preview, preview tabs and PDF export from one registry.
+2. Users can switch templates while editing without losing data.
+- Dependencies: none
+
+### Story E5-S3: Weekly fresher jobs board
+- Status: `in-progress`
+- Priority: `P0`
+- Owner: Engineering/Product
+- Description: `/jobs` page + RSS feed of entry-level government and private jobs, refreshed weekly via Vercel Cron.
+- Acceptance criteria:
+1. Cron endpoint is secret-protected and tolerant of individual source failures.
+2. Only entry-level roles are listed; expired/stale rows are pruned.
+3. Production sources configured (Adzuna keys, verified ATS boards, official RSS feeds) — **pending owner setup**.
+- Dependencies: E5-S1
+
 ## Cross-Epic Tasks
 
 ### Story X-S1: Copy and privacy consistency audit
@@ -294,3 +330,4 @@ Goal: create reliable decision-making instrumentation from acquisition to activa
 
 - 2026-03-11: Initial consolidation from specs 01-04 into single backlog file.
 - 2026-03-11: Started Epic E1 implementation for anonymous builder access, local drafts, and anonymous export policy.
+- 2026-11-03: Added Epic E5 (Supabase exit, new templates/builder UX, weekly fresher jobs board).
