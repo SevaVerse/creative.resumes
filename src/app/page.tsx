@@ -83,7 +83,10 @@ function TabsPreview({ formData, initialTemplate, onExport, onEdit, onTemplateCh
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div className="flex items-center gap-2">
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold text-white ${tpl.badgeColor}`}>Carbon Score: {carbonScore(tpl)}/10</span>
-            <span title="Higher = less ink, less energy, more eco-friendly. Score is based on template color, graphics, and print area." className="text-gray-500 dark:text-gray-400 cursor-help text-lg">&#9432;</span>
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+              🌍 ≈ {carbonFootprint(tpl).totalG.toFixed(1)} g CO₂e / printed page
+            </span>
+            <span title={`Higher score = less ink, less energy, more eco-friendly. Footprint per printed A4 page: paper ${carbonFootprint(tpl).paperG} g + printer energy ${carbonFootprint(tpl).energyG} g + ink/toner ${carbonFootprint(tpl).inkG} g (~${carbonFootprint(tpl).coveragePct}% coverage). Sharing the PDF digitally is ~0 g.`} className="text-gray-500 dark:text-gray-400 cursor-help text-lg">&#9432;</span>
           </div>
           <div className="flex gap-3">
             <button
@@ -108,7 +111,7 @@ import Confetti from "react-confetti";
 
 import ResumeTemplates from "../components/ResumeTemplates";
 import ScaledPreview from "@/components/ScaledPreview";
-import { TEMPLATE_LIST, carbonScore, getTemplateMeta } from "@/components/templates/registry";
+import { NEW_TEMPLATES, TEMPLATE_COUNT, TEMPLATE_LIST, carbonFootprint, carbonScore, getTemplateMeta } from "@/components/templates/registry";
 import { SAMPLE_FRESHER } from "@/components/templates/sampleData";
 import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
@@ -128,10 +131,15 @@ type Feature = { id: string; title: string; description: string; icon?: string }
 const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
-  { id: "templates", title: "7 Pro Templates", description: "Including new Campus (fresher), ATS Classic, and Modern designs. Switch any time with a live preview.", icon: "🎨" },
+  {
+    id: "templates",
+    title: `${TEMPLATE_COUNT} Pro Templates`,
+    description: `Including ${NEW_TEMPLATES.length} new designs like ${NEW_TEMPLATES.slice(0, 4).map((t) => t.label.replace(/ \(.*\)$/, "")).join(", ")} and more. Switch any time with a live preview.`,
+    icon: "🎨",
+  },
   { id: "jobs", title: "Monthly Fresher Jobs", description: "Entry-level government and private openings, refreshed every month on the Jobs board.", icon: "💼" },
   { id: "ai-rewrite", title: "AI Rewrite Capabilities", description: "Enhance your resume content with AI-powered text rewriting for professional summary, experience, and projects.", icon: "🤖" },
-  { id: "carbon-calculator", title: "Carbon Score Calculator", description: "Make eco-conscious choices with real-time carbon footprint scoring for each resume template.", icon: "🌱" },
+  { id: "carbon-calculator", title: "Carbon Footprint per Template", description: "Every template shows an eco score and an estimated g CO₂e per printed page, so you can pick a lighter design.", icon: "🌱" },
   { id: "structured-data", title: "Structured Experience + Skills", description: "Work history with dates, and slider-based skill levels.", icon: "🧩" },
   { id: "pdf", title: "PDF Export", description: "One‑click PDF export, optimized for fast and reliable results.", icon: "🖨️" },
   { id: "gamification", title: "Gamified Builder", description: "Score, badges, and challenges to guide better resumes.", icon: "🏅" },
@@ -1106,7 +1114,7 @@ export default function Home() {
           <span className="hidden sm:inline">•</span>
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
           <span className="hidden sm:inline">•</span>
-          <Link href="/blog/privacy-first-resume-builder" className="text-sm hover:underline">Blog</Link>
+          <Link href="/blog" className="text-sm hover:underline">Blog</Link>
           <span className="hidden sm:inline">•</span>
           <Link href="/jobs" className="text-sm hover:underline">Fresher Jobs</Link>
         </div>

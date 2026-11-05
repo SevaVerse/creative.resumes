@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import ScaledPreview from "./ScaledPreview";
-import { TAG_LABELS, TEMPLATE_LIST, carbonScore, getTemplateMeta, type TemplateTag } from "./templates/registry";
+import { TAG_LABELS, TEMPLATE_LIST, carbonFootprint, carbonScore, getTemplateMeta, type TemplateTag } from "./templates/registry";
 import { SAMPLE_EXPERIENCED, SAMPLE_FRESHER } from "./templates/sampleData";
 import type { TemplateId } from "@/types/resume";
 
@@ -76,6 +76,12 @@ export default function ResumeTemplates({ onSelect }: { onSelect: (id: TemplateI
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 flex-grow">{tpl.description}</p>
+                  <p
+                    className="text-xs text-emerald-700 dark:text-emerald-400"
+                    title={`Estimated per printed A4 page: paper ${carbonFootprint(tpl).paperG} g + printer energy ${carbonFootprint(tpl).energyG} g + ink/toner ${carbonFootprint(tpl).inkG} g (~${carbonFootprint(tpl).coveragePct}% coverage). Downloading the PDF is ~0 g.`}
+                  >
+                    🌍 ≈ {carbonFootprint(tpl).totalG.toFixed(1)} g CO₂e per printed page
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {tpl.tags.map((tag) => (
                       <span key={tag} className="px-2 py-0.5 rounded text-[11px] bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300">
