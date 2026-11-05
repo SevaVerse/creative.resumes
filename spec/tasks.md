@@ -2,7 +2,7 @@
 
 - Status: `active`
 - Owner: Product + Engineering
-- Last updated: 2026-11-03
+- Last updated: 2026-11-05
 - Source consolidation: `01-no-login-quick-mode.md`, `02-ats-checker-and-job-match.md`, `03-programmatic-seo-landing-pages.md`, `04-funnel-analytics-and-experiments.md`
 
 This file is the implementation source of truth going forward.
@@ -95,10 +95,10 @@ Goal: reduce first-visit friction and improve activation.
 Goal: add a high-intent, linkable utility that brings top-of-funnel traffic.
 
 ### Story E2-S1: Build public ATS checker page
-- Status: `todo`
+- Status: `done`
 - Priority: `P0`
 - Owner: Frontend
-- Description: Add indexable route `/ats-checker` with metadata and FAQ.
+- Description: Add indexable route `/ats-checker` with metadata and FAQ. Shipped at `/ats-checker` (`src/app/ats-checker/page.tsx`).
 - Acceptance criteria:
 1. Route is publicly accessible and indexable.
 2. Metadata (title/description/canonical) is unique.
@@ -106,10 +106,10 @@ Goal: add a high-intent, linkable utility that brings top-of-funnel traffic.
 - Dependencies: none
 
 ### Story E2-S2: Resume text analysis engine (MVP)
-- Status: `todo`
+- Status: `done`
 - Priority: `P0`
 - Owner: Backend/AI
-- Description: Compute ATS readiness with deterministic checks + optional AI enhancement.
+- Description: Compute ATS readiness with deterministic checks + optional AI enhancement. Rule-based engine in `src/lib/ats/analyze.ts`; runs in the browser with no model calls.
 - Acceptance criteria:
 1. Returns overall score with sub-scores: keyword, readability, section completeness, impact language.
 2. Typical input completes under 10s.
@@ -117,10 +117,10 @@ Goal: add a high-intent, linkable utility that brings top-of-funnel traffic.
 - Dependencies: E2-S1
 
 ### Story E2-S3: Job description keyword match
-- Status: `todo`
+- Status: `done`
 - Priority: `P0`
 - Owner: Backend/AI
-- Description: Extract key JD terms, show matched and missing keywords.
+- Description: Extract key JD terms, show matched and missing keywords. Matched/missing lists with high/medium priority.
 - Acceptance criteria:
 1. Output includes matched and missing lists.
 2. Confidence tiers or prioritization are shown.
@@ -137,10 +137,10 @@ Goal: add a high-intent, linkable utility that brings top-of-funnel traffic.
 - Dependencies: E2-S3
 
 ### Story E2-S5: ATS cost and abuse controls
-- Status: `todo`
+- Status: `done`
 - Priority: `P1`
 - Owner: Backend
-- Description: Add caching/rate controls to prevent AI cost spikes.
+- Description: Add caching/rate controls to prevent AI cost spikes. Satisfied by design: the checker makes no server or AI calls, so there is no cost or abuse surface.
 - Acceptance criteria:
 1. Repeated analyses are cached where feasible.
 2. Rate limits return clear error messaging.
@@ -162,10 +162,10 @@ Goal: expand high-intent indexed surface area for organic traffic.
 - Dependencies: none
 
 ### Story E3-S2: Ship phase-1 template pages
-- Status: `todo`
+- Status: `done`
 - Priority: `P0`
 - Owner: Frontend/Content
-- Description: Publish `/resume-templates/*` pages for existing templates.
+- Description: Publish `/resume-templates/*` pages for existing templates. Generated from the registry for all 13 templates (`src/app/resume-templates/`, copy in `src/data/templateContent.ts`).
 - Acceptance criteria:
 1. Pages exist for minimalist, onyx, awesomecv, subtle-elegant.
 2. Each page has unique copy, FAQs, and builder CTA.
@@ -193,10 +193,10 @@ Goal: expand high-intent indexed surface area for organic traffic.
 - Dependencies: E2-S1, E3-S1
 
 ### Story E3-S5: Sitemap and structured data coverage
-- Status: `todo`
+- Status: `in-progress`
 - Priority: `P0`
 - Owner: Frontend
-- Description: Ensure all new pages are in sitemap and use suitable JSON-LD.
+- Description: Ensure all new pages are in sitemap and use suitable JSON-LD. Sitemap and JSON-LD done for /ats-checker and /resume-templates; Lighthouse SEO sampling still to run.
 - Acceptance criteria:
 1. New pages appear in `src/app/sitemap.ts` output.
 2. Page-level metadata is unique and valid.
@@ -296,6 +296,61 @@ Goal: remove Supabase free-tier limits, strengthen the builder, and add a weekly
 3. Production sources configured (Adzuna keys, verified ATS boards, official RSS feeds) — **pending owner setup**.
 - Dependencies: E5-S1
 
+## Epic E6: Shareability and Discoverability
+
+Goal: give visitors reasons and one-tap ways to share, and make every page previewable and citable.
+
+### Story E6-S1: Share buttons and per-page social cards
+- Status: `done`
+- Priority: `P0`
+- Owner: Frontend
+- Description: `ShareButtons` (WhatsApp, Telegram, LinkedIn, X, native, copy) on job, template and ATS result views; WhatsApp share on job cards; 1200x630 cards at `/og/ats.png`, `/og/template/<id>.png`, `/og/job/<id>.png`.
+- Acceptance criteria:
+1. Shared links preview the page's own title, with no redirect on the image URL.
+2. No third-party share SDKs or trackers.
+- Dependencies: none
+
+### Story E6-S2: Site metadata hygiene
+- Status: `done`
+- Priority: `P0`
+- Owner: Frontend
+- Description: Template counts derived from the registry; FAQ JSON-LD moved from the root layout to the homepage with visible FAQ; invalid global breadcrumb removed; search console verification via env; installable PWA manifest and icons; MIT LICENSE file; `/llms.txt`.
+- Dependencies: none
+
+### Story E6-S3: Fun shareable resume feedback ("roast my resume")
+- Status: `todo`
+- Priority: `P1`
+- Owner: Frontend/AI
+- Description: Light-hearted AI critique that produces a share card with the score and no personal data.
+- Acceptance criteria:
+1. Share card contains no resume text or contact details.
+2. Rate-limited like `/api/rewrite`.
+- Dependencies: E2-S2
+
+### Story E6-S4: Opt-in public resume links
+- Status: `todo`
+- Priority: `P1`
+- Owner: Frontend + DB
+- Description: `/r/<id>` links that are off by default, noindex unless opted in, revocable and expiring, with a small "Made with SecureCV" label.
+- Acceptance criteria:
+1. Owner-only create/revoke, scoped by `user_id`.
+2. Default `noindex`; expiry enforced server-side.
+- Dependencies: E5-S1
+
+### Story E6-S5: Job alerts channel
+- Status: `todo`
+- Priority: `P1`
+- Owner: Engineering
+- Description: Monthly cron posts new listings to a Telegram channel / WhatsApp Channel.
+- Dependencies: E5-S3
+
+### Story E6-S6: India-specific landing pages
+- Status: `todo`
+- Priority: `P1`
+- Owner: Content/Frontend
+- Description: Resume format pages (fresher, B.Tech, BCom, government jobs, biodata), job pages by qualification (10th, 12th, ITI, diploma, graduate) and "free resume builder with no paywall" comparison pages.
+- Dependencies: E3-S1
+
 ## Cross-Epic Tasks
 
 ### Story X-S1: Copy and privacy consistency audit
@@ -331,3 +386,4 @@ Goal: remove Supabase free-tier limits, strengthen the builder, and add a weekly
 - 2026-03-11: Initial consolidation from specs 01-04 into single backlog file.
 - 2026-03-11: Started Epic E1 implementation for anonymous builder access, local drafts, and anonymous export policy.
 - 2026-11-03: Added Epic E5 (Supabase exit, new templates/builder UX, weekly fresher jobs board).
+- 2026-11-05: Shipped ATS checker (E2-S1/S2/S3/S5), template landing pages (E3-S2), sitemap coverage (E3-S5 partial); added Epic E6 (shareability and discoverability).
