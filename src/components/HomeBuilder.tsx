@@ -1118,6 +1118,8 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
         <div className="flex items-center flex-wrap gap-3 justify-center">
           <span className="text-sm">Made with ❤️ by Seva</span>
           <span className="hidden sm:inline">•</span>
+          <Link href="/free-resume-builder/" className="text-sm hover:underline">100% free, no paywall</Link>
+          <span className="hidden sm:inline">•</span>
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
           <span className="hidden sm:inline">•</span>
           <Link href="/blog/" className="text-sm hover:underline">Blog</Link>

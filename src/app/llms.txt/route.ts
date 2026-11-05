@@ -28,6 +28,7 @@ ${SITE_NAME} is a free, open-source (MIT) resume builder. Facts:
 ## Tools
 
 - [Resume builder](${base}/): live preview, AI rewrite, PDF/DOCX import, one-click PDF export
+- [Free, no paywall](${base}/free-resume-builder/): what is free (everything) and how to spot download paywalls elsewhere
 - [ATS resume checker](${base}/ats-checker/): ATS readiness score and job-description keyword match
 - [Roast my resume](${base}/roast-my-resume/): funny AI critique plus fixes; only the score is ever shared
 - [Resume templates](${base}/resume-templates/): every template with a live example
