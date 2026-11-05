@@ -23,9 +23,12 @@ If this tool helps you, please consider supporting its development. Your contrib
 *   **Privacy-First by Design:** No ads or third-party trackers. Build and export without an account.
 *   **13 Templates:** Campus (fresher), ATS Classic, Developer, Nordic, Executive, Modern, Aurora, Timeline, Horizon, Minimalist, Onyx, AwesomeCV and Subtle & Elegant — each with an eco score, an estimated g CO₂e per printed page and its own page under [`/resume-templates`](https://securecv.co.in/resume-templates/).
 *   **Free ATS Checker (`/ats-checker`):** Resume score and job-description keyword match. Runs entirely in the browser; nothing is uploaded.
+*   **Roast My Resume (`/roast-my-resume`):** Funny AI critique plus fixes; sharing posts only the score, never resume content.
+*   **Share Links (`/r/<id>`):** Opt-in, expiring, revocable links to a saved resume; contact details hidden and search-engine noindex by default.
+*   **Resume Format Guides (`/resume-format`):** India-specific guides for freshers, B.Tech, B.Com, government jobs, biodata and internships.
 *   **Live Preview Builder:** Split-screen editing, template gallery with real thumbnails and filters, "start from a fresher example".
 *   **AI-Powered Rewrites & Import:** Groq-powered rewriting and PDF/DOCX resume import.
-*   **Fresher Jobs (`/jobs`):** Entry-level government and private openings refreshed monthly, with an RSS feed and one-tap WhatsApp/Telegram sharing.
+*   **Fresher Jobs (`/jobs`):** Entry-level government and private openings refreshed monthly, browsable by category, city and qualification (10th, 12th, ITI, diploma, graduate), with an RSS feed, one-tap WhatsApp/Telegram sharing and an optional Telegram alerts channel.
 *   **One-Click PDF Export**, gamified resume score, and an eco-friendly carbon score per template.
 
 ---

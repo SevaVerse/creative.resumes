@@ -2,7 +2,7 @@
 
 - Status: `active`
 - Owner: Product + Engineering
-- Last updated: 2026-11-05
+- Last updated: 2026-11-05 (E6 complete)
 - Source consolidation: `01-no-login-quick-mode.md`, `02-ats-checker-and-job-match.md`, `03-programmatic-seo-landing-pages.md`, `04-funnel-analytics-and-experiments.md`
 
 This file is the implementation source of truth going forward.
@@ -318,37 +318,37 @@ Goal: give visitors reasons and one-tap ways to share, and make every page previ
 - Dependencies: none
 
 ### Story E6-S3: Fun shareable resume feedback ("roast my resume")
-- Status: `todo`
+- Status: `done`
 - Priority: `P1`
 - Owner: Frontend/AI
-- Description: Light-hearted AI critique that produces a share card with the score and no personal data.
+- Description: Light-hearted AI critique that produces a share card with the score and no personal data. Shipped at `/roast-my-resume` (`src/app/api/roast/route.ts`, local fallback in `src/lib/roast/quips.ts`); shared pages `/roast-my-resume/score/<n>/` are noindex and content-free.
 - Acceptance criteria:
 1. Share card contains no resume text or contact details.
 2. Rate-limited like `/api/rewrite`.
 - Dependencies: E2-S2
 
 ### Story E6-S4: Opt-in public resume links
-- Status: `todo`
+- Status: `done`
 - Priority: `P1`
 - Owner: Frontend + DB
-- Description: `/r/<id>` links that are off by default, noindex unless opted in, revocable and expiring, with a small "Made with SecureCV" label.
+- Description: `/r/<id>` links that are off by default, noindex unless opted in, revocable and expiring, with a small "Made with SecureCV" label. Shipped: `resume_shares` table, `/api/resumes/<id>/share`, `/r/<id>`; contact hidden and noindex by default; 7/30/90-day expiry.
 - Acceptance criteria:
 1. Owner-only create/revoke, scoped by `user_id`.
 2. Default `noindex`; expiry enforced server-side.
 - Dependencies: E5-S1
 
 ### Story E6-S5: Job alerts channel
-- Status: `todo`
+- Status: `done`
 - Priority: `P1`
 - Owner: Engineering
-- Description: Monthly cron posts new listings to a Telegram channel / WhatsApp Channel.
+- Description: Monthly cron posts new listings to a Telegram channel / WhatsApp Channel. Telegram digest via Bot API in the monthly cron (`src/lib/jobs/telegram.ts`); WhatsApp Channel has no API, so only a follow link (`JobAlertsCta`). Needs `TELEGRAM_*` and `NEXT_PUBLIC_*_CHANNEL_URL` env vars.
 - Dependencies: E5-S3
 
 ### Story E6-S6: India-specific landing pages
-- Status: `todo`
+- Status: `done`
 - Priority: `P1`
 - Owner: Content/Frontend
-- Description: Resume format pages (fresher, B.Tech, BCom, government jobs, biodata), job pages by qualification (10th, 12th, ITI, diploma, graduate) and "free resume builder with no paywall" comparison pages.
+- Description: Resume format pages (fresher, B.Tech, BCom, government jobs, biodata), job pages by qualification (10th, 12th, ITI, diploma, graduate) and "free resume builder with no paywall" comparison pages. Shipped `/resume-format/*` (6 guides), qualification job categories (10th, 12th, ITI, diploma, graduate) and `/free-resume-builder`.
 - Dependencies: E3-S1
 
 ## Cross-Epic Tasks
@@ -387,3 +387,4 @@ Goal: give visitors reasons and one-tap ways to share, and make every page previ
 - 2026-03-11: Started Epic E1 implementation for anonymous builder access, local drafts, and anonymous export policy.
 - 2026-11-03: Added Epic E5 (Supabase exit, new templates/builder UX, weekly fresher jobs board).
 - 2026-11-05: Shipped ATS checker (E2-S1/S2/S3/S5), template landing pages (E3-S2), sitemap coverage (E3-S5 partial); added Epic E6 (shareability and discoverability).
+- 2026-11-05: Completed Epic E6 (roast my resume, public resume links, Telegram job alerts, India landing pages); privacy page now lists every feature that sends data; AI rewrite logs no longer include resume text.
