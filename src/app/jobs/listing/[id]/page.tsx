@@ -12,6 +12,8 @@ import {
   jsonLd,
 } from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
+import ShareButtons from "@/components/ShareButtons";
+import { ogImageMeta } from "@/lib/ogImage";
 
 // Rendered on first request and cached; the monthly cron revalidates /jobs/*.
 export const revalidate = 3600;
@@ -41,8 +43,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description, url: path, type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: title }] },
-    twitter: { card: "summary_large_image", title, description, images: ["/og-image.png"] },
+    // Per-job card rendered by /og/job/[file]/route.tsx.
+    openGraph: { title, description, url: path, type: "website", images: ogImageMeta(`/og/job/${job.id}.png`, title) },
+    twitter: { card: "summary_large_image", title, description, images: [`/og/job/${job.id}.png`] },
     // Drop expired listings from search results promptly.
     robots: { index: true, follow: true, unavailable_after: new Date(jobValidThrough(job)).toUTCString() },
   };
@@ -119,6 +122,15 @@ export default async function JobListingPage({ params }: { params: Promise<Param
           </Link>
         </div>
         <p className="text-[11px] text-gray-400">Source: {job.source}</p>
+
+        <ShareButtons
+          url={jobDetailPath(job.id)}
+          text={`${job.title} at ${job.organization}${lastDate ? ` — last date ${lastDate}` : ""}. Fresher job, free to apply:`}
+          label="Share with a friend"
+        />
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Already have a resume? <Link href="/ats-checker/" className="text-blue-700 dark:text-blue-300 underline">Check its ATS score against this job for free</Link>.
+        </p>
 
         {related.length > 0 && (
           <section className="flex flex-col gap-2">

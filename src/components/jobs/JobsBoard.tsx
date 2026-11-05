@@ -12,6 +12,12 @@ function formatDate(iso: string | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
+/** WhatsApp share link to the job's SecureCV page (job news spreads through WhatsApp groups). Call on click only. */
+function whatsAppShareUrl(title: string, organization: string, id: string): string {
+  const origin = window.location.origin;
+  return `https://wa.me/?text=${encodeURIComponent(`${title} at ${organization} — fresher job: ${origin}/jobs/listing/${id}/`)}`;
+}
+
 export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; generatedAt: string }) {
   const [sector, setSector] = useState<SectorFilter>("all");
   const [query, setQuery] = useState("");
@@ -147,7 +153,17 @@ export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; gener
                   View &amp; apply ↗
                 </a>
               </div>
-              <p className="text-[11px] text-gray-400">via {j.source}</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] text-gray-400">via {j.source}</p>
+                <button
+                  type="button"
+                  onClick={() => window.open(whatsAppShareUrl(j.title, j.organization, j.id), "_blank", "noopener,noreferrer")}
+                  className="text-[11px] font-semibold text-green-700 dark:text-green-400 hover:underline"
+                  aria-label={`Share ${j.title} on WhatsApp`}
+                >
+                  Share on WhatsApp
+                </button>
+              </div>
             </li>
           ))}
         </ul>
