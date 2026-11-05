@@ -6,6 +6,12 @@ import SubtleElegantTemplate from "../SubtleElegantTemplate";
 import CampusTemplate from "../CampusTemplate";
 import ModernTemplate from "../ModernTemplate";
 import AtsClassicTemplate from "../AtsClassicTemplate";
+import ExecutiveTemplate from "../ExecutiveTemplate";
+import NordicTemplate from "../NordicTemplate";
+import AuroraTemplate from "../AuroraTemplate";
+import TimelineTemplate from "../TimelineTemplate";
+import DeveloperTemplate from "../DeveloperTemplate";
+import HorizonTemplate from "../HorizonTemplate";
 import { TEMPLATE_IDS, type ResumeData, type TemplateId } from "@/types/resume";
 
 export type TemplateTag = "fresher" | "ats" | "creative" | "photo";
@@ -90,11 +96,72 @@ export const TEMPLATES: Record<TemplateId, TemplateMeta> = {
     badgeColor: "bg-gray-500",
     Component: SubtleElegantTemplate,
   },
+  executive: {
+    id: "executive",
+    label: "Executive",
+    description: "Navy and gold with a serif name and core-competency grid. Polished for senior and corporate roles.",
+    tags: ["ats"],
+    inkScore: 3,
+    badgeColor: "bg-slate-700",
+    isNew: true,
+    Component: ExecutiveTemplate,
+  },
+  nordic: {
+    id: "nordic",
+    label: "Nordic",
+    description: "Airy Scandinavian layout with section labels in a side column. Calm, minimal and low-ink.",
+    tags: ["ats", "fresher"],
+    inkScore: 1,
+    badgeColor: "bg-stone-500",
+    isNew: true,
+    Component: NordicTemplate,
+  },
+  aurora: {
+    id: "aurora",
+    label: "Aurora",
+    description: "Violet-to-pink gradient header, card-style experience and skill chips. Optional photo.",
+    tags: ["creative", "photo"],
+    inkScore: 7,
+    badgeColor: "bg-fuchsia-600",
+    isNew: true,
+    Component: AuroraTemplate,
+  },
+  timeline: {
+    id: "timeline",
+    label: "Timeline",
+    description: "Career timeline with dates in a gutter, emerald accents and a skills rail. Optional photo.",
+    tags: ["creative", "photo"],
+    inkScore: 4,
+    badgeColor: "bg-emerald-600",
+    isNew: true,
+    Component: TimelineTemplate,
+  },
+  developer: {
+    id: "developer",
+    label: "Developer",
+    description: "Tech-focused with monospace accents and a tech-stack chip strip up top. Great for engineers.",
+    tags: ["fresher", "ats"],
+    inkScore: 3,
+    badgeColor: "bg-sky-600",
+    isNew: true,
+    Component: DeveloperTemplate,
+  },
+  horizon: {
+    id: "horizon",
+    label: "Horizon",
+    description: "Deep teal sidebar with monogram or photo, contact and skills; clean main column.",
+    tags: ["creative", "photo"],
+    inkScore: 8,
+    badgeColor: "bg-teal-700",
+    isNew: true,
+    Component: HorizonTemplate,
+  },
 };
 
 /** Ordered list for display (new fresher-friendly templates first). */
 export const TEMPLATE_LIST: TemplateMeta[] = [
-  "campus", "atsclassic", "modern", "minimalist", "onyx", "awesomecv", "subtleelegant",
+  "campus", "atsclassic", "developer", "nordic", "executive", "modern", "aurora", "timeline", "horizon",
+  "minimalist", "onyx", "awesomecv", "subtleelegant",
 ].map((id) => TEMPLATES[id as TemplateId]);
 
 if (TEMPLATE_LIST.length !== TEMPLATE_IDS.length) {
