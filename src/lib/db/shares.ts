@@ -23,12 +23,21 @@ export type ResumeShare = {
 export const SHARE_ID_PATTERN = /^[A-Za-z0-9]{12}$/;
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
-/** 12 random characters (~70 bits): unguessable, short enough to share. */
-function newShareId(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  let out = "";
+const ID_LENGTH = 12;
+// Largest multiple of the alphabet size that fits in a byte: bytes at or above it are rejected,
+// so every character is equally likely (plain `byte % length` would favour the first few).
+const UNBIASED_LIMIT = 256 - (256 % ALPHABET.length);
+
+/** 12 uniformly random characters (~70 bits): unguessable, short enough to share. */
+export function newShareId(): string {
   // ALPHABET drops look-alike characters (0/O, 1/l/I) and is a subset of SHARE_ID_PATTERN.
-  for (const b of bytes) out += ALPHABET[b % ALPHABET.length];
+  let out = "";
+  while (out.length < ID_LENGTH) {
+    for (const b of crypto.getRandomValues(new Uint8Array(ID_LENGTH * 2))) {
+      if (b < UNBIASED_LIMIT) out += ALPHABET[b % ALPHABET.length];
+      if (out.length === ID_LENGTH) break;
+    }
+  }
   return out;
 }
 
