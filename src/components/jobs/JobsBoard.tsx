@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import type { JobRow, JobSector } from "@/types/database";
 
 type SectorFilter = "all" | JobSector;
@@ -108,7 +109,9 @@ export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; gener
             <li key={j.id} className="flex flex-col gap-2 p-5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-gray-900 dark:text-white leading-snug">{j.title}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white leading-snug">
+                    <Link href={`/jobs/listing/${j.id}/`} className="hover:underline">{j.title}</Link>
+                  </h3>
                   <p className="text-sm text-gray-700 dark:text-gray-300">{j.organization}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
