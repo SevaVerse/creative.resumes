@@ -1,5 +1,6 @@
 import { TEMPLATE_LIST } from "@/components/templates/registry";
 import { BLOG_POSTS } from "@/lib/blog/posts";
+import { RESUME_FORMATS } from "@/data/resumeFormats";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import { getBaseUrl } from "@/utils/baseUrl";
 
@@ -9,6 +10,7 @@ export const dynamic = "force-static";
 export function GET() {
   const base = getBaseUrl();
   const templates = TEMPLATE_LIST.map((t) => `- [${t.label} resume template](${base}/resume-templates/${t.id}/): ${t.description}`).join("\n");
+  const formats = RESUME_FORMATS.map((f) => `- [${f.h1}](${base}/resume-format/${f.slug}/): ${f.description}`).join("\n");
   const posts = BLOG_POSTS.map((p) => `- [${p.title}](${base}/blog/${p.slug}/)`).join("\n");
   const body = `# ${SITE_NAME}
 
@@ -26,13 +28,19 @@ ${SITE_NAME} is a free, open-source (MIT) resume builder. Facts:
 ## Tools
 
 - [Resume builder](${base}/): live preview, AI rewrite, PDF/DOCX import, one-click PDF export
+- [Free, no paywall](${base}/free-resume-builder/): what is free (everything) and how to spot download paywalls elsewhere
 - [ATS resume checker](${base}/ats-checker/): ATS readiness score and job-description keyword match
+- [Roast my resume](${base}/roast-my-resume/): funny AI critique plus fixes; only the score is ever shared
 - [Resume templates](${base}/resume-templates/): every template with a live example
 - [Fresher jobs](${base}/jobs/): entry-level government and private jobs in India
 
 ## Templates
 
 ${templates}
+
+## Resume formats (India)
+
+${formats}
 
 ## Guides
 

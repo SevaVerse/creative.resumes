@@ -2,6 +2,7 @@ import Link from "next/link";
 import HomeBuilder from "@/components/HomeBuilder";
 import JobsFaq from "@/components/jobs/JobsFaq";
 import { TEMPLATE_LIST } from "@/components/templates/registry";
+import { RESUME_FORMATS } from "@/data/resumeFormats";
 import { faqJsonLd, jsonLd, type FaqItem } from "@/lib/jobs/seo";
 import { TEMPLATE_COUNT } from "@/lib/site";
 
@@ -43,10 +44,14 @@ export default function HomePage() {
   const landing = (
     <section className="z-10 w-full max-w-6xl flex flex-col gap-8 mt-6" aria-label="About SecureCV">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqJsonLd(HOME_FAQ)) }} />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/ats-checker/" className="p-5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 hover:border-blue-500">
           <h2 className="font-bold text-gray-900 dark:text-white">🎯 Free ATS resume checker</h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Paste your resume and a job description to see your score and the keywords you are missing. Runs in your browser.</p>
+        </Link>
+        <Link href="/roast-my-resume/" className="p-5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 hover:border-orange-500">
+          <h2 className="font-bold text-gray-900 dark:text-white">🔥 Roast my resume</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">A funny, honest AI critique plus the fixes that matter. Share your score with friends.</p>
         </Link>
         <Link href="/resume-templates/" className="p-5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 hover:border-blue-500">
           <h2 className="font-bold text-gray-900 dark:text-white">🎨 {TEMPLATE_COUNT} free resume templates</h2>
@@ -57,6 +62,14 @@ export default function HomePage() {
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Entry-level government and private openings, refreshed every month. Share them on WhatsApp in one tap.</p>
         </Link>
       </div>
+      <nav aria-label="Resume formats" className="flex flex-wrap gap-2 text-sm">
+        <span className="text-gray-500 dark:text-gray-400">Resume formats:</span>
+        {RESUME_FORMATS.map((f) => (
+          <Link key={f.slug} href={`/resume-format/${f.slug}/`} className="text-blue-700 dark:text-blue-300 hover:underline">
+            {f.h1.replace(/^Resume format for (an? )?/i, "").replace(/^./, (c) => c.toUpperCase())}
+          </Link>
+        ))}
+      </nav>
       <nav aria-label="Resume templates" className="flex flex-wrap gap-2 text-sm">
         <span className="text-gray-500 dark:text-gray-400">Templates:</span>
         {TEMPLATE_LIST.map((t) => (

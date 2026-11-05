@@ -117,6 +117,7 @@ import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
 import { useAuth } from "@/components/AuthProvider";
 import { ResumeSaveButton } from "@/components/ResumeSaveButton";
+import { ShareResumeLink } from "@/components/ShareResumeLink";
 import { ResumeLoader } from "@/components/ResumeLoader";
 import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
 import { scheduleAutoSave, cancelAutoSave } from "@/lib/resumesClient";
@@ -886,6 +887,7 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
                     data={formData}
                     onSaveSuccess={handleSaveSuccess}
                   />
+                  {currentResumeId && <ShareResumeLink resumeId={currentResumeId} />}
                 </div>
               )}
               {!user && (
@@ -1116,6 +1118,8 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
         <div className="flex items-center flex-wrap gap-3 justify-center">
           <span className="text-sm">Made with ❤️ by Seva</span>
           <span className="hidden sm:inline">•</span>
+          <Link href="/free-resume-builder/" className="text-sm hover:underline">100% free, no paywall</Link>
+          <span className="hidden sm:inline">•</span>
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
           <span className="hidden sm:inline">•</span>
           <Link href="/blog/" className="text-sm hover:underline">Blog</Link>
@@ -1124,7 +1128,11 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
           <span className="hidden sm:inline">•</span>
           <Link href="/resume-templates/" className="text-sm hover:underline">Resume Templates</Link>
           <span className="hidden sm:inline">•</span>
+          <Link href="/resume-format/" className="text-sm hover:underline">Resume Formats</Link>
+          <span className="hidden sm:inline">•</span>
           <Link href="/ats-checker/" className="text-sm hover:underline">ATS Checker</Link>
+          <span className="hidden sm:inline">•</span>
+          <Link href="/roast-my-resume/" className="text-sm hover:underline">Roast My Resume</Link>
           <span className="hidden sm:inline">•</span>
           <a href="https://github.com/SevaVerse/creative.resumes" target="_blank" rel="noopener noreferrer" className="text-sm hover:underline">Open source on GitHub</a>
         </div>

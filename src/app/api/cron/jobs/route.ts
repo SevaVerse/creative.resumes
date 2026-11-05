@@ -3,8 +3,10 @@ import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { refreshJobs } from "@/lib/jobs/aggregate";
 import { submitIndexNow } from "@/lib/jobs/indexnow";
+import { postJobsToTelegram } from "@/lib/jobs/telegram";
 import { JOB_CATEGORIES, jobDetailPath } from "@/lib/jobs/seo";
 import { listActiveJobs } from "@/lib/db/jobs";
+import type { JobRow } from "@/types/database";
 import { getBaseUrl } from "@/utils/baseUrl";
 import { jsonError } from "@/lib/api/http";
 import { logger, extractRequestId } from "@/utils/logger";
@@ -35,19 +37,24 @@ export async function GET(req: NextRequest) {
     // trailing slashes because of `trailingSlash: true`, so a plain "/jobs" path would not match).
     revalidatePath("/jobs", "layout");
     revalidatePath("/sitemap.xml");
-    const indexNow = await notifySearchEngines(startedAt);
-    return NextResponse.json({ ok: true, stats, indexNow });
+    const baseUrl = getBaseUrl();
+    const fresh = await newListingsSince(startedAt);
+    const [indexNow, telegram] = await Promise.all([notifySearchEngines(baseUrl, fresh), postJobsToTelegram(baseUrl, fresh)]);
+    return NextResponse.json({ ok: true, stats, indexNow, telegram });
   } catch (error) {
     log.error("jobs.refresh_failed", { error: (error as Error).message });
     return jsonError(500, "Job refresh failed");
   }
 }
 
-/** Pings IndexNow with the jobs landing pages and any listing first seen in this run. */
-async function notifySearchEngines(since: string) {
-  const baseUrl = getBaseUrl();
+/** Listings first seen in this run. */
+async function newListingsSince(since: string): Promise<JobRow[]> {
   const jobs = await listActiveJobs({ limit: 1000 }).catch(() => []);
-  const fresh = jobs.filter((j) => j.first_seen_at >= since);
+  return jobs.filter((j) => j.first_seen_at >= since);
+}
+
+/** Pings IndexNow with the jobs landing pages and the new listings. */
+async function notifySearchEngines(baseUrl: string, fresh: JobRow[]) {
   if (fresh.length === 0) return { submitted: 0 };
   const urls = [
     `${baseUrl}/jobs/`,

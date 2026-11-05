@@ -6,6 +6,7 @@ import { JOB_CATEGORIES, jobDetailPath } from "@/lib/jobs/seo";
 import type { JobRow } from "@/types/database";
 import { logger } from "@/utils/logger";
 import { TEMPLATE_IDS } from "@/types/resume";
+import { RESUME_FORMATS } from "@/data/resumeFormats";
 
 // Regenerate hourly so new monthly listings reach crawlers quickly.
 export const revalidate = 3600;
@@ -44,11 +45,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/roast-my-resume/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/resume-templates/`,
       lastModified: new Date("2026-11-05"),
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/free-resume-builder/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/resume-format/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    ...RESUME_FORMATS.map((f) => ({
+      url: `${baseUrl}/resume-format/${f.slug}/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     ...TEMPLATE_IDS.map((id) => ({
       url: `${baseUrl}/resume-templates/${id}/`,
       lastModified: new Date("2026-11-05"),

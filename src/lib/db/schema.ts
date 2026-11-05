@@ -32,6 +32,18 @@ export const SCHEMA_STATEMENTS: string[] = [
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
   )`,
   `CREATE INDEX IF NOT EXISTS idx_resumes_user_edited ON resumes(user_id, last_edited_at DESC)`,
+  // Opt-in public links to a resume (/r/<id>). Always created and revoked by the owner (user_id).
+  `CREATE TABLE IF NOT EXISTS resume_shares (
+    id TEXT PRIMARY KEY,
+    resume_id TEXT NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    indexable INTEGER NOT NULL DEFAULT 0,
+    hide_contact INTEGER NOT NULL DEFAULT 1,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_resume_shares_resume ON resume_shares(user_id, resume_id)`,
   `CREATE TABLE IF NOT EXISTS analytics (
     id TEXT PRIMARY KEY,
     user_id TEXT,
