@@ -1,95 +1,50 @@
-// Database types for Supabase tables
-// Generated from schema
+// Row types for the libSQL (Turso) database. See src/lib/db/schema.ts.
+import type { TemplateId } from "./resume";
 
-export interface Database {
-  public: {
-    Tables: {
-      resumes: {
-        Row: {
-          id: string
-          user_id: string
-          name: string
-          template: 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant'
-          data: Record<string, unknown>
-          last_edited_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          name: string
-          template: 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant'
-          data: Record<string, unknown>
-          last_edited_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          name?: string
-          template?: 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant'
-          data?: Record<string, unknown>
-          last_edited_at?: string
-          created_at?: string
-        }
-      }
-      analytics: {
-        Row: {
-          id: string
-          user_id: string | null
-          event_type: 'page_view' | 'resume_download' | 'ai_rewrite' | 'template_change' | 'resume_upload' | 'resume_save' | 'resume_load'
-          metadata: Record<string, unknown> | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          event_type: 'page_view' | 'resume_download' | 'ai_rewrite' | 'template_change' | 'resume_upload' | 'resume_save' | 'resume_load'
-          metadata?: Record<string, unknown> | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          event_type?: 'page_view' | 'resume_download' | 'ai_rewrite' | 'template_change' | 'resume_upload' | 'resume_save' | 'resume_load'
-          metadata?: Record<string, unknown> | null
-          created_at?: string
-        }
-      }
-      profiles: {
-        Row: {
-          id: string
-          email: string | null
-          full_name: string | null
-          avatar_url: string | null
-          provider: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          email?: string | null
-          full_name?: string | null
-          avatar_url?: string | null
-          provider?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          email?: string | null
-          full_name?: string | null
-          avatar_url?: string | null
-          provider?: string | null
-          updated_at?: string
-        }
-      }
-    }
-  }
+export type Resume = {
+  id: string;
+  user_id: string;
+  name: string;
+  template: TemplateId;
+  data: Record<string, unknown>;
+  last_edited_at: string;
+  created_at: string;
+};
+
+export type ResumeUpdate = Partial<Pick<Resume, "name" | "template" | "data">>;
+
+export const ANALYTICS_EVENT_TYPES = [
+  "page_view",
+  "resume_download",
+  "ai_rewrite",
+  "template_change",
+  "resume_upload",
+  "resume_save",
+  "resume_load",
+  "jobs_view",
+] as const;
+
+export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
+
+export function isAnalyticsEventType(value: unknown): value is AnalyticsEventType {
+  return typeof value === "string" && (ANALYTICS_EVENT_TYPES as readonly string[]).includes(value);
 }
 
-export type Resume = Database['public']['Tables']['resumes']['Row']
-export type ResumeInsert = Database['public']['Tables']['resumes']['Insert']
-export type ResumeUpdate = Database['public']['Tables']['resumes']['Update']
-export type AnalyticsEvent = Database['public']['Tables']['analytics']['Row']
-export type AnalyticsInsert = Database['public']['Tables']['analytics']['Insert']
-export type Profile = Database['public']['Tables']['profiles']['Row']
+export type JobSector = "government" | "private";
+
+export type JobRow = {
+  id: string;
+  title: string;
+  organization: string;
+  location: string | null;
+  sector: JobSector;
+  source: string;
+  url: string;
+  summary: string | null;
+  employment_type: string | null;
+  posted_at: string | null;
+  last_date: string | null;
+  tags: string[];
+  first_seen_at: string;
+  last_seen_at: string;
+};

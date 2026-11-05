@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from './AuthProvider'
-import { listResumes, deleteResume } from '@/lib/db/resumes'
+import { listResumes, deleteResume } from '@/lib/resumesClient'
+import { getTemplateMeta } from '@/components/templates/registry'
 import { trackResumeLoad } from '@/lib/analytics'
 import type { Resume } from '@/types/database'
 
@@ -24,7 +25,7 @@ export function ResumeLoader({ onLoadResume, currentResumeId }: Props) {
       
       setLoading(true)
       try {
-        const data = await listResumes(user.id)
+        const data = await listResumes()
         setResumes(data)
       } catch (error) {
         console.error('Failed to load resumes:', error)
@@ -124,7 +125,7 @@ export function ResumeLoader({ onLoadResume, currentResumeId }: Props) {
                           )}
                         </h3>
                         <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          <span className="capitalize">{resume.template.replace('-', ' ')}</span>
+                          <span>{getTemplateMeta(resume.template).label}</span>
                           <span>•</span>
                           <span>Edited {new Date(resume.last_edited_at).toLocaleDateString()}</span>
                         </div>

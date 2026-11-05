@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { createClient } from '@/utils/supabase/client'
 
 interface ParsedResume {
   name: string
@@ -31,11 +30,9 @@ interface ResumeUploaderProps {
 export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [parsedData, setParsedData] = useState<ParsedResume | null>(null)
-  const supabase = createClient()
 
   const validateFile = (file: File): string | null => {
     const validTypes = [
@@ -47,9 +44,9 @@ export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps
       return 'Please upload a PDF or DOCX file'
     }
     
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    const maxSize = 5 * 1024 * 1024 // 5MB (server limit)
     if (file.size > maxSize) {
-      return 'File size must be less than 10MB'
+      return 'File size must be less than 5MB'
     }
     
     return null
@@ -94,41 +91,16 @@ export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps
     setIsParsing(true)
     
     try {
-      // Get user session
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        throw new Error('You must be logged in to parse resumes')
-      }
-
-      // Convert file to base64
-      const reader = new FileReader()
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string
-          // Remove data URL prefix
-          const base64 = result.split(',')[1]
-          resolve(base64)
-        }
-        reader.onerror = reject
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/parse-resume/', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: form,
       })
-      
-      reader.readAsDataURL(file)
-      const base64Content = await base64Promise
+      const result = await res.json().catch(() => null) as { success?: boolean; data?: ParsedResume; error?: string } | null
 
-      // Call Edge Function via Supabase client (handles auth automatically)
-      const { data: result, error: fnError } = await supabase.functions.invoke('parse-resume', {
-        body: {
-          fileContent: base64Content,
-          fileName: file.name,
-          contentType: file.type,
-        },
-      })
-
-      if (fnError) {
-        throw new Error(fnError.message || 'Failed to parse resume')
-      }
-
-      if (!result?.success) {
+      if (!res.ok || !result?.success || !result.data) {
         throw new Error(result?.error || 'Failed to parse resume')
       }
 
@@ -198,7 +170,7 @@ export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps
                 <span className="text-gray-500"> or drag and drop</span>
               </label>
             </div>
-            <p className="text-xs text-gray-500 mt-2">PDF or DOCX up to 10MB</p>
+            <p className="text-xs text-gray-500 mt-2">PDF or DOCX up to 5MB</p>
           </>
         ) : (
           <div className="space-y-3">

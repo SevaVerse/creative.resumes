@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
 import { pdfLimiter, createRateLimiter, buildKey } from "@/utils/rateLimit";
 import { logger, extractRequestId } from "@/utils/logger";
-import { verifySupabaseAuth, getCorsHeaders } from "@/utils/supabase/jwt";
+import { getCorsHeaders, clientKey } from "@/utils/cors";
+import { getSessionUserId } from "@/utils/auth/session";
+import { isTemplateId } from "@/types/resume";
 import chromium from "@sparticuz/chromium-min";
 import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
@@ -89,37 +91,13 @@ export async function POST(req: NextRequest) {
   const corsHeaders = getCorsHeaders(origin);
   
   try {
-    const authHeader = req.headers.get('authorization');
-    let userId: string | undefined;
+    // Signed-in users (Auth.js session cookie) get a higher export limit.
+    const userId = (await getSessionUserId()) || undefined;
     let rateLimitHeaderValue = '3';
     let rateLimitRemainingValue = '0';
+    log.info(userId ? 'pdf.authenticated' : 'pdf.anonymous_request', { userId });
 
-    if (authHeader?.startsWith('Bearer ')) {
-      const authResult = await verifySupabaseAuth(req);
-      if (!authResult.authenticated) {
-        log.warn('pdf.unauthorized', { error: authResult.error });
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized. Please sign in again to export PDFs.' }),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-              ...corsHeaders,
-            },
-          }
-        );
-      }
-
-      userId = authResult.userId;
-      log.info('pdf.authenticated', { userId });
-    } else {
-      log.info('pdf.anonymous_request');
-    }
-
-    const anonymousKey = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || req.headers.get('x-real-ip')
-      || req.headers.get('user-agent')
-      || 'anonymous';
+    const anonymousKey = clientKey(req.headers);
 
     const rl = userId
       ? pdfLimiter.check(buildKey(["pdf", userId]))
@@ -159,7 +137,7 @@ export async function POST(req: NextRequest) {
 
     // Render the resume template to HTML server-side
     const printPayload: PrintPayload = {
-      selectedTemplate: payload.selectedTemplate,
+      selectedTemplate: isTemplateId(payload?.selectedTemplate) ? payload.selectedTemplate : "minimalist",
       name: payload.name || '',
       email: payload.email || '',
       phone: payload.phone || '',
@@ -171,7 +149,10 @@ export async function POST(req: NextRequest) {
       skills: payload.skills || [],
       certifications: payload.certifications || '',
       projects: payload.projects || '',
-      profilePictureUrl: payload.profilePictureUrl || '',
+      // Only inline images: headless Chrome must not fetch arbitrary user-supplied URLs.
+      profilePictureUrl: typeof payload.profilePictureUrl === 'string' && payload.profilePictureUrl.startsWith('data:image/')
+        ? payload.profilePictureUrl
+        : '',
     };
 
     // Dynamic imports to avoid Turbopack restriction on react-dom/server in route handlers
@@ -209,7 +190,9 @@ export async function POST(req: NextRequest) {
     });
     log.info("pdf.generated", { bytes: pdf.length });
 
+    // Close and drop the cached instance so the next warm invocation relaunches cleanly.
     await browser.close();
+    browserInstance = null;
 
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);

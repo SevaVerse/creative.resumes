@@ -1,11 +1,17 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import type { User } from '@supabase/supabase-js'
+import { createContext, useContext, useMemo } from 'react'
+import { SessionProvider, signIn, signOut as authSignOut, useSession } from 'next-auth/react'
+
+export interface AuthUser {
+  id: string
+  email: string | null
+  name: string | null
+  image: string | null
+}
 
 interface AuthContextType {
-  user: User | null
+  user: AuthUser | null
   loading: boolean
   signInWithGoogle: () => Promise<void>
   signInWithGithub: () => Promise<void>
@@ -14,56 +20,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function AuthBridge({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession()
+
+  const value = useMemo<AuthContextType>(() => {
+    const u = session?.user
+    const user: AuthUser | null = u?.id
+      ? { id: u.id, email: u.email ?? null, name: u.name ?? null, image: u.image ?? null }
+      : null
+    const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/'
+    return {
+      user,
+      loading: status === 'loading',
+      signInWithGoogle: async () => { await signIn('google', { callbackUrl }) },
+      signInWithGithub: async () => { await signIn('github', { callbackUrl }) },
+      signOut: async () => { await authSignOut({ callbackUrl: '/' }) },
+    }
+  }, [session, status])
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
-
-  const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-  }
-
-  const signInWithGithub = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-  }
-
-  const signOut = async () => {
-    await supabase.auth.signOut()
-  }
-
   return (
-    <AuthContext.Provider
-      value={{ user, loading, signInWithGoogle, signInWithGithub, signOut }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <SessionProvider refetchOnWindowFocus={false}>
+      <AuthBridge>{children}</AuthBridge>
+    </SessionProvider>
   )
 }
 

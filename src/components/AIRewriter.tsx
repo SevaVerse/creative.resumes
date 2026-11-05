@@ -49,54 +49,29 @@ export function AIRewriter({ text, type, onRewrite, className = '', disabled = f
     }
   }
 
-  const handleRewrite = async (forceVercel = false) => {
+  const handleRewrite = async () => {
     if (!text?.trim() || isLoading || disabled) return
     
     setIsLoading(true)
     setError('')
     
     try {
-      // Get Supabase session token if available
-      let authToken: string | undefined;
-      try {
-        const { createClient } = await import('@/utils/supabase/client');
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        authToken = session?.access_token;
-      } catch {
-        // Ignore auth errors, let API handle it
-      }
-
-      // Try Edge Function first (90% cost savings) unless forced to use Vercel
-      const useEdgeFunction = !forceVercel && process.env.NEXT_PUBLIC_SUPABASE_URL && authToken;
-      const endpoint = useEdgeFunction
-        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-rewrite`
-        : '/api/rewrite';
-      
-      console.log(`Using ${useEdgeFunction ? 'Edge Function' : 'Vercel'} for AI rewrite`);
-      
-      const response = await fetch(endpoint, {
+      // Same-origin request: the Auth.js session cookie authenticates the call.
+      const response = await fetch('/api/rewrite', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
-        },
-        body: JSON.stringify({ 
-          text: text.trim(), 
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text.trim(),
           type,
           tone,
           action
         })
       })
-      
+
       const data: RewriteResponse = await response.json()
       
       if (!response.ok) {
-        // If Edge Function fails with server error and we haven't tried Vercel yet, fallback
-        if (useEdgeFunction && response.status >= 500) {
-          console.warn('Edge Function failed, falling back to Vercel endpoint');
-          return handleRewrite(true); // Retry with Vercel
-        }
         throw new Error(data.error || `HTTP ${response.status}`)
       }
       

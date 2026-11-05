@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCorsHeaders } from '@/utils/supabase/jwt'
+import { getCorsHeaders } from '@/utils/cors'
 
 // Health check endpoint for monitoring Vercel API routes
 
@@ -18,11 +18,15 @@ export async function GET(req: NextRequest) {
         'metrics': true,
         'pdf-data': true,
         'rewrite': true,
+        'resumes': true,
+        'parse-resume': true,
+        'cron/jobs': true,
       },
       environment: {
         node_version: process.version,
         has_groq_key: !!process.env.GROQ_API_KEY,
-        has_supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        has_turso_url: !!process.env.TURSO_DATABASE_URL,
+        has_auth_secret: !!process.env.AUTH_SECRET,
       }
     }
 
