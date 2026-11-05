@@ -31,9 +31,9 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
-  <title>SecureCV — Fresher Jobs This Week</title>
+  <title>SecureCV — Fresher Jobs This Month</title>
   <link>${esc(`${baseUrl}/jobs/`)}</link>
-  <description>Entry-level government and private jobs for freshers in India, refreshed weekly.</description>
+  <description>Entry-level government and private jobs for freshers in India, refreshed monthly.</description>
   <language>en-IN</language>
 ${items}
 </channel>

@@ -16,12 +16,12 @@ import {
 } from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
 
-// Listings are refreshed weekly by /api/cron/jobs; the page itself is cached for an hour.
+// Listings are refreshed monthly by /api/cron/jobs; the page itself is cached for an hour.
 export const revalidate = 3600;
 
 const JOBS_FAQ: FaqItem[] = [
   { q: "What are fresher jobs?", a: "Jobs open to candidates with little or no work experience (0–1 years): internships, apprenticeships, trainee programmes, entry-level private roles and government vacancies filled through exams." },
-  { q: "How often is this fresher jobs list updated?", a: "Every week. New listings are marked “New”, and listings whose last date has passed are removed automatically." },
+  { q: "How often is this fresher jobs list updated?", a: "Every month. New listings are marked “New”, and listings whose last date has passed are removed automatically." },
   { q: "Is it free to apply?", a: "Yes. SecureCV never charges for jobs, and every listing links to the employer's or recruiting body's official page. Never pay an agent to get a job." },
   { q: "How do I make a resume as a fresher?", a: "Lead with education, then projects, internships and skills. SecureCV's free Campus template is designed for freshers and exports an ATS-friendly PDF." },
 ];
@@ -30,12 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
   const { jobs, lastRun } = await loadJobsData();
   const when = monthYear(lastRun ? new Date(lastRun) : new Date());
   const count = jobs.length > 0 ? `${jobs.length}+ ` : "";
-  const description = `${count}latest fresher jobs in India for ${when}: entry-level private jobs, internships, apprenticeships and government vacancies for freshers. Updated weekly — free, no sign-up.`;
+  const description = `${count}latest fresher jobs in India for ${when}: entry-level private jobs, internships, apprenticeships and government vacancies for freshers. Updated monthly — free, no sign-up.`;
   return {
     title: { absolute: `Fresher Jobs ${when} — Latest Entry-Level, Govt & Private Jobs in India | SecureCV` },
     description,
     keywords: [
-      "fresher jobs", "jobs for freshers", "fresher jobs this week", `fresher jobs ${when}`, "entry level jobs India",
+      "fresher jobs", "jobs for freshers", "fresher jobs this month", `fresher jobs ${when}`, "entry level jobs India",
       "government jobs for freshers", "private jobs for freshers", "internships for freshers", "apprenticeship", "graduate trainee jobs",
     ],
     alternates: { canonical: "/jobs/", types: { "application/rss+xml": "/jobs/feed.xml" } },
@@ -44,17 +44,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       url: "/jobs/",
       type: "website",
-      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Fresher jobs this week on SecureCV" }],
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Fresher jobs this month on SecureCV" }],
     },
     twitter: { card: "summary_large_image", title: `Fresher Jobs ${when} | SecureCV`, description, images: ["/og-image.png"] },
   };
-}
-
-function weekOf(iso: string | null): string {
-  const d = iso ? new Date(iso) : new Date();
-  const monday = new Date(d);
-  monday.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
-  return monday.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 export default async function JobsPage() {
@@ -67,9 +60,9 @@ export default async function JobsPage() {
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: "Fresher Jobs This Week",
+      name: "Fresher Jobs This Month",
       url: `${baseUrl}/jobs/`,
-      description: "Weekly list of entry-level government and private jobs for freshers in India.",
+      description: "Monthly list of entry-level government and private jobs for freshers in India.",
       ...(lastRun ? { dateModified: lastRun } : {}),
       isPartOf: { "@type": "WebSite", name: "SecureCV", url: baseUrl },
     },
@@ -86,11 +79,11 @@ export default async function JobsPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
       <main className="w-full max-w-6xl flex flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Week of {weekOf(lastRun)}</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Fresher jobs this week</h1>
+          <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">{monthYear(lastRun ? new Date(lastRun) : new Date())}</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Fresher jobs this month</h1>
           <p className="text-gray-600 dark:text-gray-300 max-w-3xl">
             Entry-level openings, internships, apprenticeships and government vacancies for freshers in India — collected
-            from public job APIs and official feeds and refreshed every week. Always verify details and apply on the
+            from public job APIs and official feeds and refreshed every month. Always verify details and apply on the
             official website; SecureCV never charges for jobs.
           </p>
           <div className="flex flex-wrap gap-3 text-sm">

@@ -13,7 +13,7 @@ import {
 } from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
 
-// Rendered on first request and cached; the weekly cron revalidates /jobs/*.
+// Rendered on first request and cached; the monthly cron revalidates /jobs/*.
 export const revalidate = 3600;
 
 type Params = { id: string };

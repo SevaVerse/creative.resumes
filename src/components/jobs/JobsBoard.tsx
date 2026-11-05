@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { JobRow, JobSector } from "@/types/database";
 
 type SectorFilter = "all" | JobSector;
-const WEEK_MS = 7 * 86_400_000;
+const NEW_WINDOW_MS = 30 * 86_400_000;
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -19,7 +19,7 @@ export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; gener
   const [onlyNew, setOnlyNew] = useState(false);
 
   const now = new Date(generatedAt).getTime();
-  const isNew = (j: JobRow) => now - new Date(j.first_seen_at).getTime() < WEEK_MS;
+  const isNew = (j: JobRow) => now - new Date(j.first_seen_at).getTime() < NEW_WINDOW_MS;
 
   const counts = useMemo(() => ({
     all: jobs.length,
@@ -38,7 +38,7 @@ export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; gener
     return jobs.filter((j) =>
       (sector === "all" || j.sector === sector) &&
       (!tag || j.tags.includes(tag)) &&
-      (!onlyNew || now - new Date(j.first_seen_at).getTime() < WEEK_MS) &&
+      (!onlyNew || now - new Date(j.first_seen_at).getTime() < NEW_WINDOW_MS) &&
       (!q || `${j.title} ${j.organization} ${j.location ?? ""}`.toLowerCase().includes(q))
     );
   }, [jobs, sector, tag, onlyNew, query, now]);
@@ -82,7 +82,7 @@ export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; gener
       <div className="flex flex-wrap items-center gap-2">
         <label className="inline-flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 mr-2">
           <input type="checkbox" checked={onlyNew} onChange={(e) => setOnlyNew(e.target.checked)} className="h-4 w-4 rounded" />
-          New this week only
+          New this month only
         </label>
         {allTags.map((t) => (
           <button
@@ -100,7 +100,7 @@ export default function JobsBoard({ jobs, generatedAt }: { jobs: JobRow[]; gener
       {visible.length === 0 ? (
         <div className="p-10 text-center rounded-xl border border-dashed border-gray-300 dark:border-neutral-700 text-gray-600 dark:text-gray-400">
           {jobs.length === 0
-            ? "This week's listings are being prepared. Check back soon — meanwhile, use the official portals below."
+            ? "This month's listings are being prepared. Check back soon — meanwhile, use the official portals below."
             : "No jobs match these filters."}
         </div>
       ) : (

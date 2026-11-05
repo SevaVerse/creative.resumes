@@ -5,7 +5,7 @@ import { JOB_CATEGORIES, jobDetailPath } from "@/lib/jobs/seo";
 import type { JobRow } from "@/types/database";
 import { logger } from "@/utils/logger";
 
-// Regenerate hourly so new weekly listings reach crawlers quickly.
+// Regenerate hourly so new monthly listings reach crawlers quickly.
 export const revalidate = 3600;
 
 async function loadJobs(): Promise<{ jobs: JobRow[]; lastRun: Date }> {

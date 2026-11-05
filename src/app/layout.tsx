@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: "%s | SecureCV",
   },
   description:
-    "Build a professional resume for free with SecureCV's AI-powered resume builder. AI text rewrite, 7 pro templates including fresher-friendly Campus and ATS Classic, instant PDF export, and a weekly board of entry-level govt and private jobs. No tracking, no ads — privacy-first by design.",
+    "Build a professional resume for free with SecureCV's AI-powered resume builder. AI text rewrite, 7 pro templates including fresher-friendly Campus and ATS Classic, instant PDF export, and a monthly board of entry-level govt and private jobs. No tracking, no ads — privacy-first by design.",
   keywords: [
     "resume builder",
     "free resume builder",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and weekly fresher jobs. No tracking, no ads — privacy-first by design.",
+      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and monthly fresher jobs. No tracking, no ads — privacy-first by design.",
     siteName: "SecureCV",
     locale: "en_US",
     images: [
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and weekly fresher jobs. No tracking, no ads.",
+      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and monthly fresher jobs. No tracking, no ads.",
     images: ["/og-image.png"],
     creator: "@sevadeveer",
   },
@@ -135,7 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 "Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, carbon score calculator, and 7 pro templates including fresher-friendly designs. Privacy-first and free.",
               featureList: [
                 "Seven professional templates incl. Campus (fresher), ATS Classic and Modern",
-                "Weekly fresher jobs board (government and private)",
+                "Monthly fresher jobs board (government and private)",
                 "AI-powered resume text rewriting",
                 "Structured experience and skills editor",
                 "Gamified score and badge guidance",

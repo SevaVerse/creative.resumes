@@ -9,7 +9,7 @@ import { getBaseUrl } from "@/utils/baseUrl";
 import { jsonError } from "@/lib/api/http";
 import { logger, extractRequestId } from "@/utils/logger";
 
-// Weekly job refresh. Vercel Cron calls this with `Authorization: Bearer $CRON_SECRET`
+// Monthly job refresh (1st of each month). Vercel Cron calls this with `Authorization: Bearer $CRON_SECRET`
 // (schedule in vercel.json). Can also be triggered manually with the same header.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

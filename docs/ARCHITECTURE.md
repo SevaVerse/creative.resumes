@@ -11,7 +11,7 @@
                     └──┬──────────┬─────────┬───┘
                        │          │         │
               ┌────────▼───┐ ┌────▼────┐ ┌──▼────────────────────────┐
-              │ Turso      │ │ Groq    │ │ Job sources (weekly)       │
+              │ Turso      │ │ Groq    │ │ Job sources (monthly)      │
               │ (libSQL)   │ │ LLM API │ │ Adzuna · Greenhouse · Lever│
               │ HTTP client│ └─────────┘ │ RSS/Atom feeds · curated   │
               └────────────┘             └────────────────────────────┘
@@ -40,7 +40,7 @@ low-traffic side project. The replacement keeps costs at zero with fewer moving 
 * `users`, `accounts` — local identity; accounts link `(provider, provider_account_id)` → user.
 * `resumes` — JSON `data`, `template` validated against the template registry.
 * `analytics` — first-party counts only; no IP or user-agent is stored.
-* `jobs`, `job_runs` — weekly fresher job listings and refresh run stats.
+* `jobs`, `job_runs` — monthly fresher job listings and refresh run stats.
 
 Schema creation is idempotent and runs once per server instance on first DB access.
 
@@ -59,7 +59,7 @@ create the component, add its id to `TEMPLATE_IDS` (`src/types/resume.ts`) and a
 
 ## Fresher jobs pipeline
 
-`/api/cron/jobs/` (Vercel Cron, Monday 01:30 UTC) → `refreshJobs()` (`src/lib/jobs/aggregate.ts`):
+`/api/cron/jobs/` (Vercel Cron, 1st of month 01:30 UTC) → `refreshJobs()` (`src/lib/jobs/aggregate.ts`):
 
 1. Fetch all configured sources in parallel; one failing source never fails the run.
 2. Classify sector (government/private) and keep only entry-level roles (`src/lib/jobs/classify.ts`);

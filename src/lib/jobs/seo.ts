@@ -30,9 +30,9 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Government Jobs for Freshers — Latest Sarkari Naukri Vacancies",
     h1: "Government jobs for freshers",
     description:
-      "Latest government jobs for freshers in India: central and state vacancies, PSU recruitment, banking, railways and defence notifications open to fresh graduates. Updated weekly.",
+      "Latest government jobs for freshers in India: central and state vacancies, PSU recruitment, banking, railways and defence notifications open to fresh graduates. Updated monthly.",
     intro:
-      "Sarkari naukri openings that fresh graduates, diploma holders and 10th/12th pass candidates can apply for — collected from official recruitment feeds and refreshed every week. Always confirm eligibility and the last date in the official notification.",
+      "Sarkari naukri openings that fresh graduates, diploma holders and 10th/12th pass candidates can apply for — collected from official recruitment feeds and refreshed every month. Always confirm eligibility and the last date in the official notification.",
     keywords: ["government jobs for freshers", "sarkari naukri", "govt jobs 2026", "PSU recruitment freshers", "latest government vacancies"],
     faq: [
       { q: "Can freshers apply for government jobs?", a: "Yes. Most government recruitments (SSC, UPSC, IBPS, RRB, state PSCs and PSUs) select through exams and do not require prior work experience — only the stated education and age limits." },
@@ -47,13 +47,13 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Private Jobs for Freshers — Entry-Level Openings at Companies in India",
     h1: "Private jobs for freshers",
     description:
-      "Entry-level private sector jobs for freshers in India: graduate trainee, associate, junior developer and analyst roles from company career pages. Refreshed weekly.",
+      "Entry-level private sector jobs for freshers in India: graduate trainee, associate, junior developer and analyst roles from company career pages. Refreshed monthly.",
     intro:
       "Entry-level roles at private companies — graduate trainee programmes, associate and junior positions — pulled from public job APIs and company career pages. Senior roles are filtered out so every listing is fresher-friendly.",
     keywords: ["private jobs for freshers", "fresher jobs in India", "entry level jobs", "graduate trainee jobs", "jobs for freshers 2026"],
     faq: [
       { q: "What counts as a fresher job?", a: "A role open to candidates with 0–1 years of experience: trainee, intern, apprentice, junior or entry-level positions. Listings that ask for 3+ years or senior titles are excluded." },
-      { q: "How often are these jobs updated?", a: "Every week. New listings are marked “New” and expired ones are removed automatically." },
+      { q: "How often are these jobs updated?", a: "Every month. New listings are marked “New” and expired ones are removed automatically." },
     ],
     match: (j) => j.sector === "private",
   },
@@ -63,9 +63,9 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Internships for Students & Freshers in India — Paid and Remote",
     h1: "Internships for students and freshers",
     description:
-      "Latest internships in India for students and fresh graduates — engineering, data, business and government internships, including remote options. Updated every week.",
+      "Latest internships in India for students and fresh graduates — engineering, data, business and government internships, including remote options. Updated every month.",
     intro:
-      "Internships are the fastest way to get your first line of real experience on a resume. These openings come from company career pages and official programmes and are refreshed weekly.",
+      "Internships are the fastest way to get your first line of real experience on a resume. These openings come from company career pages and official programmes and are refreshed monthly.",
     keywords: ["internships for freshers", "internship in India", "remote internship", "paid internship", "summer internship 2026"],
     faq: [
       { q: "Can I get an internship after graduation?", a: "Yes. Many companies and government programmes accept recent graduates as interns, and internships often convert to full-time offers." },
@@ -79,7 +79,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Apprenticeship Jobs for Freshers — Graduate, Diploma & ITI Apprentices",
     h1: "Apprenticeships for freshers",
     description:
-      "Latest apprenticeship openings for graduates, diploma and ITI freshers in India, including PSU and NATS/NAPS apprentice recruitment. Updated weekly.",
+      "Latest apprenticeship openings for graduates, diploma and ITI freshers in India, including PSU and NATS/NAPS apprentice recruitment. Updated monthly.",
     intro:
       "Apprenticeships pay a stipend while you train on the job, and many PSUs give preference to former apprentices in later recruitment. Register on the official NATS or Apprenticeship India portal before applying.",
     keywords: ["apprenticeship for freshers", "graduate apprentice", "diploma apprentice", "ITI apprentice", "NATS apprenticeship"],
@@ -95,7 +95,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Graduate & Management Trainee Jobs for Freshers",
     h1: "Trainee jobs for freshers",
     description:
-      "Graduate trainee, engineering trainee and management trainee openings for freshers in India from PSUs and private companies. Refreshed every week.",
+      "Graduate trainee, engineering trainee and management trainee openings for freshers in India from PSUs and private companies. Refreshed every month.",
     intro:
       "Trainee programmes hire fresh graduates in batches and train them for a permanent role — a common entry route at PSUs, banks and large companies.",
     keywords: ["graduate trainee jobs", "management trainee", "engineering trainee", "GET recruitment", "trainee jobs for freshers"],
@@ -110,7 +110,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Remote Jobs for Freshers — Work From Home Entry-Level Roles",
     h1: "Remote jobs for freshers",
     description:
-      "Entry-level remote and work-from-home jobs and internships for freshers in India. Verified links to company career pages, updated weekly.",
+      "Entry-level remote and work-from-home jobs and internships for freshers in India. Verified links to company career pages, updated monthly.",
     intro:
       "Work-from-home roles open to freshers, from remote internships to junior positions. Legitimate employers never ask for a fee — be wary of any remote offer that does.",
     keywords: ["remote jobs for freshers", "work from home jobs freshers", "remote internship India", "wfh jobs freshers"],
@@ -125,7 +125,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Software Engineer & Developer Jobs for Freshers",
     h1: "Software and engineering jobs for freshers",
     description:
-      "Fresher software engineer, developer, SDE-1 and engineering trainee jobs in India — from product companies, startups and PSUs. Updated weekly.",
+      "Fresher software engineer, developer, SDE-1 and engineering trainee jobs in India — from product companies, startups and PSUs. Updated monthly.",
     intro:
       "Entry-level roles for B.Tech, BE, BCA, MCA and diploma graduates: associate and junior developer jobs, SDE-1 openings and engineering trainee posts.",
     keywords: ["software engineer fresher jobs", "developer jobs for freshers", "SDE 1 jobs", "B.Tech fresher jobs", "IT jobs for freshers"],
@@ -140,7 +140,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Data Analyst Jobs for Freshers — Entry-Level Data & Analytics Roles",
     h1: "Data analyst jobs for freshers",
     description:
-      "Entry-level data analyst, business analyst and analytics jobs and internships for freshers in India. Refreshed every week.",
+      "Entry-level data analyst, business analyst and analytics jobs and internships for freshers in India. Refreshed every month.",
     intro:
       "Junior data, analytics and business analyst roles for fresh graduates. SQL, spreadsheets and one visualisation tool are the usual baseline skills.",
     keywords: ["data analyst fresher jobs", "business analyst fresher", "analytics jobs for freshers", "junior data analyst"],
@@ -155,7 +155,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Bank Jobs for Freshers — PO, Clerk & Banking Vacancies",
     h1: "Bank jobs for freshers",
     description:
-      "Latest bank jobs for freshers: IBPS, SBI and RBI PO, clerk and specialist officer vacancies plus private banking trainee roles. Updated weekly.",
+      "Latest bank jobs for freshers: IBPS, SBI and RBI PO, clerk and specialist officer vacancies plus private banking trainee roles. Updated monthly.",
     intro:
       "Banking recruitment for graduates — public sector bank exams (IBPS, SBI, RBI) and private bank trainee programmes. Exam notifications list exact eligibility and dates.",
     keywords: ["bank jobs for freshers", "IBPS PO", "SBI clerk", "RBI assistant", "bank recruitment 2026"],
@@ -170,7 +170,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Railway Jobs for Freshers — RRB & Indian Railways Recruitment",
     h1: "Railway jobs for freshers",
     description:
-      "Latest Indian Railways and RRB recruitment for freshers: NTPC, Group D, ALP, JE and railway apprentice vacancies. Updated weekly.",
+      "Latest Indian Railways and RRB recruitment for freshers: NTPC, Group D, ALP, JE and railway apprentice vacancies. Updated monthly.",
     intro:
       "Indian Railways is one of the largest recruiters of freshers. Openings are announced by the Railway Recruitment Boards (RRB/RRC) and listed here with links to the official notice.",
     keywords: ["railway jobs for freshers", "RRB recruitment", "RRB NTPC", "railway apprentice", "Group D railway"],
@@ -185,7 +185,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     title: "Defence Jobs for Freshers — Army, Navy, Air Force & DRDO",
     h1: "Defence jobs for freshers",
     description:
-      "Defence recruitment for freshers: Indian Army, Navy, Air Force, Agniveer, DRDO and defence PSU vacancies open to fresh candidates. Updated weekly.",
+      "Defence recruitment for freshers: Indian Army, Navy, Air Force, Agniveer, DRDO and defence PSU vacancies open to fresh candidates. Updated monthly.",
     intro:
       "Entry routes into the armed forces and defence research organisations — from Agniveer and technical entries to DRDO and defence PSU openings.",
     keywords: ["defence jobs for freshers", "Indian Army recruitment", "Navy recruitment", "Air Force jobs", "DRDO recruitment"],
@@ -229,7 +229,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     label: "Bangalore",
     title: "Fresher Jobs in Bangalore (Bengaluru) — Entry-Level Openings",
     h1: "Fresher jobs in Bangalore",
-    description: "Latest fresher and entry-level jobs and internships in Bangalore (Bengaluru), refreshed weekly.",
+    description: "Latest fresher and entry-level jobs and internships in Bangalore (Bengaluru), refreshed monthly.",
     intro: "Entry-level openings located in Bengaluru, India's largest tech hiring hub.",
     keywords: ["fresher jobs in Bangalore", "jobs in Bengaluru for freshers", "Bangalore internships"],
     faq: [],
@@ -240,7 +240,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     label: "Hyderabad",
     title: "Fresher Jobs in Hyderabad — Entry-Level Openings",
     h1: "Fresher jobs in Hyderabad",
-    description: "Latest fresher and entry-level jobs and internships in Hyderabad, refreshed weekly.",
+    description: "Latest fresher and entry-level jobs and internships in Hyderabad, refreshed monthly.",
     intro: "Entry-level openings located in Hyderabad.",
     keywords: ["fresher jobs in Hyderabad", "Hyderabad jobs for freshers"],
     faq: [],
@@ -251,7 +251,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     label: "Pune",
     title: "Fresher Jobs in Pune — Entry-Level Openings",
     h1: "Fresher jobs in Pune",
-    description: "Latest fresher and entry-level jobs and internships in Pune, refreshed weekly.",
+    description: "Latest fresher and entry-level jobs and internships in Pune, refreshed monthly.",
     intro: "Entry-level openings located in Pune.",
     keywords: ["fresher jobs in Pune", "Pune jobs for freshers"],
     faq: [],
@@ -262,7 +262,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     label: "Chennai",
     title: "Fresher Jobs in Chennai — Entry-Level Openings",
     h1: "Fresher jobs in Chennai",
-    description: "Latest fresher and entry-level jobs and internships in Chennai, refreshed weekly.",
+    description: "Latest fresher and entry-level jobs and internships in Chennai, refreshed monthly.",
     intro: "Entry-level openings located in Chennai.",
     keywords: ["fresher jobs in Chennai", "Chennai jobs for freshers"],
     faq: [],
@@ -273,7 +273,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     label: "Mumbai",
     title: "Fresher Jobs in Mumbai — Entry-Level Openings",
     h1: "Fresher jobs in Mumbai",
-    description: "Latest fresher and entry-level jobs and internships in Mumbai, refreshed weekly.",
+    description: "Latest fresher and entry-level jobs and internships in Mumbai, refreshed monthly.",
     intro: "Entry-level openings located in Mumbai.",
     keywords: ["fresher jobs in Mumbai", "Mumbai jobs for freshers"],
     faq: [],
@@ -284,7 +284,7 @@ export const JOB_CATEGORIES: JobCategory[] = [
     label: "Delhi NCR",
     title: "Fresher Jobs in Delhi NCR — Delhi, Noida & Gurgaon",
     h1: "Fresher jobs in Delhi NCR",
-    description: "Latest fresher and entry-level jobs and internships in Delhi, Noida, Gurgaon (Gurugram) and the NCR, refreshed weekly.",
+    description: "Latest fresher and entry-level jobs and internships in Delhi, Noida, Gurgaon (Gurugram) and the NCR, refreshed monthly.",
     intro: "Entry-level openings across Delhi, Noida, Gurugram and the wider National Capital Region.",
     keywords: ["fresher jobs in Delhi", "jobs in Noida for freshers", "Gurgaon fresher jobs", "Delhi NCR jobs"],
     faq: [],
@@ -346,12 +346,14 @@ function schemaEmploymentType(job: JobRow): string[] {
   return [...types];
 }
 
-const DAY_MS = 86_400_000;
-
-/** Listing expiry: the stated last date, otherwise when the weekly refresh would prune it. */
-export function jobValidThrough(job: JobRow, retentionDays = 28): string {
+/**
+ * Listing expiry: the stated last date, otherwise the next monthly refresh (1st of the
+ * month, see vercel.json), which prunes listings the sources no longer return.
+ */
+export function jobValidThrough(job: JobRow): string {
   if (job.last_date) return job.last_date;
-  return new Date(new Date(job.last_seen_at).getTime() + retentionDays * DAY_MS).toISOString();
+  const seen = new Date(job.last_seen_at);
+  return new Date(Date.UTC(seen.getUTCFullYear(), seen.getUTCMonth() + 1, 1, 2, 0, 0)).toISOString();
 }
 
 export function jobDescription(job: JobRow): string {

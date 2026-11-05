@@ -2,7 +2,7 @@ import "server-only";
 import { logger } from "@/utils/logger";
 
 // IndexNow (Bing, Yandex, Seznam, Naver…) lets us tell search engines about new
-// URLs right after the weekly refresh instead of waiting for a recrawl.
+// URLs right after each monthly refresh instead of waiting for a recrawl.
 // Enabled only when INDEXNOW_KEY is set; the key is served at /indexnow-key.txt.
 
 const KEY_RE = /^[a-zA-Z0-9-]{8,128}$/;
