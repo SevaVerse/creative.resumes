@@ -1,36 +1,53 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import JobsBoard from "@/components/jobs/JobsBoard";
-import { getLastJobRun, listActiveJobs } from "@/lib/db/jobs";
-import { OFFICIAL_PORTALS } from "@/data/jobs/officialPortals";
-import type { JobRow } from "@/types/database";
+import JobCategoryNav from "@/components/jobs/JobCategoryNav";
+import JobsFaq from "@/components/jobs/JobsFaq";
+import OfficialPortals from "@/components/jobs/OfficialPortals";
+import { loadJobsData } from "@/lib/jobs/load";
+import {
+  JOB_CATEGORIES,
+  breadcrumbJsonLd,
+  faqJsonLd,
+  itemListJsonLd,
+  jsonLd,
+  monthYear,
+  type FaqItem,
+} from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
-import { logger } from "@/utils/logger";
 
 // Listings are refreshed weekly by /api/cron/jobs; the page itself is cached for an hour.
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Fresher Jobs This Week — Entry-Level Government & Private Jobs in India",
-  description:
-    "A weekly, free list of entry-level jobs, internships, apprenticeships and government vacancies for freshers in India. No sign-up, no tracking.",
-  alternates: { canonical: "/jobs", types: { "application/rss+xml": "/jobs/feed.xml" } },
-  openGraph: {
-    title: "Fresher Jobs This Week | SecureCV",
-    description: "Entry-level government and private openings for freshers, refreshed every week.",
-    url: "/jobs",
-    type: "website",
-  },
-};
+const JOBS_FAQ: FaqItem[] = [
+  { q: "What are fresher jobs?", a: "Jobs open to candidates with little or no work experience (0–1 years): internships, apprenticeships, trainee programmes, entry-level private roles and government vacancies filled through exams." },
+  { q: "How often is this fresher jobs list updated?", a: "Every week. New listings are marked “New”, and listings whose last date has passed are removed automatically." },
+  { q: "Is it free to apply?", a: "Yes. SecureCV never charges for jobs, and every listing links to the employer's or recruiting body's official page. Never pay an agent to get a job." },
+  { q: "How do I make a resume as a fresher?", a: "Lead with education, then projects, internships and skills. SecureCV's free Campus template is designed for freshers and exports an ATS-friendly PDF." },
+];
 
-async function loadData(): Promise<{ jobs: JobRow[]; lastRun: string | null }> {
-  try {
-    const [jobs, run] = await Promise.all([listActiveJobs({ limit: 600 }), getLastJobRun()]);
-    return { jobs, lastRun: run?.finished_at ?? null };
-  } catch (error) {
-    logger.warn("jobs.page_load_failed", { error: (error as Error).message });
-    return { jobs: [], lastRun: null };
-  }
+export async function generateMetadata(): Promise<Metadata> {
+  const { jobs, lastRun } = await loadJobsData();
+  const when = monthYear(lastRun ? new Date(lastRun) : new Date());
+  const count = jobs.length > 0 ? `${jobs.length}+ ` : "";
+  const description = `${count}latest fresher jobs in India for ${when}: entry-level private jobs, internships, apprenticeships and government vacancies for freshers. Updated weekly — free, no sign-up.`;
+  return {
+    title: { absolute: `Fresher Jobs ${when} — Latest Entry-Level, Govt & Private Jobs in India | SecureCV` },
+    description,
+    keywords: [
+      "fresher jobs", "jobs for freshers", "fresher jobs this week", `fresher jobs ${when}`, "entry level jobs India",
+      "government jobs for freshers", "private jobs for freshers", "internships for freshers", "apprenticeship", "graduate trainee jobs",
+    ],
+    alternates: { canonical: "/jobs/", types: { "application/rss+xml": "/jobs/feed.xml" } },
+    openGraph: {
+      title: `Fresher Jobs ${when} | SecureCV`,
+      description,
+      url: "/jobs/",
+      type: "website",
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Fresher jobs this week on SecureCV" }],
+    },
+    twitter: { card: "summary_large_image", title: `Fresher Jobs ${when} | SecureCV`, description, images: ["/og-image.png"] },
+  };
 }
 
 function weekOf(iso: string | null): string {
@@ -41,25 +58,32 @@ function weekOf(iso: string | null): string {
 }
 
 export default async function JobsPage() {
-  const { jobs, lastRun } = await loadData();
+  const { jobs, lastRun } = await loadJobsData();
   const generatedAt = new Date().toISOString();
   const baseUrl = getBaseUrl();
+  const counts = Object.fromEntries(JOB_CATEGORIES.map((c) => [c.slug, jobs.filter(c.match).length]));
+
+  const structured = [
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Fresher Jobs This Week",
+      url: `${baseUrl}/jobs/`,
+      description: "Weekly list of entry-level government and private jobs for freshers in India.",
+      ...(lastRun ? { dateModified: lastRun } : {}),
+      isPartOf: { "@type": "WebSite", name: "SecureCV", url: baseUrl },
+    },
+    itemListJsonLd(baseUrl, jobs),
+    faqJsonLd(JOBS_FAQ),
+    breadcrumbJsonLd(baseUrl, [
+      { name: "Home", path: "/" },
+      { name: "Fresher Jobs", path: "/jobs/" },
+    ]),
+  ];
 
   return (
     <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-8 px-4">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: "Fresher Jobs This Week",
-            url: `${baseUrl}/jobs`,
-            description: "Weekly list of entry-level government and private jobs for freshers in India.",
-            isPartOf: { "@type": "WebSite", name: "SecureCV", url: baseUrl },
-          }),
-        }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
       <main className="w-full max-w-6xl flex flex-col gap-8">
         <header className="flex flex-col gap-3">
           <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Week of {weekOf(lastRun)}</p>
@@ -84,24 +108,13 @@ export default async function JobsPage() {
           </div>
         </header>
 
+        <JobCategoryNav counts={counts} />
+
         <JobsBoard jobs={jobs} generatedAt={generatedAt} />
 
-        <section className="p-6 rounded-xl border border-orange-200 dark:border-orange-900/60 bg-orange-50/60 dark:bg-orange-950/20">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Official government job portals</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Government vacancies are always announced first on these official sites. Bookmark them.
-          </p>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {OFFICIAL_PORTALS.map((p) => (
-              <li key={p.url}>
-                <a href={p.url} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-white/80 dark:bg-neutral-900/80 border border-orange-100 dark:border-neutral-800 hover:border-orange-400">
-                  <span className="font-semibold text-gray-900 dark:text-white">{p.name} ↗</span>
-                  <span className="block text-xs text-gray-600 dark:text-gray-400">{p.description}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <OfficialPortals />
+
+        <JobsFaq items={JOBS_FAQ} />
 
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Listings link to third-party sites. SecureCV does not verify employers — never pay to apply for a job, and report

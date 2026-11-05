@@ -1,5 +1,6 @@
 import { listActiveJobs } from "@/lib/db/jobs";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { jobDetailPath } from "@/lib/jobs/seo";
 
 export const revalidate = 3600;
 
@@ -18,7 +19,7 @@ export async function GET() {
         .join(" · ");
       return `<item>
   <title>${esc(`${j.title} — ${j.organization}`)}</title>
-  <link>${esc(j.url)}</link>
+  <link>${esc(`${baseUrl}${jobDetailPath(j.id)}`)}</link>
   <guid isPermaLink="false">${esc(j.id)}</guid>
   <pubDate>${new Date(j.first_seen_at).toUTCString()}</pubDate>
   <category>${j.sector}</category>
@@ -31,7 +32,7 @@ export async function GET() {
 <rss version="2.0">
 <channel>
   <title>SecureCV — Fresher Jobs This Week</title>
-  <link>${esc(`${baseUrl}/jobs`)}</link>
+  <link>${esc(`${baseUrl}/jobs/`)}</link>
   <description>Entry-level government and private jobs for freshers in India, refreshed weekly.</description>
   <language>en-IN</language>
 ${items}
