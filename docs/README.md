@@ -2,7 +2,7 @@
 
 ![SecureCV Hero](https://raw.githubusercontent.com/SevaVerse/creative.resumes/develop/public/og-image.png)
 
-A fast, privacy-first resume builder with professional templates, AI writing help, and a weekly board of
+A fast, privacy-first resume builder with professional templates, AI writing help, and a monthly board of
 entry-level jobs for freshers. **[securecv.co.in](https://securecv.co.in)**
 
 ---
@@ -15,7 +15,7 @@ entry-level jobs for freshers. **[securecv.co.in](https://securecv.co.in)**
   "start from a fresher example".
 * **AI rewrite and resume import** (PDF/DOCX) powered by Groq, for signed-in users.
 * **Cloud save/load** with Google or GitHub sign-in.
-* **Fresher Jobs (`/jobs`):** entry-level government and private openings, refreshed weekly, with an RSS feed.
+* **Fresher Jobs (`/jobs`):** entry-level government and private openings, refreshed monthly, with an RSS feed.
 * **PDF export** via headless Chromium, gamified resume score, and a per-template carbon score.
 
 ---
@@ -78,12 +78,13 @@ sign-in the account is linked by email, so saved resumes reappear.
 
 ### Fresher jobs board
 
-* `CRON_SECRET` protects `GET /api/cron/jobs/`. Vercel Cron calls it every **Monday 07:00 IST** (`vercel.json`).
+* `CRON_SECRET` protects `GET /api/cron/jobs/`. Vercel Cron calls it on the **1st of each month at 07:00 IST** (`vercel.json`).
 * Sources (all optional, configured via env): **Adzuna** India API (`ADZUNA_APP_ID/KEY`, free), public
   **Greenhouse/Lever** boards (`GREENHOUSE_BOARDS`, `LEVER_COMPANIES`), any **RSS/Atom** feed (`JOB_FEEDS`), and
   hand-curated listings in `src/data/jobs/curated.ts`.
 * Jobs are filtered to entry-level roles (fresher/trainee/intern/apprentice/0–2 yrs, not senior), deduplicated,
-  kept for `JOBS_RETENTION_DAYS` (default 28) or until their last date.
+  kept for `JOBS_RETENTION_DAYS` (default 21) or until their last date, so each monthly run
+  replaces the previous month's listings. Pruning is skipped when any source fails, so a bad run never empties the board.
 * Manual refresh: `curl -H "Authorization: Bearer $CRON_SECRET" https://securecv.co.in/api/cron/jobs/`
 
 ---

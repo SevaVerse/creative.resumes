@@ -44,6 +44,6 @@ export function getJobsConfig(): JobsConfig {
     greenhouse: parseSlugList(process.env.GREENHOUSE_BOARDS),
     lever: parseSlugList(process.env.LEVER_COMPANIES),
     feeds: parseFeeds(process.env.JOB_FEEDS),
-    retentionDays: Math.max(7, Number(process.env.JOBS_RETENTION_DAYS) || 28),
+    retentionDays: Math.max(7, Number(process.env.JOBS_RETENTION_DAYS) || 21),
   };
 }

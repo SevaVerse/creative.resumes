@@ -76,7 +76,7 @@ Without these, `/jobs` shows only the official-portals section and any hand-cura
 ### Adzuna (main source of private-sector fresher jobs)
 1. Register at https://developer.adzuna.com/ and create an application.
 2. Copy the **Application ID** into `ADZUNA_APP_ID` and the **Application Key** into `ADZUNA_APP_KEY`.
-   The weekly run makes 5 requests, which is well within the free allowance.
+   Each run makes 5 requests. The refresh runs once a month to stay within the free allowance.
 
 ### Company job boards (Greenhouse / Lever, no key needed)
 1. On a company's careers page, open a job. If the URL looks like one of these, note the slug:
@@ -170,7 +170,7 @@ Run the first jobs refresh by hand. Use your real `CRON_SECRET`, and note the tr
 curl -H "Authorization: Bearer <CRON_SECRET>" https://securecv.co.in/api/cron/jobs/
 ```
 The JSON shows, for each source, how many jobs were fetched or what error occurred, plus how many were accepted.
-After that, Vercel runs it every **Monday 07:00 IST**. You can confirm the schedule under **Vercel → Settings → Cron Jobs**.
+After that, Vercel runs it on the **1st of each month at 07:00 IST**. You can confirm the schedule under **Vercel → Settings → Cron Jobs**.
 Cron jobs only run on production deployments.
 
 Then click through:
@@ -203,7 +203,7 @@ window exist only in Turso.
 
 ## Ongoing maintenance
 
-- **Weekly:** look at `/jobs`. If a source keeps failing, check the latest run:
+- **Monthly (after the 1st):** look at `/jobs`. If a source keeps failing, check the latest run:
   `turso db shell securecv "SELECT finished_at, stats FROM job_runs ORDER BY finished_at DESC LIMIT 1;"`
 - **More jobs:** add verified board slugs or feeds to the env vars (and redeploy), or add curated entries via a PR.
 - **Backups:** Turso keeps point-in-time history on its free plan. For an extra copy, run
