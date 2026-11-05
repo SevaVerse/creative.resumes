@@ -39,48 +39,44 @@ type Browser = {
 const remoteExecutablePath =
   "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
 
-let browserInstance: Browser | null = null;
 const anonymousPdfLimiter = createRateLimiter(60_000, 3);
 
 type SimpleLogger = { info: (m:string,e?:Record<string,unknown>)=>void; warn: (m:string,e?:Record<string,unknown>)=>void; debug:(m:string,e?:Record<string,unknown>)=>void };
 
-async function getBrowser(log: SimpleLogger = logger) {
-  if (browserInstance) return browserInstance;
-
+// Each request launches and closes its own browser. A shared module-level instance is unsafe
+// because Fluid Compute runs concurrent requests in one process: one request closing it would
+// kill another request's render mid-way.
+async function launchBrowser(log: SimpleLogger = logger): Promise<Browser> {
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-  
+
   if (isProduction) {
     log.info("pdf.launch.production_mode");
     try {
-      browserInstance = (await puppeteerCore.launch({
+      const browser = (await puppeteerCore.launch({
         args: chromium.args,
         executablePath: await chromium.executablePath(remoteExecutablePath),
         headless: true,
       })) as Browser;
       log.info("pdf.launch.production_success");
+      return browser;
     } catch (error) {
       log.warn("pdf.launch.production_failed", { error: (error as Error).message });
       throw error;
     }
-  } else {
-    log.info("pdf.launch.development_mode");
-    try {
-      browserInstance = (await puppeteer.launch({
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        headless: true,
-      })) as Browser;
-      log.info("pdf.launch.development_success");
-    } catch (error) {
-      log.warn("pdf.launch.development_failed", { error: (error as Error).message });
-      throw error;
-    }
   }
-  return browserInstance;
-}
 
-// Keep the old function name for compatibility
-async function launchBrowser(log: SimpleLogger = logger) {
-  return getBrowser(log);
+  log.info("pdf.launch.development_mode");
+  try {
+    const browser = (await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: true,
+    })) as Browser;
+    log.info("pdf.launch.development_success");
+    return browser;
+  } catch (error) {
+    log.warn("pdf.launch.development_failed", { error: (error as Error).message });
+    throw error;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -89,7 +85,8 @@ export async function POST(req: NextRequest) {
   const log = logger.withRequest(requestId);
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
-  
+  let browser: Browser | null = null;
+
   try {
     // Signed-in users (Auth.js session cookie) get a higher export limit.
     const userId = (await getSessionUserId()) || undefined;
@@ -126,10 +123,7 @@ export async function POST(req: NextRequest) {
     const payload = await req.json();
     log.debug('pdf.payload', { selectedTemplate: payload?.selectedTemplate });
 
-    const browser = await launchBrowser(log);
-    if (!browser) {
-      throw new Error("Failed to launch browser");
-    }
+    browser = await launchBrowser(log);
     log.info("pdf.browser_ready");
 
     const page = await browser.newPage();
@@ -190,10 +184,6 @@ export async function POST(req: NextRequest) {
     });
     log.info("pdf.generated", { bytes: pdf.length });
 
-    // Close and drop the cached instance so the next warm invocation relaunches cleanly.
-    await browser.close();
-    browserInstance = null;
-
     // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);
     log.info('pdf.success', { durationMs, userId, anonymous: !userId });
@@ -219,5 +209,12 @@ export async function POST(req: NextRequest) {
         ...corsHeaders,
       },
     });
+  } finally {
+    // Always release Chromium (closing the browser also closes its pages), even when rendering failed.
+    if (browser) {
+      await browser.close().catch((error: unknown) => {
+        log.warn("pdf.browser_close_failed", { error: error instanceof Error ? error.message : String(error) });
+      });
+    }
   }
 }

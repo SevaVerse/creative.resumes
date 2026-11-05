@@ -4,19 +4,21 @@ import { getDb, nowIso } from "./client";
 export type OAuthProfile = {
   provider: string;
   providerAccountId: string;
-  email?: string | null;
+  /** Only an address the provider has verified (see src/auth.ts); pass null otherwise. */
+  verifiedEmail?: string | null;
   name?: string | null;
   image?: string | null;
 };
 
 /**
  * Finds or creates the local user for an OAuth sign-in and returns its id.
- * Lookup order: linked account -> verified email (Google/GitHub only) -> new user.
- * Email linking lets users migrated from Supabase keep their saved resumes.
+ * Lookup order: linked account -> verified email -> new user.
+ * Email linking lets users migrated from Supabase keep their saved resumes, which is why
+ * only provider-verified emails may be stored or matched here.
  */
 export async function upsertOAuthUser(profile: OAuthProfile): Promise<string> {
   const db = await getDb();
-  const email = profile.email?.trim().toLowerCase() || null;
+  const email = profile.verifiedEmail?.trim().toLowerCase() || null;
   const now = nowIso();
 
   const linked = await db.execute({
@@ -38,14 +40,19 @@ export async function upsertOAuthUser(profile: OAuthProfile): Promise<string> {
       args: [userId, email, profile.name ?? null, profile.image ?? null, now, now],
     });
   } else {
+    // Keep the stored email if the new one already belongs to another user: users.email is
+    // UNIQUE, and a failed update here would block this user from signing in at all.
     await db.execute({
       sql: `UPDATE users SET
-              email = COALESCE(?, email),
+              email = CASE
+                WHEN ? IS NOT NULL AND NOT EXISTS (SELECT 1 FROM users WHERE email = ? AND id <> ?) THEN ?
+                ELSE email
+              END,
               name = COALESCE(?, name),
               image = COALESCE(?, image),
               updated_at = ?
             WHERE id = ?`,
-      args: [email, profile.name ?? null, profile.image ?? null, now, userId],
+      args: [email, email, userId, email, profile.name ?? null, profile.image ?? null, now, userId],
     });
   }
 

@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import type { ResumeData } from "@/types/resume";
 import { Bullets, dateRange, hasExperience, toLines } from "./templates/shared";
