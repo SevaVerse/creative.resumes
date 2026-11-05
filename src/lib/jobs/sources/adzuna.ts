@@ -3,7 +3,8 @@ import { stripHtml, toIsoDate, truncate } from "../text";
 import type { RawJob } from "../types";
 
 // Adzuna job search API (free developer key): https://developer.adzuna.com/
-// Country "in" = India. We run a few fresher-oriented queries limited to the last 7 days.
+// Country "in" = India. We run a few fresher-oriented queries limited to the last 30 days
+// (the refresh runs monthly; 5 requests per run).
 
 type AdzunaResult = {
   id: string;
@@ -26,7 +27,7 @@ export async function fetchAdzuna(appId: string, appKey: string, maxPerQuery = 5
       app_id: appId,
       app_key: appKey,
       what,
-      max_days_old: "7",
+      max_days_old: "30",
       results_per_page: String(Math.min(50, maxPerQuery)),
       sort_by: "date",
       "content-type": "application/json",

@@ -129,7 +129,7 @@ const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
   { id: "templates", title: "7 Pro Templates", description: "Including new Campus (fresher), ATS Classic, and Modern designs. Switch any time with a live preview.", icon: "🎨" },
-  { id: "jobs", title: "Weekly Fresher Jobs", description: "Entry-level government and private openings, refreshed every week on the Jobs board.", icon: "💼" },
+  { id: "jobs", title: "Monthly Fresher Jobs", description: "Entry-level government and private openings, refreshed every month on the Jobs board.", icon: "💼" },
   { id: "ai-rewrite", title: "AI Rewrite Capabilities", description: "Enhance your resume content with AI-powered text rewriting for professional summary, experience, and projects.", icon: "🤖" },
   { id: "carbon-calculator", title: "Carbon Score Calculator", description: "Make eco-conscious choices with real-time carbon footprint scoring for each resume template.", icon: "🌱" },
   { id: "structured-data", title: "Structured Experience + Skills", description: "Work history with dates, and slider-based skill levels.", icon: "🧩" },
@@ -720,7 +720,7 @@ export default function Home() {
                 href="/jobs"
                 className="mt-4 inline-flex items-center gap-2 rounded-lg border border-teal-300/80 bg-teal-50/80 px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-900/30 dark:text-teal-100 dark:hover:bg-teal-900/50"
               >
-                💼 New: Weekly entry-level jobs for freshers (Govt + Private) →
+                💼 New: Monthly entry-level jobs for freshers (Govt + Private) →
               </Link>
               <div className="mt-4 flex items-center gap-4 justify-center md:justify-start">
                 <BuyMeCoffee />

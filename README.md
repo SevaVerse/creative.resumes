@@ -24,7 +24,7 @@ If this tool helps you, please consider supporting its development. Your contrib
 *   **Seven Templates:** New Campus (fresher), ATS Classic and Modern, plus Minimalist, Onyx, AwesomeCV and Subtle & Elegant.
 *   **Live Preview Builder:** Split-screen editing, template gallery with real thumbnails and filters, "start from a fresher example".
 *   **AI-Powered Rewrites & Import:** Groq-powered rewriting and PDF/DOCX resume import.
-*   **Fresher Jobs (`/jobs`):** Entry-level government and private openings refreshed weekly, with an RSS feed.
+*   **Fresher Jobs (`/jobs`):** Entry-level government and private openings refreshed monthly, with an RSS feed.
 *   **One-Click PDF Export**, gamified resume score, and an eco-friendly carbon score per template.
 
 ---
@@ -36,7 +36,7 @@ If this tool helps you, please consider supporting its development. Your contrib
 *   **Database:** Turso (libSQL) — local SQLite file in development
 *   **AI:** Groq API
 *   **PDF Generation:** Puppeteer / @sparticuz/chromium
-*   **Deployment:** Vercel (+ Vercel Cron for the weekly jobs refresh)
+*   **Deployment:** Vercel (+ Vercel Cron for the monthly jobs refresh)
 
 ---
 
