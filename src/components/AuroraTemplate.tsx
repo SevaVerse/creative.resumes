@@ -1,7 +1,6 @@
 import React from "react";
-import Image from "next/image";
 import type { ResumeData } from "@/types/resume";
-import { Bullets, dateRange, hasExperience, toLines } from "./templates/shared";
+import { Bullets, dateRange, hasExperience, toLines, ProfilePhoto } from "./templates/shared";
 
 // Aurora: violet-to-pink gradient header, card-style sections and skill chips. Optional photo.
 export default function AuroraTemplate({
@@ -22,7 +21,7 @@ export default function AuroraTemplate({
       <header className="relative bg-gradient-to-r from-violet-700 via-fuchsia-600 to-pink-500 text-white px-10 pt-9 pb-12">
         <div className="flex items-center gap-6">
           {profilePictureUrl && (
-            <Image src={profilePictureUrl} alt="Profile picture" width={92} height={92} className="rounded-2xl object-cover ring-4 ring-white/40" />
+            <ProfilePhoto src={profilePictureUrl} alt="Profile picture" size={92} className="rounded-2xl object-cover ring-4 ring-white/40" />
           )}
           <div className="min-w-0">
             <h1 className="text-[30px] font-extrabold leading-tight tracking-tight">{name}</h1>

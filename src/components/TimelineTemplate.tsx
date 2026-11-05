@@ -1,7 +1,6 @@
 import React from "react";
-import Image from "next/image";
 import type { ResumeData } from "@/types/resume";
-import { Bullets, hasExperience, toLines } from "./templates/shared";
+import { Bullets, hasExperience, toLines, ProfilePhoto } from "./templates/shared";
 
 // Timeline: emerald accents, dates in a left gutter with a vertical career line; right rail for skills.
 export default function TimelineTemplate({
@@ -27,7 +26,7 @@ export default function TimelineTemplate({
           )}
         </div>
         {profilePictureUrl && (
-          <Image src={profilePictureUrl} alt="Profile picture" width={88} height={88} className="rounded-full object-cover ring-4 ring-emerald-100 shrink-0" />
+          <ProfilePhoto src={profilePictureUrl} alt="Profile picture" size={88} className="rounded-full object-cover ring-4 ring-emerald-100 shrink-0" />
         )}
       </header>
 

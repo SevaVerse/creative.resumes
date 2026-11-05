@@ -30,3 +30,13 @@ export function Bullets({ text, className = "" }: { text?: string; className?: s
     </ul>
   );
 }
+
+/**
+ * Profile photo as a plain <img>. Templates are also rendered to static HTML on the server for PDF
+ * export, where next/image (a client component) cannot run; images are unoptimized anyway (next.config),
+ * and eager loading keeps the photo from being missing in the printed page.
+ */
+export function ProfilePhoto({ src, alt = "Profile picture", size, className }: { src: string; alt?: string; size: number; className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={alt} width={size} height={size} className={className} />;
+}

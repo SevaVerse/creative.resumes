@@ -1,7 +1,6 @@
 import React from "react";
-import Image from "next/image";
 import type { ResumeData } from "@/types/resume";
-import { Bullets, dateRange, hasExperience, toLines } from "./templates/shared";
+import { Bullets, dateRange, hasExperience, toLines, ProfilePhoto } from "./templates/shared";
 
 // Modern: bold colour header with a two-column body (main + side rail).
 export default function ModernTemplate({
@@ -20,7 +19,7 @@ export default function ModernTemplate({
     <div className="w-full max-w-4xl mx-auto bg-white text-gray-900 overflow-hidden" style={{ fontFamily: "Inter, 'Segoe UI', Arial, sans-serif", fontSize: "11pt" }}>
       <header className="bg-indigo-700 text-white px-10 py-7 flex items-center gap-6">
         {profilePictureUrl && (
-          <Image src={profilePictureUrl} alt="Profile picture" width={84} height={84} className="rounded-full object-cover border-2 border-white/70" />
+          <ProfilePhoto src={profilePictureUrl} alt="Profile picture" size={84} className="rounded-full object-cover border-2 border-white/70" />
         )}
         <div className="min-w-0">
           <h1 className="text-[28px] font-extrabold leading-tight">{name}</h1>
