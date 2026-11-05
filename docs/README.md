@@ -108,7 +108,7 @@ src/
 scripts/migrate-from-supabase.ts
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for details and [DEPLOYMENT.md](DEPLOYMENT.md) for the step-by-step go-live runbook.
 
 ---
 
