@@ -4,6 +4,7 @@ import { getLastJobRun, listActiveJobs } from "@/lib/db/jobs";
 import { JOB_CATEGORIES, jobDetailPath } from "@/lib/jobs/seo";
 import type { JobRow } from "@/types/database";
 import { logger } from "@/utils/logger";
+import { TEMPLATE_IDS } from "@/types/resume";
 
 // Regenerate hourly so new monthly listings reach crawlers quickly.
 export const revalidate = 3600;
@@ -35,6 +36,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/ats-checker/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/resume-templates/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    ...TEMPLATE_IDS.map((id) => ({
+      url: `${baseUrl}/resume-templates/${id}/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     {
       url: `${baseUrl}/privacy/`,
       lastModified: new Date("2025-09-18"),
