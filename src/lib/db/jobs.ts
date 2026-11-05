@@ -84,6 +84,13 @@ export async function listActiveJobs(options: { sector?: JobSector; limit?: numb
   return rs.rows.map(toJob);
 }
 
+export async function getJobById(id: string): Promise<JobRow | null> {
+  if (!/^[a-f0-9]{24}$/.test(id)) return null;
+  const db = await getDb();
+  const rs = await db.execute({ sql: "SELECT * FROM jobs WHERE id = ? LIMIT 1", args: [id] });
+  return rs.rows[0] ? toJob(rs.rows[0]) : null;
+}
+
 export type JobRunStats = Record<string, unknown>;
 
 export async function recordJobRun(startedAt: string, stats: JobRunStats): Promise<void> {

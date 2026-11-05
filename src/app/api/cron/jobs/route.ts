@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { refreshJobs } from "@/lib/jobs/aggregate";
+import { submitIndexNow } from "@/lib/jobs/indexnow";
+import { JOB_CATEGORIES, jobDetailPath } from "@/lib/jobs/seo";
+import { listActiveJobs } from "@/lib/db/jobs";
+import { getBaseUrl } from "@/utils/baseUrl";
 import { jsonError } from "@/lib/api/http";
 import { logger, extractRequestId } from "@/utils/logger";
 
@@ -25,13 +29,30 @@ export async function GET(req: NextRequest) {
   const log = logger.withRequest(extractRequestId(req.headers));
   if (!authorized(req)) return jsonError(401, "Unauthorized");
   try {
+    const startedAt = new Date().toISOString();
     const stats = await refreshJobs();
-    // "layout" scope invalidates /jobs and /jobs/feed.xml (tags carry trailing slashes
-    // because of `trailingSlash: true`, so a plain "/jobs" path would not match).
+    // "layout" scope invalidates /jobs, its category/detail pages and /jobs/feed.xml (tags carry
+    // trailing slashes because of `trailingSlash: true`, so a plain "/jobs" path would not match).
     revalidatePath("/jobs", "layout");
-    return NextResponse.json({ ok: true, stats });
+    revalidatePath("/sitemap.xml");
+    const indexNow = await notifySearchEngines(startedAt);
+    return NextResponse.json({ ok: true, stats, indexNow });
   } catch (error) {
     log.error("jobs.refresh_failed", { error: (error as Error).message });
     return jsonError(500, "Job refresh failed");
   }
+}
+
+/** Pings IndexNow with the jobs landing pages and any listing first seen in this run. */
+async function notifySearchEngines(since: string) {
+  const baseUrl = getBaseUrl();
+  const jobs = await listActiveJobs({ limit: 1000 }).catch(() => []);
+  const fresh = jobs.filter((j) => j.first_seen_at >= since);
+  if (fresh.length === 0) return { submitted: 0 };
+  const urls = [
+    `${baseUrl}/jobs/`,
+    ...JOB_CATEGORIES.filter((c) => fresh.some(c.match)).map((c) => `${baseUrl}/jobs/${c.slug}/`),
+    ...fresh.map((j) => `${baseUrl}${jobDetailPath(j.id)}`),
+  ];
+  return submitIndexNow(baseUrl, urls);
 }
