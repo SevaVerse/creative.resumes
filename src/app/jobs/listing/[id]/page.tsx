@@ -13,6 +13,7 @@ import {
 } from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
 import ShareButtons from "@/components/ShareButtons";
+import JobAlertsCta from "@/components/jobs/JobAlertsCta";
 import { ogImageMeta } from "@/lib/ogImage";
 
 // Rendered on first request and cached; the monthly cron revalidates /jobs/*.
@@ -128,6 +129,7 @@ export default async function JobListingPage({ params }: { params: Promise<Param
           text={`${job.title} at ${job.organization}${lastDate ? ` — last date ${lastDate}` : ""}. Fresher job, free to apply:`}
           label="Share with a friend"
         />
+        <JobAlertsCta compact />
         <p className="text-sm text-gray-600 dark:text-gray-300">
           Already have a resume? <Link href="/ats-checker/" className="text-blue-700 dark:text-blue-300 underline">Check its ATS score against this job for free</Link>.
         </p>

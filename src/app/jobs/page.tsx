@@ -4,6 +4,7 @@ import JobsBoard from "@/components/jobs/JobsBoard";
 import JobCategoryNav from "@/components/jobs/JobCategoryNav";
 import JobsFaq from "@/components/jobs/JobsFaq";
 import OfficialPortals from "@/components/jobs/OfficialPortals";
+import JobAlertsCta from "@/components/jobs/JobAlertsCta";
 import { loadJobsData } from "@/lib/jobs/load";
 import {
   JOB_CATEGORIES,
@@ -100,6 +101,8 @@ export default async function JobsPage() {
             )}
           </div>
         </header>
+
+        <JobAlertsCta />
 
         <JobCategoryNav counts={counts} />
 
