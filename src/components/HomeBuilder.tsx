@@ -117,6 +117,7 @@ import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
 import { useAuth } from "@/components/AuthProvider";
 import { ResumeSaveButton } from "@/components/ResumeSaveButton";
+import { ShareResumeLink } from "@/components/ShareResumeLink";
 import { ResumeLoader } from "@/components/ResumeLoader";
 import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
 import { scheduleAutoSave, cancelAutoSave } from "@/lib/resumesClient";
@@ -886,6 +887,7 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
                     data={formData}
                     onSaveSuccess={handleSaveSuccess}
                   />
+                  {currentResumeId && <ShareResumeLink resumeId={currentResumeId} />}
                 </div>
               )}
               {!user && (

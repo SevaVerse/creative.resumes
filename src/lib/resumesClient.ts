@@ -72,3 +72,34 @@ export function cancelAutoSave(): void {
     autosaveTimeout = null
   }
 }
+
+// --- Public share links (/r/<id>) ---
+
+export type ResumeShareInfo = {
+  id: string
+  resume_id: string
+  indexable: boolean
+  hide_contact: boolean
+  expires_at: string
+  created_at: string
+}
+
+export async function getResumeShare(resumeId: string): Promise<ResumeShareInfo | null> {
+  const { share } = await request<{ share: ResumeShareInfo | null }>(`/api/resumes/${encodeURIComponent(resumeId)}/share/`)
+  return share
+}
+
+export async function createResumeShare(
+  resumeId: string,
+  opts: { expiresInDays: 7 | 30 | 90; indexable: boolean; hideContact: boolean }
+): Promise<ResumeShareInfo> {
+  const { share } = await request<{ share: ResumeShareInfo }>(`/api/resumes/${encodeURIComponent(resumeId)}/share/`, {
+    method: 'POST',
+    body: JSON.stringify(opts),
+  })
+  return share
+}
+
+export async function revokeResumeShare(resumeId: string): Promise<void> {
+  await request<{ ok: true }>(`/api/resumes/${encodeURIComponent(resumeId)}/share/`, { method: 'DELETE' })
+}

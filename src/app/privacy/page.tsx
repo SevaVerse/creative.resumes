@@ -235,6 +235,7 @@ export default function PrivacyPage() {
               <li><strong className="text-gray-800 dark:text-gray-200">Roast my resume:</strong> the pasted text is sent to Groq to write the roast and is not stored by SecureCV or written to our logs. The score is calculated in your browser, and sharing a roast shares only the score.</li>
               <li><strong className="text-gray-800 dark:text-gray-200">Resume import</strong> (signed-in users): the uploaded PDF or DOCX is read on our server and sent to Groq to extract your details. It is not stored.</li>
               <li><strong className="text-gray-800 dark:text-gray-200">Cloud save</strong> (optional, signed-in users): saved resumes are stored in our database, visible only to your account, and deleted when you delete them.</li>
+              <li><strong className="text-gray-800 dark:text-gray-200">Share links</strong> (optional, signed-in users): off until you create one for a saved resume. Anyone with the link can see that resume until it expires (7, 30 or 90 days) or you turn it off. Email and phone are hidden and search engines are told not to list it unless you choose otherwise.</li>
             </ul>
           </section>
 

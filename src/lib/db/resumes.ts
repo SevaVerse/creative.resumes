@@ -77,6 +77,8 @@ export async function updateResume(userId: string, id: string, updates: ResumeUp
 
 export async function deleteResume(userId: string, id: string): Promise<boolean> {
   const db = await getDb();
+  // Remove public links explicitly: SQLite only cascades when foreign_keys is enabled.
+  await db.execute({ sql: "DELETE FROM resume_shares WHERE resume_id = ? AND user_id = ?", args: [id, userId] });
   const rs = await db.execute({
     sql: "DELETE FROM resumes WHERE id = ? AND user_id = ?",
     args: [id, userId],
