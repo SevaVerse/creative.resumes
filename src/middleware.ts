@@ -1,5 +1,4 @@
-import { type NextRequest } from 'next/server';
-import { updateSession } from '@/utils/supabase/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
 
 // Simple security middleware adding foundational headers.
 // Adjust CSP sources as features evolve.
@@ -7,14 +6,14 @@ import { updateSession } from '@/utils/supabase/middleware';
 
 const isProd = process.env.NODE_ENV === 'production';
 
-// Content Security Policy (updated for Supabase)
+// Content Security Policy
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js-agent.newrelic.com https://challenges.cloudflare.com https://*.cloudflare.com", // Next.js + New Relic + Turnstile
   "style-src 'self' 'unsafe-inline' https://challenges.cloudflare.com", // Tailwind + Turnstile styles
-  "img-src 'self' data: blob: https: https://challenges.cloudflare.com", // Supabase Storage + Turnstile
+  "img-src 'self' data: blob: https: https://challenges.cloudflare.com", // OAuth avatars + Turnstile
   "font-src 'self' data:",
-  "connect-src 'self' https://*.newrelic.com https://challenges.cloudflare.com https://*.cloudflare.com https://*.supabase.co wss://*.supabase.co", // Add Supabase
+  "connect-src 'self' https://*.newrelic.com https://challenges.cloudflare.com https://*.cloudflare.com",
   "frame-src https://challenges.cloudflare.com https://*.cloudflare.com", // Turnstile iframe
   "child-src https://challenges.cloudflare.com",
   "form-action 'self' https://challenges.cloudflare.com",
@@ -27,8 +26,8 @@ export async function middleware(request: NextRequest) {
   const existingId = request.headers.get('x-request-id');
   const requestId = existingId || crypto.randomUUID();
   
-  // Update Supabase session
-  const response = await updateSession(request);
+  // Auth.js uses stateless JWT cookies, so no per-request session refresh is needed here.
+  const response = NextResponse.next();
   
   // Add security headers
   response.headers.set('x-request-id', requestId);

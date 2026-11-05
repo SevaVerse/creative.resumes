@@ -23,11 +23,11 @@ const baseUrl = getBaseUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "SecureCV — Free AI Resume Builder | Privacy-First, 4 Pro Templates",
+    default: "SecureCV — Free AI Resume Builder & Fresher Jobs | Privacy-First, 7 Templates",
     template: "%s | SecureCV",
   },
   description:
-    "Build a professional resume for free with SecureCV's AI-powered resume builder. AI text rewrite, carbon score calculator, 4 pro templates (Minimalist, Onyx, AwesomeCV, Subtle Elegant), instant PDF export. No tracking, no ads — privacy-first by design.",
+    "Build a professional resume for free with SecureCV's AI-powered resume builder. AI text rewrite, 7 pro templates including fresher-friendly Campus and ATS Classic, instant PDF export, and a weekly board of entry-level govt and private jobs. No tracking, no ads — privacy-first by design.",
   keywords: [
     "resume builder",
     "free resume builder",
@@ -51,6 +51,10 @@ export const metadata: Metadata = {
     "secure resume builder",
     "no tracking resume",
     "open source resume builder",
+    "fresher resume template",
+    "fresher jobs",
+    "entry level jobs India",
+    "government jobs for freshers",
   ],
   applicationName: "SecureCV",
   authors: [{ name: "Seva" }],
@@ -63,7 +67,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      "Build a standout resume for free with AI rewrite, carbon score calculator, and 4 pro templates. No tracking, no ads — privacy-first by design.",
+      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and weekly fresher jobs. No tracking, no ads — privacy-first by design.",
     siteName: "SecureCV",
     locale: "en_US",
     images: [
@@ -71,7 +75,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "SecureCV — Free AI Resume Builder with 4 Pro Templates",
+        alt: "SecureCV — Free AI Resume Builder",
       },
     ],
   },
@@ -79,7 +83,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      "Build a standout resume for free with AI rewrite, carbon score calculator, and 4 pro templates. No tracking, no ads.",
+      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and weekly fresher jobs. No tracking, no ads.",
     images: ["/og-image.png"],
     creator: "@sevadeveer",
   },
@@ -128,9 +132,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 priceCurrency: "USD",
               },
               description:
-                "Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, carbon score calculator, and 4 pro templates. Privacy-first and free.",
+                "Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, carbon score calculator, and 7 pro templates including fresher-friendly designs. Privacy-first and free.",
               featureList: [
-                "Four professional templates (Minimalist, Onyx, AwesomeCV, Subtle Elegant)",
+                "Seven professional templates incl. Campus (fresher), ATS Classic and Modern",
+                "Weekly fresher jobs board (government and private)",
                 "AI-powered resume text rewriting",
                 "Structured experience and skills editor",
                 "Gamified score and badge guidance",
@@ -156,6 +161,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 { "@type": "ListItem", position: 1, name: "Home", item: baseUrl },
                 { "@type": "ListItem", position: 2, name: "Privacy", item: `${baseUrl}/privacy` },
                 { "@type": "ListItem", position: 3, name: "Blog", item: `${baseUrl}/blog/privacy-first-resume-builder` },
+                { "@type": "ListItem", position: 4, name: "Fresher Jobs", item: `${baseUrl}/jobs` },
               ],
             }),
           }}
@@ -172,7 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "Is SecureCV really free?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "Yes. All core features — 4 templates, AI rewrite, PDF export, and the carbon score calculator — are completely free with no trials or paywalls.",
+                    text: "Yes. All core features — 7 templates, AI rewrite, PDF export, the fresher jobs board and the carbon score calculator — are completely free with no trials or paywalls.",
                   },
                 },
                 {
@@ -188,7 +194,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "What resume templates are available?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "SecureCV offers four professional templates: Minimalist (clean, ATS-optimized), Onyx (modern with subtle color accents), AwesomeCV (bold LaTeX-inspired), and Subtle Elegant (refined with tasteful typography).",
+                    text: "SecureCV offers seven templates: Campus (education-first, for freshers), ATS Classic (plain, parser-safe), Modern (colour header), Minimalist, Onyx, AwesomeCV and Subtle Elegant.",
                   },
                 },
                 {
@@ -240,7 +246,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className="border-b border-gray-200/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-neutral-950/60 sticky top-0 z-50">
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
               <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" aria-label="SecureCV — Home">SecureCV</Link>
-              <nav aria-label="Main navigation" className="flex items-center gap-4">
+              <nav aria-label="Main navigation" className="flex items-center gap-2 sm:gap-4">
+                <Link href="/jobs" className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300">Fresher Jobs</Link>
                 <LoginButton />
               </nav>
             </div>

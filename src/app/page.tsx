@@ -1,15 +1,6 @@
-// Tabbed preview component for templates
 "use client";
-// Tabbed preview component for templates
-type ExperienceItem = {
-  company: string;
-  title: string;
-  startDate: string;
-  endDate?: string;
-  current?: boolean;
-  details: string;
-};
-type SkillItem = { name: string; level: number }
+import type { ExperienceItem, SkillItem } from "@/types/resume";
+
 type FormData = {
   name: string;
   email: string;
@@ -25,30 +16,64 @@ type FormData = {
   profilePicture?: File;
   profilePictureUrl: string;
 };
+
+type LocalDraft = {
+  selectedTemplate: string | null;
+  formData: FormData;
+  showPreview: boolean;
+  savedAt: string;
+};
 type TabsPreviewProps = {
   formData: FormData;
+  initialTemplate: string | null;
   onExport: (tpl: string) => void | Promise<void>;
   onEdit: () => void;
+  onTemplateChange?: (tpl: string) => void;
   isExporting?: boolean;
 };
-function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPreviewProps) {
-  const TEMPLATES = [
-    { id: "minimalist", label: "Minimalist", color: "bg-green-500", score: normalizeCarbonScore(computeCarbonScore("minimalist")), Component: MinimalistTemplate },
-    { id: "onyx", label: "Onyx", color: "bg-yellow-400", score: normalizeCarbonScore(computeCarbonScore("onyx")), Component: OnyxTemplate },
-    { id: "awesomecv", label: "AwesomeCV", color: "bg-red-500", score: normalizeCarbonScore(computeCarbonScore("awesomecv")), Component: AwesomeCVTemplate },
-    { id: "subtleelegant", label: "Subtle & Elegant", color: "bg-gray-500", score: normalizeCarbonScore(computeCarbonScore("subtleelegant")), Component: SubtleElegantTemplate },
-  ];
-  const [tab, setTab] = useState("minimalist");
-  const tpl = TEMPLATES.find((t) => t.id === tab) || TEMPLATES[0];
+
+function ExportButton({ onClick, isExporting, compact = false }: { onClick: () => void; isExporting: boolean; compact?: boolean }) {
+  return (
+    <button
+      data-export-button
+      className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold ${compact ? "px-4 py-2 text-sm" : "px-6 py-2"} rounded-lg transition print:hidden disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg`}
+      onClick={onClick}
+      disabled={isExporting}
+      title="Download PDF (Ctrl+E)"
+      type="button"
+    >
+      {isExporting ? (
+        <>
+          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Generating PDF...
+        </>
+      ) : (
+        "Download PDF"
+      )}
+    </button>
+  );
+}
+
+// Tabbed full-size preview for all templates
+function TabsPreview({ formData, initialTemplate, onExport, onEdit, onTemplateChange, isExporting = false }: TabsPreviewProps) {
+  const [tab, setTab] = useState<string>(getTemplateMeta(initialTemplate).id);
+  const tpl = getTemplateMeta(tab);
   const TemplateComponent = tpl.Component;
+  const selectTab = (id: string) => {
+    setTab(id);
+    onTemplateChange?.(id);
+  };
   return (
     <div className="z-10 w-full max-w-4xl">
-      <div className="flex gap-2 mb-0 -translate-y-px">
-        {TEMPLATES.map((t) => (
+      <div className="flex gap-1 mb-0 -translate-y-px overflow-x-auto">
+        {TEMPLATE_LIST.map((t) => (
           <button
             key={t.id}
-            className={`px-4 py-2.5 rounded-t-lg font-semibold text-sm transition-all duration-200 ${tab === t.id ? "bg-white/80 dark:bg-neutral-900/80 border-gray-200/80 dark:border-neutral-800 border-t border-x" : "bg-white/40 dark:bg-neutral-950/40 text-gray-600 dark:text-gray-400 border-transparent border-b"}`}
-            onClick={() => setTab(t.id)}
+            className={`px-4 py-2.5 rounded-t-lg font-semibold text-sm whitespace-nowrap transition-all duration-200 ${tab === t.id ? "bg-white/80 dark:bg-neutral-900/80 border-gray-200/80 dark:border-neutral-800 border-t border-x" : "bg-white/40 dark:bg-neutral-950/40 text-gray-600 dark:text-gray-400 border-transparent border-b"}`}
+            onClick={() => selectTab(t.id)}
           >
             {t.label}
           </button>
@@ -57,8 +82,8 @@ function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPr
       <div className="p-6 md:p-8 rounded-xl rounded-tl-none border border-gray-200/80 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold text-white ${tpl.color}`}>Carbon Score: {tpl.score}/10</span>
-            <span title="Lower = less ink, less energy, more eco-friendly. Score is based on template color, graphics, and print area." className="text-gray-500 dark:text-gray-400 cursor-help text-lg">&#9432;</span>
+            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold text-white ${tpl.badgeColor}`}>Carbon Score: {carbonScore(tpl)}/10</span>
+            <span title="Higher = less ink, less energy, more eco-friendly. Score is based on template color, graphics, and print area." className="text-gray-500 dark:text-gray-400 cursor-help text-lg">&#9432;</span>
           </div>
           <div className="flex gap-3">
             <button
@@ -67,25 +92,7 @@ function TabsPreview({ formData, onExport, onEdit, isExporting = false }: TabsPr
             >
               Edit Details
             </button>
-            <button
-              data-export-button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition print:hidden disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:scale-105"
-              onClick={() => onExport(tpl.id)}
-              disabled={isExporting}
-              title="Download PDF (Ctrl+E)"
-            >
-              {isExporting ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating PDF...
-                </>
-              ) : (
-                'Download PDF'
-              )}
-            </button>
+            <ExportButton onClick={() => onExport(tpl.id)} isExporting={isExporting} />
           </div>
         </div>
         <div className="bg-white dark:bg-white/90 p-4 rounded-lg shadow-inner">
@@ -99,49 +106,30 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Confetti from "react-confetti";
 
-import MinimalistTemplate from "../components/MinimalistTemplate";
-import OnyxTemplate from "../components/OnyxTemplate";
-import AwesomeCVTemplate from "../components/AwesomeCVTemplate";
-import SubtleElegantTemplate from "../components/SubtleElegantTemplate";
 import ResumeTemplates from "../components/ResumeTemplates";
+import ScaledPreview from "@/components/ScaledPreview";
+import { TEMPLATE_LIST, carbonScore, getTemplateMeta } from "@/components/templates/registry";
+import { SAMPLE_FRESHER } from "@/components/templates/sampleData";
 import BuyMeCoffee from "../components/BuyMeCoffee";
 import { AIRewriter } from "../components/AIRewriter";
 import { useAuth } from "@/components/AuthProvider";
 import { ResumeSaveButton } from "@/components/ResumeSaveButton";
 import { ResumeLoader } from "@/components/ResumeLoader";
 import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
-import { scheduleAutoSave, cancelAutoSave } from "@/lib/db/resumes";
+import { scheduleAutoSave, cancelAutoSave } from "@/lib/resumesClient";
 import { trackDownload, trackPageView } from "@/lib/analytics";
 import { Onboarding } from "@/components/Onboarding";
 import { ResumeProgress } from "@/components/ResumeProgress";
 import ResumeUploader from "@/components/ResumeUploader";
 import type { Resume } from "@/types/database";
 
-// Carbon footprint scoring function based on template color usage
-function computeCarbonScore(templateId: string): number {
-  // Base scores based on visual analysis of dark color coverage
-  const baseScores: Record<string, number> = {
-    minimalist: 2,    // Mostly white background, minimal dark elements
-    onyx: 6,         // Light gray sidebar, some blue accents
-    awesomecv: 10,   // Dark sidebar covering 1/3 of page, white text
-    subtleelegant: 3 // White background, subtle gray borders and text
-  };
-
-  return baseScores[templateId] || 5; // Default fallback
-}
-
-// Normalize scores to a scale of 10 (where 10 is most eco-friendly/lowest carbon)
-function normalizeCarbonScore(rawScore: number, maxRawScore: number = 10): number {
-  // Invert the score: higher raw score (more ink) = lower normalized score (less eco-friendly)
-  return Math.round((1 - rawScore / maxRawScore) * 10);
-}
-
 // Future-proof features list for the homepage tile (easy to extend)
 type Feature = { id: string; title: string; description: string; icon?: string }
 const FEATURES: Feature[] = [
   { id: "privacy", title: "Privacy‑first", description: "No ads or trackers. Your data stays yours; PDFs render on your client only when you export.", icon: "🔒" },
   { id: "free", title: "Forever Free", description: "All core features at no cost—no trials, no paywalls.", icon: "🆓" },
-  { id: "templates", title: "4 Pro Templates", description: "Minimalist, Onyx, AwesomeCV, and SubtleElegant—pick any or all the styles that fits you.", icon: "🎨" },
+  { id: "templates", title: "7 Pro Templates", description: "Including new Campus (fresher), ATS Classic, and Modern designs. Switch any time with a live preview.", icon: "🎨" },
+  { id: "jobs", title: "Weekly Fresher Jobs", description: "Entry-level government and private openings, refreshed every week on the Jobs board.", icon: "💼" },
   { id: "ai-rewrite", title: "AI Rewrite Capabilities", description: "Enhance your resume content with AI-powered text rewriting for professional summary, experience, and projects.", icon: "🤖" },
   { id: "carbon-calculator", title: "Carbon Score Calculator", description: "Make eco-conscious choices with real-time carbon footprint scoring for each resume template.", icon: "🌱" },
   { id: "structured-data", title: "Structured Experience + Skills", description: "Work history with dates, and slider-based skill levels.", icon: "🧩" },
@@ -157,11 +145,10 @@ const BASE_CHALLENGES: Challenge[] = [
   { id: "creativity", text: "Mention creative projects", completed: false },
 ];
 
-export default function Home() {
-  const { user } = useAuth(); // Supabase auth
-  const [showSupport, setShowSupport] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+const LOCAL_DRAFT_KEY = "rb_local_resume_draft_v1";
+
+function createEmptyFormData(): FormData {
+  return {
     name: "",
     email: "",
     phone: "",
@@ -170,17 +157,55 @@ export default function Home() {
     summary: "",
     experiences: [
       { company: "", title: "", startDate: "", endDate: "", current: false, details: "" },
-    ] as ExperienceItem[],
+    ],
     education: "",
     skills: [
-      // example initial row for UX; can be removed by user
       { name: "", level: 60 },
-    ] as SkillItem[],
+    ],
     certifications: "",
     projects: "",
-    profilePicture: undefined as File | undefined,
+    profilePicture: undefined,
     profilePictureUrl: "",
-  });
+  };
+}
+
+function toSerializableFormData(formData: FormData): FormData {
+  return {
+    ...formData,
+    profilePicture: undefined,
+  };
+}
+
+function hasDraftContent(selectedTemplate: string | null, formData: FormData): boolean {
+  return Boolean(
+    selectedTemplate ||
+    formData.name.trim() ||
+    formData.email.trim() ||
+    formData.phone.trim() ||
+    formData.website.trim() ||
+    formData.linkedin.trim() ||
+    formData.summary.trim() ||
+    formData.education.trim() ||
+    formData.certifications.trim() ||
+    formData.projects.trim() ||
+    formData.profilePictureUrl ||
+    formData.experiences.some((experience) =>
+      experience.company.trim() ||
+      experience.title.trim() ||
+      experience.startDate.trim() ||
+      (experience.endDate || "").trim() ||
+      experience.details.trim()
+    ) ||
+    formData.skills.some((skill) => skill.name.trim())
+  );
+}
+
+export default function Home() {
+  const { user, loading } = useAuth();
+  const [showSupport, setShowSupport] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>(createEmptyFormData);
   const [showPreview, setShowPreview] = useState(false);
   // Metrics state
   const [metrics, setMetrics] = useState<{ page_hits: number; resume_downloads: number }>({ page_hits: 0, resume_downloads: 0 });
@@ -204,6 +229,8 @@ export default function Home() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined);
   const hasUnsavedChanges = useRef(false);
+  const [hasLocalDraft, setHasLocalDraft] = useState(false);
+  const [localDraftSavedAt, setLocalDraftSavedAt] = useState<string | null>(null);
 
   // Resume upload state
   const [showUploader, setShowUploader] = useState(false);
@@ -216,6 +243,20 @@ export default function Home() {
     } catch {}
   }, []);
 
+  // Deep link: /?template=campus opens the builder with that template (used by /jobs).
+  // Stored in a ref so the local-draft restore below does not override it.
+  const deepLinkTemplate = useRef<string | null>(null);
+  useEffect(() => {
+    try {
+      const requested = new URLSearchParams(window.location.search).get("template");
+      if (requested && TEMPLATE_LIST.some((t) => t.id === requested)) {
+        deepLinkTemplate.current = requested;
+        setSelectedTemplate(requested);
+        setShowBuilder(true);
+      }
+    } catch {}
+  }, []);
+
   // Fetch current metrics on mount and track page view
   useEffect(() => {
     const metricsDisabled =
@@ -224,7 +265,7 @@ export default function Home() {
     if (metricsDisabled) return;
     
     const fire = async () => {
-      // Track page view (Supabase analytics)
+      // Track page view (first-party, anonymous count)
       const key = "rb_page_hit_once";
       if (!sessionStorage.getItem(key)) {
         trackPageView();
@@ -243,6 +284,72 @@ export default function Home() {
     };
     fire();
   }, []);
+
+  useEffect(() => {
+    if (loading || user) return;
+
+    try {
+      const rawDraft = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!rawDraft) {
+        setHasLocalDraft(false);
+        setLocalDraftSavedAt(null);
+        return;
+      }
+
+      const draft = JSON.parse(rawDraft) as Partial<LocalDraft>;
+      if (!draft.formData) {
+        localStorage.removeItem(LOCAL_DRAFT_KEY);
+        setHasLocalDraft(false);
+        setLocalDraftSavedAt(null);
+        return;
+      }
+
+      setFormData({
+        ...createEmptyFormData(),
+        ...draft.formData,
+        profilePicture: undefined,
+        profilePictureUrl: draft.formData.profilePictureUrl || "",
+      });
+      const restoredTemplate = deepLinkTemplate.current
+        ?? (typeof draft.selectedTemplate === "string" ? draft.selectedTemplate : null);
+      setSelectedTemplate(restoredTemplate);
+      setShowPreview(Boolean(draft.showPreview && draft.selectedTemplate && !deepLinkTemplate.current));
+      setShowBuilder(Boolean(restoredTemplate));
+      setHasLocalDraft(true);
+      setLocalDraftSavedAt(typeof draft.savedAt === "string" ? draft.savedAt : null);
+    } catch {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+      setHasLocalDraft(false);
+      setLocalDraftSavedAt(null);
+    }
+  }, [loading, user]);
+
+  useEffect(() => {
+    if (loading || user) return;
+
+    try {
+      if (!hasDraftContent(selectedTemplate, formData)) {
+        localStorage.removeItem(LOCAL_DRAFT_KEY);
+        setHasLocalDraft(false);
+        setLocalDraftSavedAt(null);
+        return;
+      }
+
+      const savedAt = new Date().toISOString();
+      const draft: LocalDraft = {
+        selectedTemplate,
+        formData: toSerializableFormData(formData),
+        showPreview,
+        savedAt,
+      };
+
+      localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(draft));
+      setHasLocalDraft(true);
+      setLocalDraftSavedAt(savedAt);
+    } catch {
+      // Ignore local storage write failures.
+    }
+  }, [loading, user, selectedTemplate, formData, showPreview]);
 
   // Trigger a subtle pulse when metrics values change
   useEffect(() => {
@@ -290,7 +397,7 @@ export default function Home() {
     if (currentResumeId) {
       hasUnsavedChanges.current = true;
     }
-  }, [formData]);
+  }, [currentResumeId, formData]);
 
   // Warn user about unsaved changes before leaving
   useEffect(() => {
@@ -323,7 +430,7 @@ export default function Home() {
       // Ctrl+E or Cmd+E to export
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault();
-        if (user && showPreview && selectedTemplate) {
+        if (showPreview && selectedTemplate) {
           // Trigger export by clicking the download button if it exists
           const exportButton = document.querySelector('[data-export-button]') as HTMLButtonElement;
           if (exportButton) {
@@ -350,6 +457,7 @@ export default function Home() {
   const handleLoadResume = (resume: Resume) => {
     setCurrentResumeId(resume.id);
     setCurrentResumeName(resume.name);
+    setShowBuilder(true);
     setSelectedTemplate(resume.template);
     setFormData(resume.data as typeof formData);
     setSaveStatus('saved');
@@ -482,16 +590,75 @@ export default function Home() {
     setShowPreview(true);
   };
 
+  const startBuilder = () => {
+    setShowBuilder(true);
+  };
 
+  const goToLanding = () => {
+    setShowBuilder(false);
+  };
+
+  const clearLocalDraft = () => {
+    try {
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+    } catch {
+      // Ignore local storage cleanup failures.
+    }
+
+    setSelectedTemplate(null);
+    setFormData(createEmptyFormData());
+    setShowPreview(false);
+    setShowBuilder(false);
+    setHasLocalDraft(false);
+    setLocalDraftSavedAt(null);
+  };
+
+  const fillWithExample = () => {
+    if (hasDraftContent(null, formData) && !confirm("Replace your current details with example content?")) return;
+    setFormData({ ...createEmptyFormData(), ...SAMPLE_FRESHER, certifications: SAMPLE_FRESHER.certifications || "", projects: SAMPLE_FRESHER.projects || "", profilePictureUrl: "" });
+  };
+
+  const exportPdf = async (tpl: string) => {
+    setIsExporting(true);
+    try {
+      // Same-origin request: the Auth.js session cookie (if any) raises the rate limit.
+      const res = await fetch("/api/export-pdf", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, profilePicture: undefined, selectedTemplate: tpl }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `resume-${tpl}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        await trackDownload(tpl, currentResumeId);
+      } else {
+        const error = await res.json().catch(() => ({ error: "Failed to export PDF" }));
+        alert(error.error || "Failed to export PDF.");
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const activeTemplate = getTemplateMeta(selectedTemplate);
+  const LivePreviewComponent = activeTemplate.Component;
 
   return (
     <div className="relative min-h-screen w-full bg-white dark:bg-black flex flex-col items-center py-6 px-4">
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
       <Onboarding />
-      <Onboarding />
       <main className="w-full max-w-6xl flex flex-col items-center gap-6">
         {/* Trust + Metrics summary */}
+        {showBuilder && (
         <div className="w-full flex items-center justify-end">
           <div
             aria-label="Site metrics"
@@ -511,8 +678,9 @@ export default function Home() {
             </span>
           </div>
         </div>
-        {/* Show hero section if not logged in */}
-        {!user && (
+        )}
+        {/* Landing page */}
+        {!showBuilder && (
           <div className="z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-4 w-full max-w-6xl">
             {/* Left Column: Hero Text */}
             <div className="text-center md:text-left">
@@ -523,8 +691,37 @@ export default function Home() {
                 Choose a template, fill in your details, and get a polished, professional resume ready for your next job application. No hidden fees, no data selling.
               </p>
               <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto md:mx-0">
-                👉 Sign in with Google or GitHub (top right) to get started
+                👉 Start now without signing up. Sign in later to save and sync across devices.
               </p>
+              <div className="mt-5 flex items-center gap-3 justify-center md:justify-start">
+                <button
+                  type="button"
+                  onClick={startBuilder}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-transform hover:scale-105 shadow-lg"
+                >
+                  {hasLocalDraft ? "Continue Building" : "Start Building"}
+                </button>
+                {hasLocalDraft && (
+                  <button
+                    type="button"
+                    onClick={clearLocalDraft}
+                    className="px-4 py-3 rounded-lg border border-gray-300/80 text-gray-700 hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800 text-sm"
+                  >
+                    Start Fresh
+                  </button>
+                )}
+              </div>
+              {hasLocalDraft && (
+                <p className="mt-3 text-xs text-amber-700 dark:text-amber-300 max-w-2xl mx-auto md:mx-0">
+                  Draft found on this browser{localDraftSavedAt ? ` • last updated ${new Date(localDraftSavedAt).toLocaleString()}` : ""}.
+                </p>
+              )}
+              <Link
+                href="/jobs"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-teal-300/80 bg-teal-50/80 px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-900/30 dark:text-teal-100 dark:hover:bg-teal-900/50"
+              >
+                💼 New: Weekly entry-level jobs for freshers (Govt + Private) →
+              </Link>
               <div className="mt-4 flex items-center gap-4 justify-center md:justify-start">
                 <BuyMeCoffee />
                 <Link href="/privacy" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Privacy</Link>
@@ -556,7 +753,7 @@ export default function Home() {
             {/* Right Column: Features */}
             <div className="p-6 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
               <div className="flex flex-col gap-5">
-                {FEATURES.slice(0, 5).map((f) => (
+                {FEATURES.slice(0, 6).map((f) => (
                   <div key={f.id} className="flex items-start gap-4">
                     <div className="text-2xl mt-1">{f.icon ?? "✔️"}</div>
                     <div>
@@ -570,68 +767,94 @@ export default function Home() {
           </div>
         )}
 
-        {/* After login: show template selection */}
-        {user && !selectedTemplate && (
+        {/* Template selection */}
+        {showBuilder && (
+          <div className="w-full max-w-6xl flex justify-start">
+            <button
+              type="button"
+              onClick={goToLanding}
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-300 hover:underline"
+            >
+              ← Back to landing page
+            </button>
+          </div>
+        )}
+
+        {showBuilder && !selectedTemplate && (
           <ResumeTemplates onSelect={setSelectedTemplate} />
         )}
 
-        {/* After template selection: show placeholder for form */}
+        {/* After template selection: show builder */}
         
-{user && selectedTemplate && !showPreview && (
-  <div className="z-10 w-full max-w-4xl flex flex-col items-center gap-8">
-    {/* Combined Form, Gamification, and Disclaimer Card */}
+      {showBuilder && selectedTemplate && !showPreview && (
+  <div className="z-10 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+    {/* Left: editor */}
     <div className="w-full p-6 md:p-8 rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left Column: Gamification & Disclaimer */}
-        <div className="md:col-span-1 flex flex-col gap-6">
-          {/* Gamified Score */}
-          <div className="p-4 rounded-lg bg-white/50 dark:bg-black/20 border border-gray-200/50 dark:border-neutral-800/50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Resume Score</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400">{score}/100</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
-              <div className="bg-blue-500 h-2.5 rounded-full transition-all" style={{ width: `${score}%` }}></div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {badges.map(badge => (
-                <span key={badge} className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-300/50 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50">🏅 {badge}</span>
-              ))}
-            </div>
+      {/* Score + challenges */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        <div className="p-4 rounded-lg bg-white/50 dark:bg-black/20 border border-gray-200/50 dark:border-neutral-800/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Resume Score</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400">{score}/100</span>
           </div>
-          {/* Challenges */}
-          <div className="p-4 rounded-lg bg-white/50 dark:bg-black/20 border border-gray-200/50 dark:border-neutral-800/50">
-            <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Challenges</span>
-            <ul className="list-none text-sm mt-2 space-y-1">
-              {challenges.map(c => (
-                <li key={c.id} className={`flex items-center gap-2 ${c.completed ? "text-green-600 dark:text-green-400 font-medium" : "text-gray-600 dark:text-gray-400"}`}>
-                  <span className="text-lg">{c.completed ? "✅" : "⬜️"}</span>
-                  <span>{c.text}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2.5 mb-2">
+            <div className="bg-blue-500 h-2.5 rounded-full transition-all" style={{ width: `${score}%` }}></div>
           </div>
-          {/* Disclaimer */}
-          <div className="p-4 bg-amber-50/80 border border-amber-200/80 rounded-lg dark:bg-amber-900/30 dark:border-amber-800/50">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200">Quick Tip</h3>
-                <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-                  Our resume templates are designed for single-page resumes. To ensure the best results, please keep your details concise.
-                </p>
-              </div>
-            </div>
+          <div className="flex gap-2 flex-wrap">
+            {badges.map(badge => (
+              <span key={badge} className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-300/50 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700/50">🏅 {badge}</span>
+            ))}
           </div>
         </div>
+        <div className="p-4 rounded-lg bg-white/50 dark:bg-black/20 border border-gray-200/50 dark:border-neutral-800/50">
+          <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Challenges</span>
+          <ul className="list-none text-xs mt-2 space-y-1">
+            {challenges.map(c => (
+              <li key={c.id} className={`flex items-center gap-2 ${c.completed ? "text-green-600 dark:text-green-400 font-medium" : "text-gray-600 dark:text-gray-400"}`}>
+                <span>{c.completed ? "✅" : "⬜️"}</span>
+                <span>{c.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
-        {/* Right Column: Form */}
-        <div className="md:col-span-2">
-          {user && <ResumeProgress formData={formData} />}
+      {/* Template switcher + quick start */}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <label htmlFor="template-switcher" className="text-sm font-medium text-gray-700 dark:text-gray-300">Template</label>
+        <select
+          id="template-switcher"
+          value={activeTemplate.id}
+          onChange={(e) => setSelectedTemplate(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200"
+        >
+          {TEMPLATE_LIST.map((t) => (
+            <option key={t.id} value={t.id}>{t.label}{t.isNew ? " (new)" : ""}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => setSelectedTemplate(null)}
+          className="text-sm px-3 py-1.5 rounded-lg border border-gray-300/80 dark:border-neutral-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800"
+        >
+          Browse gallery
+        </button>
+        <button
+          type="button"
+          onClick={fillWithExample}
+          className="text-sm px-3 py-1.5 rounded-lg border border-teal-300/80 dark:border-teal-800 text-teal-800 dark:text-teal-200 bg-teal-50/70 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40"
+          title="Fill the form with a sample fresher resume you can edit"
+        >
+          ✨ Start from a fresher example
+        </button>
+      </div>
+
+      <p className="mb-4 text-xs text-amber-700 dark:text-amber-300">
+        Tip: templates are designed for single-page resumes — keep details concise. Freshers: lead with education and projects.
+      </p>
+
+      <div>
+          <ResumeProgress formData={formData} />
           <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Enter Your Details</h2>
@@ -653,6 +876,22 @@ export default function Home() {
                     data={formData}
                     onSaveSuccess={handleSaveSuccess}
                   />
+                </div>
+              )}
+              {!user && (
+                <div className="flex items-center gap-2 flex-wrap justify-end text-xs">
+                  <span className="rounded-full border border-amber-200/80 bg-amber-50/80 px-3 py-1.5 text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/30 dark:text-amber-200">
+                    Saved only in this browser{localDraftSavedAt ? ` • updated ${new Date(localDraftSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}. Sign in to sync across devices.
+                  </span>
+                  {hasLocalDraft && (
+                    <button
+                      type="button"
+                      onClick={clearLocalDraft}
+                      className="rounded-lg border border-gray-300/80 px-3 py-1.5 text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800"
+                    >
+                      Clear local draft
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -711,8 +950,8 @@ export default function Home() {
               <input type="text" name="name" placeholder="Full Name" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" required value={formData.name} onChange={handleFieldChange} />
               <input type="email" name="email" placeholder="Email" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" required value={formData.email} onChange={handleFieldChange} />
               <input type="tel" name="phone" placeholder="Phone Number" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.phone} onChange={handleFieldChange} />
-              <input type="url" name="website" placeholder="Website URL" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.website} onChange={handleFieldChange} />
-              <input type="url" name="linkedin" placeholder="LinkedIn URL" className="sm:col-span-2 bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.linkedin} onChange={handleFieldChange} />
+              <input type="text" inputMode="url" autoComplete="url" name="website" placeholder="Website / GitHub (e.g. github.com/you)" className="bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.website} onChange={handleFieldChange} />
+              <input type="text" inputMode="url" name="linkedin" placeholder="LinkedIn (e.g. linkedin.com/in/you)" className="sm:col-span-2 bg-white/50 dark:bg-black/20 border border-gray-300/50 dark:border-neutral-700/50 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none" value={formData.linkedin} onChange={handleFieldChange} />
             </div>
             
             {/* Professional Summary */}
@@ -724,6 +963,7 @@ export default function Home() {
                   text={formData.summary}
                   type="summary"
                   onRewrite={(rewritten) => setFormData(prev => ({ ...prev, summary: rewritten }))}
+                  disabled={!user}
                 />
               </div>
             </div>
@@ -754,6 +994,7 @@ export default function Home() {
                           text={exp.details}
                           type="experience"
                           onRewrite={(rewritten) => handleExperienceChange(idx, "details", rewritten)}
+                          disabled={!user}
                         />
                       </div>
                     </div>
@@ -806,6 +1047,7 @@ export default function Home() {
                   text={formData.projects}
                   type="projects"
                   onRewrite={(rewritten) => setFormData(prev => ({ ...prev, projects: rewritten }))}
+                  disabled={!user}
                 />
               </div>
             </div>
@@ -813,64 +1055,41 @@ export default function Home() {
               <label className="block mb-1 font-medium text-sm text-gray-800 dark:text-gray-200">Profile Picture</label>
               <input type="file" name="profilePicture" accept="image/*" className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100/80 file:text-blue-700 hover:file:bg-blue-200/80 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900/80" onChange={handleFieldChange} />
             </div>
-            <button type="submit" className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-transform transform hover:scale-105 shadow-lg">Generate Resume</button>
+            <button type="submit" className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-transform transform hover:scale-105 shadow-lg">Preview All Templates &amp; Download</button>
           </form>
-        </div>
       </div>
     </div>
+
+    {/* Right: live preview (desktop) */}
+    <aside className="hidden lg:block lg:sticky lg:top-20" aria-label="Live preview">
+      <div className="rounded-xl border border-gray-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm p-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Live preview · {activeTemplate.label}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Updates as you type</p>
+          </div>
+          <ExportButton compact onClick={() => exportPdf(activeTemplate.id)} isExporting={isExporting} />
+        </div>
+        <div className="rounded-lg bg-gray-100 dark:bg-neutral-800 p-3 max-h-[calc(100vh-11rem)] overflow-y-auto">
+          <div className="shadow-md">
+            <ScaledPreview>
+              <LivePreviewComponent {...formData} />
+            </ScaledPreview>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 )}
 
 {/* Show resume preview after form submit */}
-{user && selectedTemplate && showPreview && (
+{showBuilder && selectedTemplate && showPreview && (
   <div className="w-full mt-8 flex flex-col items-center">
     <TabsPreview
       formData={formData}
-      onExport={async (tpl: string) => {
-        setIsExporting(true);
-        try {
-          // Get Supabase session token if available
-          let authToken: string | undefined;
-          if (user) {
-            const { createClient } = await import('@/utils/supabase/client');
-            const supabase = createClient();
-            const { data: { session } } = await supabase.auth.getSession();
-            authToken = session?.access_token;
-          }
-          
-          const payload = {
-            selectedTemplate: tpl,
-            ...formData,
-          };
-          const res = await fetch("/api/export-pdf", {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              ...(authToken && { "Authorization": `Bearer ${authToken}` }),
-            },
-            body: JSON.stringify(payload),
-          });
-          if (res.ok) {
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `resume-${tpl}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-            
-            // Track download with Supabase analytics
-            await trackDownload(tpl, currentResumeId);
-          } else {
-            const error = await res.json().catch(() => ({ error: 'Failed to export PDF' }));
-            alert(error.error || "Failed to export PDF.");
-          }
-        } finally {
-          setIsExporting(false);
-        }
-      }}
+      initialTemplate={selectedTemplate}
+      onTemplateChange={setSelectedTemplate}
+      onExport={exportPdf}
       onEdit={() => setShowPreview(false)}
       isExporting={isExporting}
     />
@@ -888,6 +1107,8 @@ export default function Home() {
           <Link href="/privacy" className="text-sm hover:underline">Privacy & Transparency</Link>
           <span className="hidden sm:inline">•</span>
           <Link href="/blog/privacy-first-resume-builder" className="text-sm hover:underline">Blog</Link>
+          <span className="hidden sm:inline">•</span>
+          <Link href="/jobs" className="text-sm hover:underline">Fresher Jobs</Link>
         </div>
         {!showSupport && (
           <button

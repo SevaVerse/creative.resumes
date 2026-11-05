@@ -1,10 +1,15 @@
 import Groq from 'groq-sdk';
 import { logger } from '@/utils/logger';
 
-// Initialize Groq client with API key from environment
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY!
-});
+// Lazily initialised so builds/imports don't fail when GROQ_API_KEY is absent.
+let groqClient: Groq | null = null;
+export function getGroq(): Groq {
+  if (!groqClient) groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  return groqClient;
+}
+
+// llama-3.1-70b-versatile was retired by Groq; override with GROQ_MODEL if needed.
+export const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 // Define supported text rewrite types for resume content
 export type RewriteType = 'job_summary' | 'experience' | 'skill_description' | 'summary' | 'projects';
@@ -77,7 +82,7 @@ export async function rewriteText(
     
     const fullPrompt = `${basePrompt}\n\nTone: ${toneModifier}\n\nAction: ${actionInstruction}\n\nOriginal text: "${text}"`;
     
-    const response = await groq.chat.completions.create({
+    const response = await getGroq().chat.completions.create({
       messages: [
         {
           role: 'system',
@@ -88,7 +93,7 @@ export async function rewriteText(
           content: fullPrompt
         }
       ],
-      model: process.env.GROQ_MODEL || 'llama-3.1-70b-versatile',
+      model: GROQ_MODEL,
       temperature: action === 'achievements' ? 0.8 : 0.7,
       max_tokens: action === 'expand' ? 300 : action === 'condense' ? 150 : 200,
       top_p: 0.9

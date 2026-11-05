@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useAuth } from './AuthProvider'
-import { saveResume, updateResume } from '@/lib/db/resumes'
+import { saveResume, updateResume } from '@/lib/resumesClient'
+import { isTemplateId } from '@/types/resume'
 import { trackResumeSave } from '@/lib/analytics'
 
 interface Props {
@@ -42,14 +43,14 @@ export function ResumeSaveButton({
         // Update existing resume
         await updateResume(currentResumeId, { 
           name: resumeName.trim(), 
-          template: template as 'minimalist' | 'onyx' | 'awesomecv' | 'subtleelegant', 
+          template: isTemplateId(template) ? template : 'minimalist',
           data 
         })
         await trackResumeSave(currentResumeId, false)
         onSaveSuccess(currentResumeId, resumeName.trim())
       } else {
         // Create new resume
-        const resume = await saveResume(user.id, resumeName.trim(), template, data)
+        const resume = await saveResume(resumeName.trim(), template, data)
         await trackResumeSave(resume.id, true)
         onSaveSuccess(resume.id, resume.name)
       }
