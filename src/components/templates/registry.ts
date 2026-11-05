@@ -172,9 +172,50 @@ export function getTemplateMeta(id: string | null | undefined): TemplateMeta {
   return (id && TEMPLATES[id as TemplateId]) || TEMPLATES.minimalist;
 }
 
+/** Total number of templates, for marketing copy that must stay in sync. */
+export const TEMPLATE_COUNT = TEMPLATE_LIST.length;
+
+/** Templates flagged as new, in display order. */
+export const NEW_TEMPLATES: TemplateMeta[] = TEMPLATE_LIST.filter((t) => t.isNew);
+
 /** Eco score out of 10 (10 = least ink). */
 export function carbonScore(meta: TemplateMeta): number {
   return Math.round((1 - meta.inkScore / 10) * 10);
+}
+
+/*
+ * Carbon footprint model for one printed A4 page (grams CO2e). Rough, published-average inputs:
+ *  - Paper: an 80 gsm A4 sheet weighs ~5 g; virgin office paper is ~0.9 kg CO2e/kg → ~4.5 g.
+ *  - Printer energy: ~0.01 kWh/page at ~0.4 kg CO2e/kWh grid average → ~0.5 g (laser, incl. warm-up share).
+ *  - Toner/ink: a cartridge's life-cycle footprint spread over its rated yield (ISO/IEC 19752, 5% coverage)
+ *    is ~2.5 g/page at 5% coverage, scaling roughly linearly with coverage → ~0.5 g per 1% coverage.
+ * Coverage is derived from the template's inkScore (0 → ~3%, 10 → ~28%).
+ * Downloading and storing the PDF digitally is negligible (<0.1 g) and is ignored.
+ */
+const PAPER_G_PER_PAGE = 4.5;
+const ENERGY_G_PER_PAGE = 0.5;
+const INK_G_PER_COVERAGE_PCT = 0.5;
+
+export type CarbonFootprint = {
+  /** Estimated ink/toner coverage of the page, in percent. */
+  coveragePct: number;
+  paperG: number;
+  energyG: number;
+  inkG: number;
+  /** Total grams CO2e per printed page, rounded to 0.1 g. */
+  totalG: number;
+};
+
+export function carbonFootprint(meta: Pick<TemplateMeta, "inkScore">): CarbonFootprint {
+  const coveragePct = 3 + meta.inkScore * 2.5;
+  const inkG = coveragePct * INK_G_PER_COVERAGE_PCT;
+  const totalG = Math.round((PAPER_G_PER_PAGE + ENERGY_G_PER_PAGE + inkG) * 10) / 10;
+  return { coveragePct, paperG: PAPER_G_PER_PAGE, energyG: ENERGY_G_PER_PAGE, inkG: Math.round(inkG * 10) / 10, totalG };
+}
+
+/** Short human label, e.g. "≈ 8.5 g CO₂e / printed page". */
+export function formatFootprint(meta: Pick<TemplateMeta, "inkScore">): string {
+  return `≈ ${carbonFootprint(meta).totalG.toFixed(1)} g CO₂e / printed page`;
 }
 
 export const TAG_LABELS: Record<TemplateTag, string> = {

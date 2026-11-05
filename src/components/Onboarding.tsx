@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from './AuthProvider'
+import { TEMPLATE_COUNT } from './templates/registry'
 
 export function Onboarding() {
   const { user } = useAuth()
@@ -42,7 +43,7 @@ export function Onboarding() {
     },
     {
       title: 'Choose Your Template 🎨',
-      description: 'Pick from 7 professionally designed templates (including fresher-friendly ones). Switch anytime without losing your progress!',
+      description: `Pick from ${TEMPLATE_COUNT} professionally designed templates (including fresher-friendly ones). Switch anytime without losing your progress!`,
       icon: '📄',
     },
     {

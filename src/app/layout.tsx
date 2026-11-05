@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      `Build a standout resume for free with AI rewrite, a free ATS checker, ${TEMPLATE_COUNT} pro templates and monthly fresher jobs. No tracking, no ads, no paywall at download.`,
+      `Build a standout resume for free with AI rewrite, a free ATS checker, carbon footprint estimates, ${TEMPLATE_COUNT} pro templates and monthly fresher jobs. No tracking, no ads, no paywall at download.`,
     siteName: "SecureCV",
     locale: "en_US",
     images: [
@@ -142,15 +142,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 priceCurrency: "USD",
               },
               description:
-                `Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, a free ATS checker, carbon score calculator, and ${TEMPLATE_COUNT} pro templates including fresher-friendly designs. Privacy-first and free.`,
+                `Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, a free ATS checker, carbon footprint estimates, and ${TEMPLATE_COUNT} pro templates including fresher-friendly designs. Privacy-first and free.`,
               featureList: [
-                `${TEMPLATE_COUNT} professional templates incl. Campus (fresher), ATS Classic and Modern`,
+                `${TEMPLATE_COUNT} professional templates incl. Campus (fresher), ATS Classic, Developer and Executive`,
                 "Free in-browser ATS checker with job-description keyword match",
                 "Monthly fresher jobs board (government and private)",
                 "AI-powered resume text rewriting",
                 "Structured experience and skills editor",
                 "Gamified score and badge guidance",
-                "Carbon footprint score per template",
+                "Carbon footprint estimate (g CO2e per printed page) per template",
                 "One-click PDF export via headless Chrome",
                 "Privacy-first — no tracking, no ads",
                 "Import from existing PDF/DOCX resume",

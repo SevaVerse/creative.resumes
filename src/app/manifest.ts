@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: `${SITE_NAME} — Free AI Resume Builder`,
     short_name: SITE_NAME,
-    description: `Build a professional resume for free: ${TEMPLATE_COUNT} templates, AI rewrite, ATS checker and instant PDF export. Privacy-first by design.`,
+    description: `Build a professional resume for free: ${TEMPLATE_COUNT} templates, AI rewrite, ATS checker, carbon footprint estimates and instant PDF export. Privacy-first by design.`,
     start_url: "/",
     scope: "/",
     display: "standalone",

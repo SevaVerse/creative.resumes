@@ -5,6 +5,8 @@ import { TEMPLATE_LIST } from "@/components/templates/registry";
 import { faqJsonLd, jsonLd, type FaqItem } from "@/lib/jobs/seo";
 import { TEMPLATE_COUNT } from "@/lib/site";
 
+const TEMPLATE_NAMES = TEMPLATE_LIST.map((t) => t.label.replace(/ \(.*\)$/, ""));
+
 // Visible FAQ mirrored by the FAQPage JSON-LD below (homepage only, not every page).
 const HOME_FAQ: FaqItem[] = [
   {
@@ -20,6 +22,10 @@ const HOME_FAQ: FaqItem[] = [
     a: "Drafts stay in your browser by default. If you sign in you can choose to save resumes to your account. PDF rendering is transient and nothing is kept without your consent.",
   },
   {
+    q: "What resume templates are available?",
+    a: `SecureCV offers ${TEMPLATE_COUNT} templates: ${TEMPLATE_NAMES.slice(0, -1).join(", ")} and ${TEMPLATE_NAMES[TEMPLATE_NAMES.length - 1]}. Campus, ATS Classic, Nordic and Developer suit freshers; ATS Classic and Nordic are the most parser-safe.`,
+  },
+  {
     q: "Are the templates ATS-friendly?",
     a: "ATS Classic, Campus, Nordic, Developer, Executive and Minimalist use simple single-column structures and standard headings that applicant tracking systems parse cleanly. You can check any resume with the free ATS checker.",
   },
@@ -29,7 +35,7 @@ const HOME_FAQ: FaqItem[] = [
   },
   {
     q: "What is the carbon score?",
-    a: "Each template gets a score based on ink coverage, colour and print area. A higher score means less ink and energy when printed.",
+    a: "Each template gets an eco score and an estimated footprint in grams of CO₂e per printed A4 page, based on paper, printer energy and ink coverage. Sharing the PDF digitally is close to zero.",
   },
 ];
 
