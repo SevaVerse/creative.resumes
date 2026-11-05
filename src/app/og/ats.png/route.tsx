@@ -1,10 +1,10 @@
-import { OG_CONTENT_TYPE, OG_SIZE, renderOgCard } from "@/lib/ogImage";
+import { renderOgCard } from "@/lib/ogImage";
 
-export const size = OG_SIZE;
-export const contentType = OG_CONTENT_TYPE;
-export const alt = "Free ATS resume checker";
+// Served at /og/ats.png. The file extension exempts it from the trailing-slash redirect,
+// which some link-preview crawlers do not follow.
+export const dynamic = "force-static";
 
-export default function Image() {
+export function GET() {
   return renderOgCard({
     eyebrow: "Free ATS resume checker",
     title: "Will your resume pass the ATS?",

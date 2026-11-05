@@ -10,6 +10,7 @@ import { TEMPLATE_CONTENT } from "@/data/templateContent";
 import { breadcrumbJsonLd, faqJsonLd, jsonLd } from "@/lib/jobs/seo";
 import { isTemplateId } from "@/types/resume";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { ogImageMeta } from "@/lib/ogImage";
 
 type Params = { id: string };
 
@@ -32,8 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title,
     description: description.slice(0, 300),
     alternates: { canonical: path },
-    openGraph: { title, description, url: path, type: "website" },
-    twitter: { card: "summary_large_image", title, description },
+    openGraph: { title, description, url: path, type: "website", images: ogImageMeta(`/og/template/${id}.png`, `${meta.label} resume template`) },
+    twitter: { card: "summary_large_image", title, description, images: [`/og/template/${id}.png`] },
   };
 }
 

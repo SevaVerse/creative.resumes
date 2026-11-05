@@ -13,6 +13,7 @@ import {
 } from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
 import ShareButtons from "@/components/ShareButtons";
+import { ogImageMeta } from "@/lib/ogImage";
 
 // Rendered on first request and cached; the monthly cron revalidates /jobs/*.
 export const revalidate = 3600;
@@ -42,9 +43,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title,
     description,
     alternates: { canonical: path },
-    // Images come from ./opengraph-image.tsx (a per-job card); X falls back to og:image.
-    openGraph: { title, description, url: path, type: "website" },
-    twitter: { card: "summary_large_image", title, description },
+    // Per-job card rendered by /og/job/[file]/route.tsx.
+    openGraph: { title, description, url: path, type: "website", images: ogImageMeta(`/og/job/${job.id}.png`, title) },
+    twitter: { card: "summary_large_image", title, description, images: [`/og/job/${job.id}.png`] },
     // Drop expired listings from search results promptly.
     robots: { index: true, follow: true, unavailable_after: new Date(jobValidThrough(job)).toUTCString() },
   };

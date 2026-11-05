@@ -1,10 +1,7 @@
 import { loadJob } from "@/lib/jobs/load";
-import { OG_CONTENT_TYPE, OG_SIZE, renderOgCard } from "@/lib/ogImage";
+import { renderOgCard } from "@/lib/ogImage";
 
-export const size = OG_SIZE;
-export const contentType = OG_CONTENT_TYPE;
-export const alt = "Fresher job on SecureCV";
-export const revalidate = 3600;
+// Served at /og/job/<id>.png (the extension avoids the trailing-slash redirect).
 
 function shortDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -12,8 +9,8 @@ function shortDate(iso: string | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
-export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export async function GET(_req: Request, { params }: { params: Promise<{ file: string }> }) {
+  const id = (await params).file.replace(/\.png$/, "");
   const job = await loadJob(id);
   if (!job) {
     return renderOgCard({ eyebrow: "Fresher jobs", title: "Latest fresher jobs in India", subtitle: "Government and private openings, refreshed monthly." });

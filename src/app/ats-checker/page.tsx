@@ -4,6 +4,7 @@ import AtsChecker from "@/components/AtsChecker";
 import JobsFaq from "@/components/jobs/JobsFaq";
 import { breadcrumbJsonLd, faqJsonLd, jsonLd, type FaqItem } from "@/lib/jobs/seo";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { ogImageMeta } from "@/lib/ogImage";
 
 const title = "Free ATS Resume Checker — Score & Job Description Keyword Match";
 const description =
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
   description,
   keywords: ["ATS checker", "ATS resume checker", "ATS score", "resume keyword match", "resume scanner", "free ATS checker", "job description keyword match"],
   alternates: { canonical: "/ats-checker/" },
-  openGraph: { title, description, url: "/ats-checker/", type: "website" },
-  twitter: { card: "summary_large_image", title, description },
+  openGraph: { title, description, url: "/ats-checker/", type: "website", images: ogImageMeta("/og/ats.png", "Free ATS resume checker") },
+  twitter: { card: "summary_large_image", title, description, images: ["/og/ats.png"] },
 };
 
 const FAQ: FaqItem[] = [

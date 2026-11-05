@@ -51,3 +51,8 @@ export function renderOgCard({ eyebrow, title, subtitle, accent = "#2563eb" }: O
     OG_SIZE,
   );
 }
+
+/** Metadata entry for a card served by a route under /og/ (paths end in ".png" to avoid redirects). */
+export function ogImageMeta(path: string, alt: string) {
+  return [{ url: path, width: OG_SIZE.width, height: OG_SIZE.height, alt, type: OG_CONTENT_TYPE }];
+}
