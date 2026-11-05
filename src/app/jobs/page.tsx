@@ -7,17 +7,17 @@ import type { JobRow } from "@/types/database";
 import { getBaseUrl } from "@/utils/baseUrl";
 import { logger } from "@/utils/logger";
 
-// Listings are refreshed weekly by /api/cron/jobs; the page itself is cached for an hour.
+// Listings are refreshed monthly by /api/cron/jobs; the page itself is cached for an hour.
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Fresher Jobs This Week — Entry-Level Government & Private Jobs in India",
+  title: "Fresher Jobs This Month — Entry-Level Government & Private Jobs in India",
   description:
-    "A weekly, free list of entry-level jobs, internships, apprenticeships and government vacancies for freshers in India. No sign-up, no tracking.",
+    "A monthly, free list of entry-level jobs, internships, apprenticeships and government vacancies for freshers in India. No sign-up, no tracking.",
   alternates: { canonical: "/jobs", types: { "application/rss+xml": "/jobs/feed.xml" } },
   openGraph: {
-    title: "Fresher Jobs This Week | SecureCV",
-    description: "Entry-level government and private openings for freshers, refreshed every week.",
+    title: "Fresher Jobs This Month | SecureCV",
+    description: "Entry-level government and private openings for freshers, refreshed every month.",
     url: "/jobs",
     type: "website",
   },
@@ -33,11 +33,9 @@ async function loadData(): Promise<{ jobs: JobRow[]; lastRun: string | null }> {
   }
 }
 
-function weekOf(iso: string | null): string {
+function monthOf(iso: string | null): string {
   const d = iso ? new Date(iso) : new Date();
-  const monday = new Date(d);
-  monday.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
-  return monday.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+  return d.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 export default async function JobsPage() {
@@ -53,20 +51,20 @@ export default async function JobsPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            name: "Fresher Jobs This Week",
+            name: "Fresher Jobs This Month",
             url: `${baseUrl}/jobs`,
-            description: "Weekly list of entry-level government and private jobs for freshers in India.",
+            description: "Monthly list of entry-level government and private jobs for freshers in India.",
             isPartOf: { "@type": "WebSite", name: "SecureCV", url: baseUrl },
           }),
         }}
       />
       <main className="w-full max-w-6xl flex flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">Week of {weekOf(lastRun)}</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Fresher jobs this week</h1>
+          <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">{monthOf(lastRun)}</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Fresher jobs this month</h1>
           <p className="text-gray-600 dark:text-gray-300 max-w-3xl">
             Entry-level openings, internships, apprenticeships and government vacancies for freshers in India — collected
-            from public job APIs and official feeds and refreshed every week. Always verify details and apply on the
+            from public job APIs and official feeds and refreshed every month. Always verify details and apply on the
             official website; SecureCV never charges for jobs.
           </p>
           <div className="flex flex-wrap gap-3 text-sm">

@@ -85,7 +85,10 @@ export async function refreshJobs() {
   const results = await Promise.all(buildSources().map(runSource));
   const rows = toEntryLevelRows(results.flatMap((r) => r.jobs));
   const inserted = await upsertJobs(rows);
-  const pruned = await pruneJobs(cfg.retentionDays);
+  // A monthly run replaces last month's listings. If any source failed, keep the old
+  // listings instead of emptying the board until the next run.
+  const anyFailed = results.some((r) => r.error);
+  const pruned = anyFailed ? 0 : await pruneJobs(cfg.retentionDays);
 
   const stats = {
     sources: results.map((r) => ({ source: r.source, fetched: r.jobs.length, error: r.error })),
