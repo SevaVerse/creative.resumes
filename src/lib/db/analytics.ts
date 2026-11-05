@@ -1,6 +1,7 @@
 import "server-only";
 import { getDb, nowIso } from "./client";
 import type { AnalyticsEventType } from "@/types/database";
+import { isTemplateId } from "@/types/resume";
 
 export async function insertAnalyticsEvent(
   eventType: AnalyticsEventType,
@@ -33,7 +34,8 @@ export async function getMetrics(): Promise<{
   );
   const row = counts.rows[0];
   const templates: Record<string, number> = {};
-  for (const r of byTemplate.rows) templates[String(r.template)] = Number(r.n);
+  // Only real template ids: older rows came from client-sent metadata and may hold arbitrary text.
+  for (const r of byTemplate.rows) if (isTemplateId(r.template)) templates[r.template] = Number(r.n);
   return {
     page_hits: Number(row?.page_hits ?? 0),
     resume_downloads: Number(row?.resume_downloads ?? 0),

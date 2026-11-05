@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserId } from "@/utils/auth/session";
 import { jsonError } from "@/lib/api/http";
-import { createRateLimiter } from "@/utils/rateLimit";
+import { checkRateLimit } from "@/lib/db/rateLimits";
 import { logger, extractRequestId } from "@/utils/logger";
 import { isAIRewriterEnabled } from "@/utils/groq";
 import { DOCX_TYPE, PDF_TYPE, extractResumeText, structureResume } from "@/lib/resumeParser";
@@ -11,7 +11,8 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const parseLimiter = createRateLimiter(60 * 60 * 1000, 10); // 10 parses / hour / user
+// Imports per user per hour, shared across server instances (each is a paid AI call).
+const PARSE_LIMIT = 10;
 
 export async function POST(req: NextRequest) {
   const log = logger.withRequest(extractRequestId(req.headers));
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return jsonError(401, "You must be signed in to import a resume.");
   if (!isAIRewriterEnabled()) return jsonError(503, "Resume import is not enabled");
 
-  const rl = parseLimiter.check(`parse:${userId}`);
+  const rl = await checkRateLimit("parse", userId, 60 * 60 * 1000, PARSE_LIMIT);
   if (!rl.allowed) return jsonError(429, "Too many imports. Please try again later.");
 
   let file: File | null = null;

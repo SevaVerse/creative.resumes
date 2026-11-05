@@ -1,7 +1,7 @@
 import { logger } from './logger';
-// Simple in-memory rate limiting utilities.
-// Not persistent across server restarts; suitable for low‑risk throttling.
-// For production hardening, consider redis / durable KV.
+// Simple in-memory rate limiting, per server instance (resets on restart and is not shared
+// across instances). Fine for cheap, low-risk throttling; costly or public-facing limits use the
+// shared limiter in src/lib/db/rateLimits.ts.
 
 export interface RateLimitResult { allowed: boolean; remaining: number; retryAfterMs?: number }
 
@@ -43,17 +43,4 @@ export function createRateLimiter(windowMs: number, max: number): RateLimiter {
       return { allowed: true, remaining: Math.max(0, max - bucket.hits.length) };
     },
   };
-}
-
-// Shared limiter instances (tunable via env if desired later)
-const DEFAULT_WINDOW_MS = 60_000; // 1 minute
-const LOGIN_MAX = 5; // per minute per key
-const PDF_MAX = 10; // more generous
-
-export const loginLimiter = createRateLimiter(DEFAULT_WINDOW_MS, LOGIN_MAX);
-export const pdfLimiter = createRateLimiter(DEFAULT_WINDOW_MS, PDF_MAX);
-
-// Helper to derive composite keys
-export function buildKey(parts: (string | undefined | null)[]): string {
-  return parts.filter(Boolean).join(":");
 }

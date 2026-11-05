@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { pdfLimiter, createRateLimiter, buildKey } from "@/utils/rateLimit";
+import { checkRateLimit } from "@/lib/db/rateLimits";
+import { insertAnalyticsEvent } from "@/lib/db/analytics";
 import { logger, extractRequestId } from "@/utils/logger";
 import { getCorsHeaders, clientKey } from "@/utils/cors";
 import { getSessionUserId } from "@/utils/auth/session";
@@ -33,7 +34,9 @@ const remoteExecutablePath =
 // as saved resumes (see src/app/api/resumes/validate.ts).
 const MAX_PDF_BODY_BYTES = 3_000_000;
 
-const anonymousPdfLimiter = createRateLimiter(60_000, 3);
+// Exports per minute, shared across server instances.
+const PDF_LIMIT_ANON = 3; // per client
+const PDF_LIMIT_USER = 10; // per signed-in user
 
 type SimpleLogger = { info: (m:string,e?:Record<string,unknown>)=>void; warn: (m:string,e?:Record<string,unknown>)=>void; debug:(m:string,e?:Record<string,unknown>)=>void };
 
@@ -75,12 +78,10 @@ async function launchBrowser(log: SimpleLogger = logger): Promise<Browser> {
 
 /** Normalizes the untrusted request body into template props (same rules as public resume pages). */
 function toPrintPayload(body: Record<string, unknown>): PrintPayload {
-  const data = toResumeData(body);
   return {
-    ...data,
+    // Photos are inline data: images only, so headless Chrome never fetches user-supplied URLs.
+    ...toResumeData(body),
     selectedTemplate: isTemplateId(body.selectedTemplate) ? body.selectedTemplate : "minimalist",
-    // Only inline images: headless Chrome must not fetch user-supplied URLs.
-    profilePictureUrl: data.profilePictureUrl?.startsWith("data:image/") ? data.profilePictureUrl : "",
   };
 }
 
@@ -133,9 +134,9 @@ export async function POST(req: NextRequest) {
     log.info(userId ? 'pdf.authenticated' : 'pdf.anonymous_request', { userId });
 
     const rl = userId
-      ? pdfLimiter.check(buildKey(["pdf", userId]))
-      : anonymousPdfLimiter.check(buildKey(["pdf", "anonymous", clientKey(req.headers)]));
-    const rateLimitHeaderValue = userId ? '10' : '3';
+      ? await checkRateLimit("pdf:user", userId, 60_000, PDF_LIMIT_USER)
+      : await checkRateLimit("pdf:anon", clientKey(req.headers), 60_000, PDF_LIMIT_ANON);
+    const rateLimitHeaderValue = String(userId ? PDF_LIMIT_USER : PDF_LIMIT_ANON);
 
     if (!rl.allowed) {
       log.warn('pdf.rate_limited', { userId, retryAfterMs: rl.retryAfterMs, anonymous: !userId });
@@ -182,6 +183,11 @@ export async function POST(req: NextRequest) {
 
     const durationMs = +(performance.now() - started).toFixed(2);
     log.info('pdf.success', { durationMs, userId, anonymous: !userId });
+    // The public download counter is fed here, by real exports, not by a client-sent event.
+    // Anonymous: only the template name is recorded.
+    await insertAnalyticsEvent("resume_download", null, { template: payload.selectedTemplate }).catch((error: unknown) => {
+      log.warn("pdf.analytics_failed", { error: error instanceof Error ? error.message : String(error) });
+    });
     return new Response(new Uint8Array(pdf), {
       status: 200,
       headers: {
