@@ -1,5 +1,5 @@
 import "server-only";
-import { getGroq, GROQ_MODEL } from "@/utils/groq";
+import { getGroq, GROQ_MODEL, GROQ_REASONING_PARAMS, GROQ_REASONING_TOKENS } from "@/utils/groq";
 import type { ExperienceItem, SkillItem } from "@/types/resume";
 
 export type ParsedResume = {
@@ -19,8 +19,39 @@ export type ParsedResume = {
 export const PDF_TYPE = "application/pdf";
 export const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-export async function extractResumeText(buffer: Uint8Array, contentType: string): Promise<string> {
+// The import route has a 30s budget: bound each step so a stall returns an error, not a gateway 504.
+const EXTRACT_TIMEOUT_MS = 10_000;
+const LLM_TIMEOUT_MS = 18_000;
+
+// unpdf bundles pdf.js 5, which calls Promise.try (Node 24+). Without it, pdf.js rejects inside its
+// worker setup and getDocumentProxy never settles, so the request hangs. Polyfill for older Node.
+function ensurePromiseTry(): void {
+  const P = Promise as PromiseConstructor & { try?: unknown };
+  if (typeof P.try === "function") return;
+  Object.defineProperty(Promise, "try", {
+    configurable: true,
+    writable: true,
+    value: function <T>(fn: (...args: unknown[]) => T | PromiseLike<T>, ...args: unknown[]): Promise<T> {
+      return new Promise<T>((resolve) => resolve(fn(...args)));
+    },
+  });
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+export function extractResumeText(buffer: Uint8Array, contentType: string): Promise<string> {
+  return withTimeout(readText(buffer, contentType), EXTRACT_TIMEOUT_MS, "text extraction");
+}
+
+async function readText(buffer: Uint8Array, contentType: string): Promise<string> {
   if (contentType === PDF_TYPE) {
+    ensurePromiseTry();
     const { extractText, getDocumentProxy } = await import("unpdf");
     const pdf = await getDocumentProxy(buffer);
     const { text } = await extractText(pdf, { mergePages: true });
@@ -90,16 +121,20 @@ function normalize(raw: Record<string, unknown>): ParsedResume {
 }
 
 export async function structureResume(text: string): Promise<ParsedResume> {
-  const completion = await getGroq().chat.completions.create({
-    model: GROQ_MODEL,
-    temperature: 0.2,
-    max_tokens: 2500,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Parse this resume:\n\n${text.slice(0, 20_000)}` },
-    ],
-  });
+  const completion = await getGroq().chat.completions.create(
+    {
+      model: GROQ_MODEL,
+      ...GROQ_REASONING_PARAMS,
+      temperature: 0.2,
+      max_tokens: 2500 + GROQ_REASONING_TOKENS,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Parse this resume:\n\n${text.slice(0, 20_000)}` },
+      ],
+    },
+    { timeout: LLM_TIMEOUT_MS, maxRetries: 0 },
+  );
   const content = completion.choices[0]?.message?.content?.trim();
   if (!content) throw new Error("No content returned from LLM");
   const parsed = JSON.parse(content) as Record<string, unknown>;

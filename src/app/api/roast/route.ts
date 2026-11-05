@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGroq, GROQ_MODEL, isAIRewriterEnabled } from "@/utils/groq";
+import { getGroq, GROQ_MODEL, GROQ_REASONING_PARAMS, GROQ_REASONING_TOKENS, isAIRewriterEnabled } from "@/utils/groq";
 import { logger, extractRequestId } from "@/utils/logger";
 import { createRateLimiter, buildKey } from "@/utils/rateLimit";
 import { clientKey, getCorsHeaders } from "@/utils/cors";
@@ -63,12 +63,13 @@ export async function POST(req: NextRequest) {
   try {
     const response = await getGroq().chat.completions.create({
       model: GROQ_MODEL,
+      ...GROQ_REASONING_PARAMS,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Roast this resume:\n"""\n${text}\n"""` },
       ],
       temperature: 0.9,
-      max_tokens: 500,
+      max_tokens: 500 + GROQ_REASONING_TOKENS,
       response_format: { type: "json_object" },
     });
     const raw = response.choices[0]?.message?.content ?? "";

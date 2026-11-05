@@ -8,8 +8,14 @@ export function getGroq(): Groq {
   return groqClient;
 }
 
-// llama-3.1-70b-versatile was retired by Groq; override with GROQ_MODEL if needed.
-export const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+// Groq retired llama-3.3-70b-versatile on 2026-08-16 (and llama-3.1-70b before it); override with GROQ_MODEL if needed.
+export const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+
+// gpt-oss models reason before answering, and those tokens count against max_tokens. Keep reasoning
+// short and reserve room for it so answers aren't truncated. Other models reject reasoning_effort.
+const IS_REASONING_MODEL = GROQ_MODEL.startsWith('openai/gpt-oss');
+export const GROQ_REASONING_PARAMS: { reasoning_effort?: 'low' } = IS_REASONING_MODEL ? { reasoning_effort: 'low' } : {};
+export const GROQ_REASONING_TOKENS = IS_REASONING_MODEL ? 1024 : 0;
 
 // Define supported text rewrite types for resume content
 export type RewriteType = 'job_summary' | 'experience' | 'skill_description' | 'summary' | 'projects';
@@ -93,8 +99,9 @@ export async function rewriteText(
         }
       ],
       model: GROQ_MODEL,
+      ...GROQ_REASONING_PARAMS,
       temperature: action === 'achievements' ? 0.8 : 0.7,
-      max_tokens: action === 'expand' ? 300 : action === 'condense' ? 150 : 200,
+      max_tokens: (action === 'expand' ? 300 : action === 'condense' ? 150 : 200) + GROQ_REASONING_TOKENS,
       top_p: 0.9
     });
 
