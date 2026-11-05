@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
       endpoints: {
         'export-pdf': true,
         'metrics': true,
-        'pdf-data': true,
         'rewrite': true,
         'resumes': true,
         'parse-resume': true,

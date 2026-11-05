@@ -4,8 +4,11 @@ import { logger, extractRequestId } from "@/utils/logger";
 import { getCorsHeaders, clientKey } from "@/utils/cors";
 import { getSessionUserId } from "@/utils/auth/session";
 import { isTemplateId } from "@/types/resume";
+import { isPlainObject, readJsonBody } from "@/lib/api/http";
+import { toResumeData } from "@/lib/resumeData";
+import { tailwindCssFor } from "@/lib/pdf/tailwind";
 import chromium from "@sparticuz/chromium-min";
-import puppeteerCore from "puppeteer-core";
+import puppeteerCore, { type Browser } from "puppeteer-core";
 import puppeteer from "puppeteer";
 import type { PrintPayload } from "@/components/PrintResume";
 
@@ -20,24 +23,15 @@ export async function OPTIONS(req: NextRequest) {
   });
 }
 
-// Minimal runtime types to avoid using `any`
-type PdfOptions = {
-  format?: string;
-  printBackground?: boolean;
-  margin?: { top?: string; right?: string; bottom?: string; left?: string };
-};
-type Page = {
-  goto: (url: string, options?: Record<string, unknown>) => Promise<void>;
-  pdf: (options?: PdfOptions) => Promise<Buffer>;
-  setContent: (html: string, options?: Record<string, unknown>) => Promise<void>;
-  evaluate: (pageFunction: (html: string) => void, html: string) => Promise<void>;
-};
-type Browser = {
-  newPage: () => Promise<Page>;
-  close: () => Promise<void>;
-};
+// Chromium build for Vercel's x64 functions. Its version must match @sparticuz/chromium-min in
+// package.json (138.0.2); update both together. CHROMIUM_PACK_URL can point at a self-hosted copy.
 const remoteExecutablePath =
-  "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
+  process.env.CHROMIUM_PACK_URL ||
+  "https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar";
+
+// A resume with a compressed profile photo (inline data URL) fits well within this; same budget
+// as saved resumes (see src/app/api/resumes/validate.ts).
+const MAX_PDF_BODY_BYTES = 3_000_000;
 
 const anonymousPdfLimiter = createRateLimiter(60_000, 3);
 
@@ -52,11 +46,11 @@ async function launchBrowser(log: SimpleLogger = logger): Promise<Browser> {
   if (isProduction) {
     log.info("pdf.launch.production_mode");
     try {
-      const browser = (await puppeteerCore.launch({
+      const browser = await puppeteerCore.launch({
         args: chromium.args,
         executablePath: await chromium.executablePath(remoteExecutablePath),
         headless: true,
-      })) as Browser;
+      });
       log.info("pdf.launch.production_success");
       return browser;
     } catch (error) {
@@ -79,89 +73,32 @@ async function launchBrowser(log: SimpleLogger = logger): Promise<Browser> {
   }
 }
 
-export async function POST(req: NextRequest) {
-  const started = performance.now();
-  const requestId = extractRequestId(req.headers);
-  const log = logger.withRequest(requestId);
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
-  let browser: Browser | null = null;
+/** Normalizes the untrusted request body into template props (same rules as public resume pages). */
+function toPrintPayload(body: Record<string, unknown>): PrintPayload {
+  const data = toResumeData(body);
+  return {
+    ...data,
+    selectedTemplate: isTemplateId(body.selectedTemplate) ? body.selectedTemplate : "minimalist",
+    // Only inline images: headless Chrome must not fetch user-supplied URLs.
+    profilePictureUrl: data.profilePictureUrl?.startsWith("data:image/") ? data.profilePictureUrl : "",
+  };
+}
 
-  try {
-    // Signed-in users (Auth.js session cookie) get a higher export limit.
-    const userId = (await getSessionUserId()) || undefined;
-    let rateLimitHeaderValue = '3';
-    let rateLimitRemainingValue = '0';
-    log.info(userId ? 'pdf.authenticated' : 'pdf.anonymous_request', { userId });
+async function renderResumeHtml(payload: PrintPayload): Promise<string> {
+  // Dynamic imports to avoid Turbopack restriction on react-dom/server in route handlers
+  const React = (await import('react')).default;
+  const { renderToString } = await import('react-dom/server');
+  const { default: PrintResume } = await import('@/components/PrintResume');
+  const resumeHtml = renderToString(React.createElement(PrintResume, payload));
+  const css = await tailwindCssFor(resumeHtml);
 
-    const anonymousKey = clientKey(req.headers);
-
-    const rl = userId
-      ? pdfLimiter.check(buildKey(["pdf", userId]))
-      : anonymousPdfLimiter.check(buildKey(["pdf", "anonymous", anonymousKey]));
-
-    rateLimitHeaderValue = userId ? '10' : '3';
-    rateLimitRemainingValue = rl.remaining.toString();
-
-    if (!rl.allowed) {
-      log.warn('pdf.rate_limited', { userId, retryAfterMs: rl.retryAfterMs, anonymous: !userId });
-      return new Response(
-        JSON.stringify({ error: "Too many export requests", retryAfterMs: rl.retryAfterMs }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
-            "RateLimit-Limit": rateLimitHeaderValue,
-            "RateLimit-Remaining": "0",
-            ...corsHeaders,
-          },
-        }
-      );
-    }
-    log.info('pdf.start', { remaining: rl.remaining });
-    const payload = await req.json();
-    log.debug('pdf.payload', { selectedTemplate: payload?.selectedTemplate });
-
-    browser = await launchBrowser(log);
-    log.info("pdf.browser_ready");
-
-    const page = await browser.newPage();
-    log.debug("pdf.page_created");
-
-    // Render the resume template to HTML server-side
-    const printPayload: PrintPayload = {
-      selectedTemplate: isTemplateId(payload?.selectedTemplate) ? payload.selectedTemplate : "minimalist",
-      name: payload.name || '',
-      email: payload.email || '',
-      phone: payload.phone || '',
-      website: payload.website || '',
-      linkedin: payload.linkedin || '',
-      summary: payload.summary || '',
-      experiences: payload.experiences || [],
-      education: payload.education || '',
-      skills: payload.skills || [],
-      certifications: payload.certifications || '',
-      projects: payload.projects || '',
-      // Only inline images: headless Chrome must not fetch arbitrary user-supplied URLs.
-      profilePictureUrl: typeof payload.profilePictureUrl === 'string' && payload.profilePictureUrl.startsWith('data:image/')
-        ? payload.profilePictureUrl
-        : '',
-    };
-
-    // Dynamic imports to avoid Turbopack restriction on react-dom/server in route handlers
-    const React = (await import('react')).default;
-    const { renderToString } = await import('react-dom/server');
-    const { default: PrintResume } = await import('@/components/PrintResume');
-    const resumeHtml = renderToString(React.createElement(PrintResume, printPayload));
-    
-    // Build a complete self-contained HTML page with inline Tailwind-like styles
-    const fullHtml = `<!DOCTYPE html>
+  // Self-contained page: no scripts and no external resources.
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>${css}</style>
   <style>
     body { margin: 0; padding: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; }
     .resume-container { width: 100%; max-width: 100%; }
@@ -173,8 +110,67 @@ export async function POST(req: NextRequest) {
   </div>
 </body>
 </html>`;
+}
 
-    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+function jsonResponse(status: number, body: Record<string, unknown>, headers: HeadersInit): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...headers },
+  });
+}
+
+export async function POST(req: NextRequest) {
+  const started = performance.now();
+  const requestId = extractRequestId(req.headers);
+  const log = logger.withRequest(requestId);
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  let browser: Browser | null = null;
+
+  try {
+    // Signed-in users (Auth.js session cookie) get a higher export limit.
+    const userId = (await getSessionUserId()) || undefined;
+    log.info(userId ? 'pdf.authenticated' : 'pdf.anonymous_request', { userId });
+
+    const rl = userId
+      ? pdfLimiter.check(buildKey(["pdf", userId]))
+      : anonymousPdfLimiter.check(buildKey(["pdf", "anonymous", clientKey(req.headers)]));
+    const rateLimitHeaderValue = userId ? '10' : '3';
+
+    if (!rl.allowed) {
+      log.warn('pdf.rate_limited', { userId, retryAfterMs: rl.retryAfterMs, anonymous: !userId });
+      return jsonResponse(429, { error: "Too many export requests", retryAfterMs: rl.retryAfterMs }, {
+        "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
+        "RateLimit-Limit": rateLimitHeaderValue,
+        "RateLimit-Remaining": "0",
+        ...corsHeaders,
+      });
+    }
+    log.info('pdf.start', { remaining: rl.remaining });
+
+    const body = await readJsonBody<unknown>(req, MAX_PDF_BODY_BYTES);
+    if (!isPlainObject(body)) {
+      return jsonResponse(400, { error: "Resume data is invalid or too large" }, corsHeaders);
+    }
+    const payload = toPrintPayload(body);
+    log.debug('pdf.payload', { selectedTemplate: payload.selectedTemplate });
+
+    // Render before launching Chromium, so bad input fails fast and cheaply.
+    const fullHtml = await renderResumeHtml(payload);
+
+    browser = await launchBrowser(log);
+    log.info("pdf.browser_ready");
+
+    const page = await browser.newPage();
+    // The page is fully self-contained: run no scripts and make no network requests
+    // (inline data: images are still allowed).
+    await page.setJavaScriptEnabled(false);
+    await page.setRequestInterception(true);
+    page.on("request", (request) => {
+      if (request.url().startsWith("data:")) void request.continue();
+      else void request.abort();
+    });
+    await page.setContent(fullHtml, { waitUntil: "load" });
     log.info("pdf.page_loaded");
 
     const pdf = await page.pdf({
@@ -184,7 +180,6 @@ export async function POST(req: NextRequest) {
     });
     log.info("pdf.generated", { bytes: pdf.length });
 
-    // Wrap Buffer into a Uint8Array for Web Response compatibility
     const durationMs = +(performance.now() - started).toFixed(2);
     log.info('pdf.success', { durationMs, userId, anonymous: !userId });
     return new Response(new Uint8Array(pdf), {
@@ -193,7 +188,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="resume.pdf"`,
         "RateLimit-Limit": rateLimitHeaderValue,
-        "RateLimit-Remaining": rateLimitRemainingValue,
+        "RateLimit-Remaining": rl.remaining.toString(),
         "x-request-id": requestId || '',
         ...corsHeaders,
       },
@@ -201,14 +196,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const durationMs = +(performance.now() - started).toFixed(2);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    logger.error("pdf.error", { error: errorMessage, durationMs, requestId });
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { 
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+    log.error("pdf.error", { error: errorMessage, durationMs });
+    // Internal details stay in the logs; the client gets a request id to report.
+    return jsonResponse(500, { error: "Failed to generate the PDF. Please try again.", requestId }, corsHeaders);
   } finally {
     // Always release Chromium (closing the browser also closes its pages), even when rendering failed.
     if (browser) {
