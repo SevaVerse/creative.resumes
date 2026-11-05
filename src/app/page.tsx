@@ -2,6 +2,7 @@ import Link from "next/link";
 import HomeBuilder from "@/components/HomeBuilder";
 import JobsFaq from "@/components/jobs/JobsFaq";
 import { TEMPLATE_LIST } from "@/components/templates/registry";
+import { RESUME_FORMATS } from "@/data/resumeFormats";
 import { faqJsonLd, jsonLd, type FaqItem } from "@/lib/jobs/seo";
 import { TEMPLATE_COUNT } from "@/lib/site";
 
@@ -61,6 +62,14 @@ export default function HomePage() {
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Entry-level government and private openings, refreshed every month. Share them on WhatsApp in one tap.</p>
         </Link>
       </div>
+      <nav aria-label="Resume formats" className="flex flex-wrap gap-2 text-sm">
+        <span className="text-gray-500 dark:text-gray-400">Resume formats:</span>
+        {RESUME_FORMATS.map((f) => (
+          <Link key={f.slug} href={`/resume-format/${f.slug}/`} className="text-blue-700 dark:text-blue-300 hover:underline">
+            {f.h1.replace(/^Resume format for (an? )?/i, "").replace(/^./, (c) => c.toUpperCase())}
+          </Link>
+        ))}
+      </nav>
       <nav aria-label="Resume templates" className="flex flex-wrap gap-2 text-sm">
         <span className="text-gray-500 dark:text-gray-400">Templates:</span>
         {TEMPLATE_LIST.map((t) => (

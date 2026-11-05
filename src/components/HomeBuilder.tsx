@@ -1126,6 +1126,8 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
           <span className="hidden sm:inline">•</span>
           <Link href="/resume-templates/" className="text-sm hover:underline">Resume Templates</Link>
           <span className="hidden sm:inline">•</span>
+          <Link href="/resume-format/" className="text-sm hover:underline">Resume Formats</Link>
+          <span className="hidden sm:inline">•</span>
           <Link href="/ats-checker/" className="text-sm hover:underline">ATS Checker</Link>
           <span className="hidden sm:inline">•</span>
           <Link href="/roast-my-resume/" className="text-sm hover:underline">Roast My Resume</Link>
