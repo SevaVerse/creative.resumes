@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 
 // जय श्री राम - Blessed template

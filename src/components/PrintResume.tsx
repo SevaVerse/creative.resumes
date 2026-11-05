@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { getTemplateMeta } from "./templates/registry";
 import type { ResumeData, TemplateId } from "@/types/resume";
