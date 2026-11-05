@@ -72,22 +72,32 @@ export async function pruneJobs(retentionDays: number): Promise<number> {
   return rs.rowsAffected;
 }
 
+// Listings whose last date has passed are hidden at read time: the refresh that deletes them
+// runs only monthly, and a closed vacancy must not be shown (or offered to Google for Jobs) meanwhile.
+// Same UTC-day rule as pruneJobs(), so a listing stays visible through its last date.
+const OPEN_SQL = "(last_date IS NULL OR substr(last_date, 1, 10) >= ?)";
+const todayUtc = () => new Date().toISOString().slice(0, 10);
+
 export async function listActiveJobs(options: { sector?: JobSector; limit?: number } = {}): Promise<JobRow[]> {
   const db = await getDb();
   const limit = Math.min(Math.max(options.limit ?? 500, 1), 1000);
   const rs = options.sector
     ? await db.execute({
-        sql: "SELECT * FROM jobs WHERE sector = ? ORDER BY first_seen_at DESC, posted_at DESC LIMIT ?",
-        args: [options.sector, limit],
+        sql: `SELECT * FROM jobs WHERE sector = ? AND ${OPEN_SQL} ORDER BY first_seen_at DESC, posted_at DESC LIMIT ?`,
+        args: [options.sector, todayUtc(), limit],
       })
-    : await db.execute({ sql: "SELECT * FROM jobs ORDER BY first_seen_at DESC, posted_at DESC LIMIT ?", args: [limit] });
+    : await db.execute({
+        sql: `SELECT * FROM jobs WHERE ${OPEN_SQL} ORDER BY first_seen_at DESC, posted_at DESC LIMIT ?`,
+        args: [todayUtc(), limit],
+      });
   return rs.rows.map(toJob);
 }
 
+/** A single open listing (expired ones return null, so their detail pages 404 like pruned ones). */
 export async function getJobById(id: string): Promise<JobRow | null> {
   if (!/^[a-f0-9]{24}$/.test(id)) return null;
   const db = await getDb();
-  const rs = await db.execute({ sql: "SELECT * FROM jobs WHERE id = ? LIMIT 1", args: [id] });
+  const rs = await db.execute({ sql: `SELECT * FROM jobs WHERE id = ? AND ${OPEN_SQL} LIMIT 1`, args: [id, todayUtc()] });
   return rs.rows[0] ? toJob(rs.rows[0]) : null;
 }
 

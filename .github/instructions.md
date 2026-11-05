@@ -5,7 +5,7 @@ This file defines repository-specific guidance for AI coding agents working in t
 ## 1. Project Context
 
 - Stack: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4.
-- Purpose: Privacy-first resume builder with resume editing, template rendering, AI rewrite, PDF export, and a weekly fresher jobs board (`/jobs`).
+- Purpose: Privacy-first resume builder with resume editing, template rendering, AI rewrite, PDF export, and a fresher jobs board (`/jobs`) refreshed monthly.
 - Key integrations:
   - Auth.js v5 (`next-auth`) for Google/GitHub OAuth with JWT sessions (`src/auth.ts`)
   - Turso / libSQL database (`@libsql/client`; local SQLite file fallback in dev)
@@ -13,7 +13,7 @@ This file defines repository-specific guidance for AI coding agents working in t
   - Puppeteer + `@sparticuz/chromium(-min)` for server-side PDF generation
   - Job sources for `/jobs`: Adzuna, Greenhouse, Lever, RSS/Atom feeds, curated list
 - Runtime split:
-  - Single Next.js app: pages + API routes under `src/app`, weekly Vercel Cron (`/api/cron/jobs/`)
+  - Single Next.js app: pages + API routes under `src/app`, monthly Vercel Cron (`/api/cron/jobs/`, 1st of the month, see `vercel.json`)
 
 ## 2. Important Paths
 

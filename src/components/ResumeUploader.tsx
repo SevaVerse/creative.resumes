@@ -27,6 +27,24 @@ interface ResumeUploaderProps {
   onResumeImported: (resume: ParsedResume) => void
 }
 
+function validateFile(file: File): string | null {
+  const validTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ]
+
+  if (!validTypes.includes(file.type)) {
+    return 'Please upload a PDF or DOCX file'
+  }
+
+  const maxSize = 5 * 1024 * 1024 // 5MB (server limit)
+  if (file.size > maxSize) {
+    return 'File size must be less than 5MB'
+  }
+
+  return null
+}
+
 export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -34,35 +52,17 @@ export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps
   const [error, setError] = useState<string | null>(null)
   const [parsedData, setParsedData] = useState<ParsedResume | null>(null)
 
-  const validateFile = (file: File): string | null => {
-    const validTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ]
-    
-    if (!validTypes.includes(file.type)) {
-      return 'Please upload a PDF or DOCX file'
-    }
-    
-    const maxSize = 5 * 1024 * 1024 // 5MB (server limit)
-    if (file.size > maxSize) {
-      return 'File size must be less than 5MB'
-    }
-    
-    return null
-  }
-
-  const handleFileChange = (selectedFile: File) => {
+  const handleFileChange = useCallback((selectedFile: File) => {
     const validationError = validateFile(selectedFile)
     if (validationError) {
       setError(validationError)
       return
     }
-    
+
     setFile(selectedFile)
     setError(null)
     setParsedData(null)
-  }
+  }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -82,7 +82,7 @@ export default function ResumeUploader({ onResumeImported }: ResumeUploaderProps
     if (droppedFile) {
       handleFileChange(droppedFile)
     }
-  }, [])
+  }, [handleFileChange])
 
   const handleParseResume = async () => {
     if (!file) return
