@@ -22,6 +22,8 @@ export type JobCategory = {
 const text = (j: JobRow) => `${j.title} ${j.organization} ${j.location ?? ""} ${j.employment_type ?? ""}`;
 const hasTag = (tag: string) => (j: JobRow) => j.tags.includes(tag);
 const inCity = (re: RegExp) => (j: JobRow) => re.test(j.location ?? "");
+/** Eligibility is usually stated in the title or summary ("10th pass", "ITI", "any graduate"). */
+const needsQualification = (re: RegExp) => (j: JobRow) => re.test(`${j.title} ${j.summary ?? ""}`);
 
 export const JOB_CATEGORIES: JobCategory[] = [
   {
@@ -289,6 +291,78 @@ export const JOB_CATEGORIES: JobCategory[] = [
     keywords: ["fresher jobs in Delhi", "jobs in Noida for freshers", "Gurgaon fresher jobs", "Delhi NCR jobs"],
     faq: [],
     match: inCity(/delhi|ncr|noida|gurgaon|gurugram|ghaziabad|faridabad/i),
+  },
+  // Eligibility-based pages: how most people search for government jobs. Bare "SSC" is avoided
+  // because it usually means the Staff Selection Commission, not the Class X exam.
+  {
+    slug: "10th-pass",
+    label: "10th pass jobs",
+    title: "10th Pass Jobs — Latest Govt & Private Vacancies for Matric Pass",
+    h1: "Jobs for 10th pass candidates",
+    description: "Latest 10th pass (matriculation / SSLC) government and private jobs: MTS, peon, constable, apprentice and helper vacancies. Refreshed monthly with official links.",
+    intro: "Openings where Class 10 (matriculation, SSLC) is the stated minimum qualification. Always confirm age limits, physical standards and the last date in the official notification.",
+    keywords: ["10th pass jobs", "10th pass govt jobs", "matric pass jobs", "SSLC jobs", "MTS jobs"],
+    faq: [
+      { q: "Which government jobs can I get after 10th?", a: "Multi-tasking staff (MTS), constable, railway Group D/Level 1, postal Gramin Dak Sevak and many apprenticeships accept Class 10 as the minimum. Each notification lists the exact eligibility." },
+      { q: "Do I need a resume for a 10th pass job?", a: "Government exams use an online form instead. For private jobs and apprenticeships, a simple one-page resume with your marks, skills and any training helps you stand out." },
+    ],
+    match: needsQualification(/\b10th\b|\bmatric(ulation)?\b|\bsslc\b|\bclass\s*(x|10)\b/i),
+  },
+  {
+    slug: "12th-pass",
+    label: "12th pass jobs",
+    title: "12th Pass Jobs — Latest Govt & Private Vacancies After 12th",
+    h1: "Jobs for 12th pass candidates",
+    description: "Latest 12th pass (10+2 / HSC) government and private jobs: clerk, data entry, constable, stenographer and trainee openings. Refreshed monthly with official links.",
+    intro: "Openings where Class 12 (10+2, HSC, higher secondary) is the stated minimum qualification, from official recruitment feeds and company career pages.",
+    keywords: ["12th pass jobs", "12th pass govt jobs", "jobs after 12th", "10+2 jobs", "HSC pass jobs"],
+    faq: [
+      { q: "Which government jobs can I get after 12th?", a: "SSC CHSL (clerk, data entry operator), state police constable, stenographer, railway non-technical posts and defence entries such as Agniveer accept 10+2. Check each notice for age and subject requirements." },
+      { q: "Can I get a private job after 12th?", a: "Yes — customer support, sales, data entry and retail roles often accept 12th pass candidates, and many offer training. A short resume that highlights communication and computer skills helps." },
+    ],
+    match: needsQualification(/\b12th\b|\bhsc\b|\bclass\s*(xii|12)\b|higher secondary|10\s*\+\s*2/i),
+  },
+  {
+    slug: "iti",
+    label: "ITI jobs",
+    title: "ITI Jobs — Latest Apprentice & Technician Vacancies for ITI Pass",
+    h1: "Jobs for ITI pass candidates",
+    description: "Latest ITI jobs and apprenticeships for electricians, fitters, welders, mechanics and other NCVT/SCVT trades in government and private companies. Refreshed monthly.",
+    intro: "Openings that ask for an ITI certificate (NCVT or SCVT) — apprenticeships, technician and operator roles in PSUs, railways and manufacturing.",
+    keywords: ["ITI jobs", "ITI apprentice", "ITI pass govt jobs", "NCVT jobs", "fitter electrician jobs"],
+    faq: [
+      { q: "Which trades are most in demand?", a: "Electrician, fitter, welder, mechanic (motor vehicle and diesel), COPA and machinist trades appear most often in PSU and railway apprenticeship notices." },
+      { q: "Is an apprenticeship worth it after ITI?", a: "Usually yes: it pays a stipend, adds a National Apprenticeship Certificate to your resume, and some employers reserve permanent posts for their former apprentices." },
+    ],
+    match: needsQualification(/\biti\b|industrial training institute|\bncvt\b|\bscvt\b/i),
+  },
+  {
+    slug: "diploma",
+    label: "Diploma jobs",
+    title: "Diploma Jobs — Latest Jobs for Polytechnic Diploma Holders",
+    h1: "Jobs for diploma holders",
+    description: "Latest jobs for diploma and polytechnic holders: junior engineer, technician, supervisor and apprentice roles in government and private sectors. Refreshed monthly.",
+    intro: "Openings that ask for a diploma (usually a three-year polytechnic diploma in engineering) — junior engineer, technician and supervisor roles.",
+    keywords: ["diploma jobs", "polytechnic jobs", "junior engineer jobs", "diploma engineer fresher jobs", "diploma apprentice"],
+    faq: [
+      { q: "Can diploma holders apply for junior engineer posts?", a: "Yes. SSC JE, railway JE and many state JE recruitments accept a diploma in the relevant engineering branch." },
+      { q: "What should a diploma holder put on a resume?", a: "Your branch and percentage, your final-year project, any industrial training or apprenticeship, and the tools and machines you have used." },
+    ],
+    match: needsQualification(/\bdiploma\b|\bpolytechnic\b/i),
+  },
+  {
+    slug: "graduate",
+    label: "Graduate jobs",
+    title: "Jobs for Graduates — Any Graduate Fresher Vacancies (Govt & Private)",
+    h1: "Jobs for graduates",
+    description: "Latest jobs open to fresh graduates — any graduate, B.Tech, B.Com, B.Sc, BCA and BBA — in government and private sectors. Refreshed monthly.",
+    intro: "Openings that ask for a bachelor's degree, including “any graduate” government posts, graduate trainee programmes and entry-level private roles.",
+    keywords: ["jobs for graduates", "any graduate jobs", "graduate fresher jobs", "B.Com fresher jobs", "BCA fresher jobs"],
+    faq: [
+      { q: "Which government jobs are open to any graduate?", a: "SSC CGL, bank PO and clerk exams (IBPS, SBI), UPSC civil services and many state PSC posts accept a degree in any subject." },
+      { q: "How should a fresh graduate format a resume?", a: "Lead with your degree, then projects and internships, then skills. Keep it to one page — see our fresher resume format guide." },
+    ],
+    match: needsQualification(/\bany graduate\b|\bgraduat(e|es|ion)\b|\bb\.?\s?tech\b|\bb\.?\s?sc\b|\bb\.?\s?com\b|\bbca\b|\bbba\b|\bbachelor'?s?\b/i),
   },
 ];
 
