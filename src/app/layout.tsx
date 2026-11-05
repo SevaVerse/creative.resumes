@@ -182,12 +182,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <header className="border-b border-gray-200/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-neutral-950/60 sticky top-0 z-50">
-            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div className="container mx-auto px-4 py-3 flex justify-between items-center gap-3">
               <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" aria-label="SecureCV — Home">SecureCV</Link>
               <nav aria-label="Main navigation" className="flex items-center gap-2 sm:gap-4">
                 <Link href="/resume-templates/" className="hidden sm:inline whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300">Templates</Link>
-                <Link href="/ats-checker/" className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300">ATS Checker</Link>
-                <Link href="/jobs/" className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300">Fresher Jobs</Link>
+                <Link href="/ats-checker/" className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300"><span className="sm:hidden">ATS</span><span className="hidden sm:inline">ATS Checker</span></Link>
+                <Link href="/jobs/" className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300"><span className="sm:hidden">Jobs</span><span className="hidden sm:inline">Fresher Jobs</span></Link>
                 <LoginButton />
               </nav>
             </div>
