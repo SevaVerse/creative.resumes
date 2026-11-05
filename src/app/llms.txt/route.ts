@@ -27,6 +27,7 @@ ${SITE_NAME} is a free, open-source (MIT) resume builder. Facts:
 
 - [Resume builder](${base}/): live preview, AI rewrite, PDF/DOCX import, one-click PDF export
 - [ATS resume checker](${base}/ats-checker/): ATS readiness score and job-description keyword match
+- [Roast my resume](${base}/roast-my-resume/): funny AI critique plus fixes; only the score is ever shared
 - [Resume templates](${base}/resume-templates/): every template with a live example
 - [Fresher jobs](${base}/jobs/): entry-level government and private jobs in India
 

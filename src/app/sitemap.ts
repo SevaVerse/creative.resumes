@@ -44,6 +44,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/roast-my-resume/`,
+      lastModified: new Date("2026-11-05"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/resume-templates/`,
       lastModified: new Date("2026-11-05"),
       changeFrequency: "monthly",

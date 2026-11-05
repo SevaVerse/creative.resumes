@@ -1126,6 +1126,8 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
           <span className="hidden sm:inline">•</span>
           <Link href="/ats-checker/" className="text-sm hover:underline">ATS Checker</Link>
           <span className="hidden sm:inline">•</span>
+          <Link href="/roast-my-resume/" className="text-sm hover:underline">Roast My Resume</Link>
+          <span className="hidden sm:inline">•</span>
           <a href="https://github.com/SevaVerse/creative.resumes" target="_blank" rel="noopener noreferrer" className="text-sm hover:underline">Open source on GitHub</a>
         </div>
         {!showSupport && (
