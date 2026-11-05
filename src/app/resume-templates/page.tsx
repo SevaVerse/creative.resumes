@@ -60,11 +60,13 @@ export default function ResumeTemplatesIndex() {
             const sample = t.tags.includes("fresher") ? SAMPLE_FRESHER : SAMPLE_EXPERIENCED;
             return (
               <li key={t.id} className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 overflow-hidden flex flex-col">
-                <Link href={`/resume-templates/${t.id}/`} className="block border-b border-gray-200 dark:border-neutral-800" aria-label={`${t.label} resume template`}>
+                {/* Overlay link, not a wrapper: templates contain their own <a> tags and nested anchors break hydration. */}
+                <div className="relative border-b border-gray-200 dark:border-neutral-800">
                   <ScaledPreview maxHeight={320}>
                     <Tpl {...sample} />
                   </ScaledPreview>
-                </Link>
+                  <Link href={`/resume-templates/${t.id}/`} className="absolute inset-0" aria-label={`${t.label} resume template`} />
+                </div>
                 <div className="p-4 flex flex-col gap-2 flex-1">
                   <h2 className="font-bold text-gray-900 dark:text-white">
                     <Link href={`/resume-templates/${t.id}/`} className="hover:underline">{t.label}</Link>
