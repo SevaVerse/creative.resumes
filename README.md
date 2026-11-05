@@ -21,10 +21,11 @@ If this tool helps you, please consider supporting its development. Your contrib
 ## ✨ Core Features
 
 *   **Privacy-First by Design:** No ads or third-party trackers. Build and export without an account.
-*   **Seven Templates:** New Campus (fresher), ATS Classic and Modern, plus Minimalist, Onyx, AwesomeCV and Subtle & Elegant.
+*   **13 Templates:** Campus (fresher), ATS Classic, Developer, Nordic, Executive, Modern, Aurora, Timeline, Horizon, Minimalist, Onyx, AwesomeCV and Subtle & Elegant — each with its own page under [`/resume-templates`](https://securecv.co.in/resume-templates/).
+*   **Free ATS Checker (`/ats-checker`):** Resume score and job-description keyword match. Runs entirely in the browser; nothing is uploaded.
 *   **Live Preview Builder:** Split-screen editing, template gallery with real thumbnails and filters, "start from a fresher example".
 *   **AI-Powered Rewrites & Import:** Groq-powered rewriting and PDF/DOCX resume import.
-*   **Fresher Jobs (`/jobs`):** Entry-level government and private openings refreshed monthly, with an RSS feed.
+*   **Fresher Jobs (`/jobs`):** Entry-level government and private openings refreshed monthly, with an RSS feed and one-tap WhatsApp/Telegram sharing.
 *   **One-Click PDF Export**, gamified resume score, and an eco-friendly carbon score per template.
 
 ---
