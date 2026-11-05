@@ -121,8 +121,8 @@ export default function PrivacyPage() {
                   <p className="text-blue-700 dark:text-blue-300 text-sm">
                     Resume content you enter remains in your browser.{" "}
                     <strong>
-                      No data is sent to our servers unless you explicitly choose
-                      to export a PDF.
+                      Nothing is sent to our servers unless you use a feature that
+                      needs it — each one is listed below.
                     </strong>
                   </p>
                 </div>
@@ -199,8 +199,8 @@ export default function PrivacyPage() {
               </div>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Only when you explicitly choose to export a PDF do we temporarily
-              process your data on our server. Here&apos;s exactly what happens:
+              Your data leaves your browser only when you use one of the features
+              listed in this section. PDF export works like this:
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-3 bg-gray-50/50 dark:bg-neutral-800/50 rounded-lg border border-gray-200/50 dark:border-neutral-700/50">
@@ -228,6 +228,14 @@ export default function PrivacyPage() {
                 </span>
               </div>
             </div>
+            <h3 className="mt-6 mb-3 font-semibold text-gray-900 dark:text-white">Other features that send data</h3>
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400" data-privacy-features>
+              <li><strong className="text-gray-800 dark:text-gray-200">ATS checker:</strong> runs entirely in your browser. Nothing is sent.</li>
+              <li><strong className="text-gray-800 dark:text-gray-200">AI rewrite</strong> (signed-in users): the text you choose to rewrite is sent to our AI provider, Groq, to generate the new wording. SecureCV does not store it.</li>
+              <li><strong className="text-gray-800 dark:text-gray-200">Roast my resume:</strong> the pasted text is sent to Groq to write the roast and is not stored by SecureCV or written to our logs. The score is calculated in your browser, and sharing a roast shares only the score.</li>
+              <li><strong className="text-gray-800 dark:text-gray-200">Resume import</strong> (signed-in users): the uploaded PDF or DOCX is read on our server and sent to Groq to extract your details. It is not stored.</li>
+              <li><strong className="text-gray-800 dark:text-gray-200">Cloud save</strong> (optional, signed-in users): saved resumes are stored in our database, visible only to your account, and deleted when you delete them.</li>
+            </ul>
           </section>
 
           {/* OAuth Authentication */}
