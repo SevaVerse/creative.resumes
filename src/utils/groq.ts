@@ -66,13 +66,12 @@ export async function rewriteText(
     throw new Error('Text cannot be empty');
   }
 
-  // Log the rewrite attempt
+  // Log the rewrite attempt (lengths only: resume text is personal data and is never logged)
   logger.info('groq.rewrite.start', { 
     type, 
     tone,
     action,
     originalLength: text.length,
-    originalPreview: text.substring(0, 50) + (text.length > 50 ? '...' : '')
   });
 
   try {
@@ -113,7 +112,6 @@ export async function rewriteText(
       originalLength: text.length,
       rewrittenLength: rewrittenText.length,
       savedChars: text.length - rewrittenText.length,
-      rewrittenPreview: rewrittenText.substring(0, 50) + (rewrittenText.length > 50 ? '...' : '')
     });
 
     return rewrittenText;
