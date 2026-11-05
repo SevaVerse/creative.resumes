@@ -7,6 +7,7 @@ import { getBaseUrl } from "@/utils/baseUrl";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LoginButton } from "@/components/LoginButton";
+import { TEMPLATE_COUNT, TEMPLATE_LIST } from "@/components/templates/registry";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,15 +20,16 @@ const geistMono = Geist_Mono({
 });
 
 const baseUrl = getBaseUrl();
+const templateNames = TEMPLATE_LIST.map((t) => t.label.replace(/ \(.*\)$/, ""));
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "SecureCV — Free AI Resume Builder & Fresher Jobs | Privacy-First, 7 Templates",
+    default: `SecureCV — Free AI Resume Builder & Fresher Jobs | Privacy-First, ${TEMPLATE_COUNT} Templates`,
     template: "%s | SecureCV",
   },
   description:
-    "Build a professional resume for free with SecureCV's AI-powered resume builder. AI text rewrite, 7 pro templates including fresher-friendly Campus and ATS Classic, instant PDF export, and a monthly board of entry-level govt and private jobs. No tracking, no ads — privacy-first by design.",
+    `Build a professional resume for free with SecureCV's AI-powered resume builder. AI text rewrite, ${TEMPLATE_COUNT} pro templates including fresher-friendly Campus and ATS Classic, instant PDF export, and a monthly board of entry-level govt and private jobs. No tracking, no ads — privacy-first by design.`,
   keywords: [
     "resume builder",
     "free resume builder",
@@ -67,7 +69,7 @@ export const metadata: Metadata = {
     url: "/",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and monthly fresher jobs. No tracking, no ads — privacy-first by design.",
+      `Build a standout resume for free with AI rewrite, carbon footprint estimates, ${TEMPLATE_COUNT} pro templates and monthly fresher jobs. No tracking, no ads — privacy-first by design.`,
     siteName: "SecureCV",
     locale: "en_US",
     images: [
@@ -83,7 +85,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SecureCV — Free AI Resume Builder | Privacy-First",
     description:
-      "Build a standout resume for free with AI rewrite, carbon score calculator, 7 pro templates and monthly fresher jobs. No tracking, no ads.",
+      `Build a standout resume for free with AI rewrite, carbon footprint estimates, ${TEMPLATE_COUNT} pro templates and monthly fresher jobs. No tracking, no ads.`,
     images: ["/og-image.png"],
     creator: "@sevadeveer",
   },
@@ -132,14 +134,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 priceCurrency: "USD",
               },
               description:
-                "Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, carbon score calculator, and 7 pro templates including fresher-friendly designs. Privacy-first and free.",
+                `Build a professional, ATS-friendly resume in minutes with AI-powered text rewrite, carbon footprint estimates, and ${TEMPLATE_COUNT} pro templates including fresher-friendly designs. Privacy-first and free.`,
               featureList: [
-                "Seven professional templates incl. Campus (fresher), ATS Classic and Modern",
+                `${TEMPLATE_COUNT} professional templates incl. Campus (fresher), ATS Classic, Developer and Executive`,
                 "Monthly fresher jobs board (government and private)",
                 "AI-powered resume text rewriting",
                 "Structured experience and skills editor",
                 "Gamified score and badge guidance",
-                "Carbon footprint score per template",
+                "Carbon footprint estimate (g CO2e per printed page) per template",
                 "One-click PDF export via headless Chrome",
                 "Privacy-first — no tracking, no ads",
                 "Import from existing PDF/DOCX resume",
@@ -160,7 +162,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: baseUrl },
                 { "@type": "ListItem", position: 2, name: "Privacy", item: `${baseUrl}/privacy` },
-                { "@type": "ListItem", position: 3, name: "Blog", item: `${baseUrl}/blog/privacy-first-resume-builder` },
+                { "@type": "ListItem", position: 3, name: "Blog", item: `${baseUrl}/blog` },
                 { "@type": "ListItem", position: 4, name: "Fresher Jobs", item: `${baseUrl}/jobs` },
               ],
             }),
@@ -178,7 +180,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "Is SecureCV really free?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "Yes. All core features — 7 templates, AI rewrite, PDF export, the fresher jobs board and the carbon score calculator — are completely free with no trials or paywalls.",
+                    text: `Yes. All core features — ${TEMPLATE_COUNT} templates, AI rewrite, PDF export, the fresher jobs board and the carbon footprint estimates — are completely free with no trials or paywalls.`,
                   },
                 },
                 {
@@ -194,7 +196,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "What resume templates are available?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "SecureCV offers seven templates: Campus (education-first, for freshers), ATS Classic (plain, parser-safe), Modern (colour header), Minimalist, Onyx, AwesomeCV and Subtle Elegant.",
+                    text: `SecureCV offers ${TEMPLATE_COUNT} templates: ${templateNames.slice(0, -1).join(", ")} and ${templateNames[templateNames.length - 1]}. Campus, ATS Classic, Nordic and Developer suit freshers; ATS Classic and Nordic are the most parser-safe.`,
                   },
                 },
                 {

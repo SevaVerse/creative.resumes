@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getBaseUrl } from "@/utils/baseUrl";
+import { BLOG_POSTS } from "@/lib/blog/posts";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = getBaseUrl();
@@ -24,10 +25,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
-      url: `${baseUrl}/blog/privacy-first-resume-builder`,
-      lastModified: new Date("2025-06-01"),
-      changeFrequency: "monthly",
-      priority: 0.7,
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(BLOG_POSTS[0]?.published ?? Date.now()),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
+    ...BLOG_POSTS.map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: new Date(post.updated ?? post.published),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
   ];
 }

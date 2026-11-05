@@ -10,7 +10,7 @@ entry-level jobs for freshers. **[securecv.co.in](https://securecv.co.in)**
 ## ✨ Core Features
 
 * **Privacy-first:** no ads, no third-party trackers; works without an account (drafts stay in your browser).
-* **7 templates:** Campus (fresher), ATS Classic, Modern, Minimalist, Onyx, AwesomeCV, Subtle & Elegant.
+* **13 templates:** Campus (fresher), ATS Classic, Developer, Nordic, Executive, Modern, Aurora, Timeline, Horizon, Minimalist, Onyx, AwesomeCV, Subtle & Elegant.
 * **Live split-screen preview** while editing, template gallery with real thumbnails and filters, one-click
   "start from a fresher example".
 * **AI rewrite and resume import** (PDF/DOCX) powered by Groq, for signed-in users.
