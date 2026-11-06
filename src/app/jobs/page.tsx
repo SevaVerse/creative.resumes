@@ -23,7 +23,7 @@ export const revalidate = 3600;
 const JOBS_FAQ: FaqItem[] = [
   { q: "What are fresher jobs?", a: "Jobs open to candidates with little or no work experience (0–1 years): internships, apprenticeships, trainee programmes, entry-level private roles and government vacancies filled through exams." },
   { q: "How often is this fresher jobs list updated?", a: "Every month. New listings are marked “New”, and listings whose last date has passed are removed automatically." },
-  { q: "Is it free to apply?", a: "Yes. SecureCV never charges for jobs, and every listing links to the employer's or recruiting body's official page. Never pay an agent to get a job." },
+  { q: "Is it free to apply?", a: "Yes. SecureCV never charges for jobs, and every listing links to the original posting — the employer's careers page, the recruiting body's official notice, or the job board it was listed on. Never pay an agent to get a job." },
   { q: "How do I make a resume as a fresher?", a: "Lead with education, then projects, internships and skills. SecureCV's free Campus template is designed for freshers and exports an ATS-friendly PDF." },
 ];
 

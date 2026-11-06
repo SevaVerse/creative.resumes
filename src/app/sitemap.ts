@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { getBaseUrl } from "@/utils/baseUrl";
 import { BLOG_POSTS } from "@/lib/blog/posts";
 import { getLastJobRun, listActiveJobs } from "@/lib/db/jobs";
@@ -11,13 +12,20 @@ import { RESUME_FORMATS } from "@/data/resumeFormats";
 // Regenerate hourly so new monthly listings reach crawlers quickly.
 export const revalidate = 3600;
 
+// Bump when the homepage content actually changes, so crawlers aren't told it changes hourly.
+const HOME_LAST_MODIFIED = new Date("2026-11-05");
+
 async function loadJobs(): Promise<{ jobs: JobRow[]; lastRun: Date }> {
   try {
     const [jobs, run] = await Promise.all([listActiveJobs({ limit: 1000 }), getLastJobRun()]);
     return { jobs, lastRun: run ? new Date(run.finished_at) : new Date() };
   } catch (error) {
-    logger.warn("sitemap.jobs_load_failed", { error: (error as Error).message });
-    return { jobs: [], lastRun: new Date() };
+    logger.error("sitemap.jobs_load_failed", { error: (error as Error).message });
+    // At build time, fall back to a sitemap without jobs so a DB blip can't fail the deploy.
+    // During ISR revalidation, throw instead: Next.js then keeps serving the last good sitemap
+    // rather than caching one with every job and category URL missing.
+    if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return { jobs: [], lastRun: new Date() };
+    throw error;
   }
 }
 
@@ -28,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}/`,
-      lastModified: new Date(),
+      lastModified: HOME_LAST_MODIFIED,
       changeFrequency: "weekly",
       priority: 1,
     },
