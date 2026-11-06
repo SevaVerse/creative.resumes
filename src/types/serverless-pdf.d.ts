@@ -8,10 +8,3 @@ declare module "@sparticuz/chromium" {
   export const defaultViewport: unknown;
   export function executablePath(): Promise<string>;
 }
-
-declare module "puppeteer-core" {
-  const puppeteerCore: {
-    launch: (options?: unknown) => unknown;
-  };
-  export default puppeteerCore;
-}

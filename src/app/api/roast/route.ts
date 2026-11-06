@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGroq, GROQ_MODEL, GROQ_REASONING_PARAMS, GROQ_REASONING_TOKENS, isAIRewriterEnabled } from "@/utils/groq";
 import { logger, extractRequestId } from "@/utils/logger";
-import { createRateLimiter, buildKey } from "@/utils/rateLimit";
+import { checkRateLimit } from "@/lib/db/rateLimits";
 import { clientKey, getCorsHeaders } from "@/utils/cors";
 import { jsonError, readJsonBody, isPlainObject } from "@/lib/api/http";
 
 export const runtime = "nodejs";
 
-// No sign-in needed (it is a top-of-funnel tool), so limits are per client and kept tight.
-const roastLimiter = createRateLimiter(10 * 60_000, 5);
+// No sign-in needed (it is a top-of-funnel tool), so limits are per client, kept tight, and shared
+// across server instances (each roast is a paid AI call).
+const ROAST_WINDOW_MS = 10 * 60_000;
+const ROAST_LIMIT = 5;
 
 const MAX_CHARS = 12_000;
 const MIN_CHARS = 200;
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     return jsonError(503, "AI roast is not available right now", corsHeaders);
   }
 
-  const rl = roastLimiter.check(buildKey(["roast", clientKey(req.headers)]));
+  const rl = await checkRateLimit("roast", clientKey(req.headers), ROAST_WINDOW_MS, ROAST_LIMIT);
   if (!rl.allowed) {
     log.warn("roast.rate_limited", { retryAfterMs: rl.retryAfterMs });
     return NextResponse.json(

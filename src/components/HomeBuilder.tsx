@@ -121,7 +121,7 @@ import { ShareResumeLink } from "@/components/ShareResumeLink";
 import { ResumeLoader } from "@/components/ResumeLoader";
 import { AutosaveIndicator, type SaveStatus } from "@/components/AutosaveIndicator";
 import { scheduleAutoSave, cancelAutoSave } from "@/lib/resumesClient";
-import { trackDownload, trackPageView } from "@/lib/analytics";
+import { trackPageView } from "@/lib/analytics";
 import { Onboarding } from "@/components/Onboarding";
 import { ResumeProgress } from "@/components/ResumeProgress";
 import ResumeUploader from "@/components/ResumeUploader";
@@ -649,7 +649,7 @@ export default function HomeBuilder({ landingContent }: { landingContent?: React
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
-        await trackDownload(tpl, currentResumeId);
+        // The download is counted server-side by /api/export-pdf.
       } else {
         const error = await res.json().catch(() => ({ error: "Failed to export PDF" }));
         alert(error.error || "Failed to export PDF.");

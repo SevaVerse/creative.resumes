@@ -24,10 +24,6 @@ export async function trackPageView(): Promise<void> {
   await trackEvent('page_view', { path: window.location.pathname })
 }
 
-export async function trackDownload(template: string, resumeId?: string): Promise<void> {
-  await trackEvent('resume_download', { template, resume_id: resumeId || null })
-}
-
 export async function trackAIRewrite(fieldType: string, tone?: string): Promise<void> {
   await trackEvent('ai_rewrite', { field_type: fieldType, tone: tone || 'default' })
 }

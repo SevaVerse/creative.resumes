@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image";
+import { ProfilePhoto } from "./templates/shared";
 
 // This is a simplified and adapted version of the Onyx template from tbakerx/react-resume-template
 // For a full-featured version, you may want to further style and modularize this component.
@@ -49,13 +49,7 @@ export default function OnyxTemplate({
   <aside className="w-1/3 bg-slate-100 text-gray-900 p-8 flex flex-col items-center min-h-full">
         {profilePictureUrl && (
           <div className="mb-6">
-            <Image
-              src={profilePictureUrl}
-              alt="Profile picture"
-              width={96}
-              height={96}
-              className="rounded-full object-cover border-4 border-slate-300 shadow"
-            />
+            <ProfilePhoto src={profilePictureUrl} alt="Profile picture" size={96} className="rounded-full object-cover border-4 border-slate-300 shadow" />
           </div>
         )}
         <div className="mb-8 text-center">

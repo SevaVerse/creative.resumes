@@ -1,7 +1,6 @@
 import React from "react";
-import Image from "next/image";
 import type { ResumeData } from "@/types/resume";
-import { Bullets, dateRange, hasExperience, toLines } from "./templates/shared";
+import { Bullets, dateRange, hasExperience, toLines, ProfilePhoto } from "./templates/shared";
 
 // Horizon: deep teal sidebar with initials monogram (or photo) and contact details; light main column.
 export default function HorizonTemplate({
@@ -35,7 +34,7 @@ export default function HorizonTemplate({
       <aside className="bg-teal-900 text-teal-50 px-6 py-9 flex flex-col gap-6">
         <div className="flex justify-center">
           {profilePictureUrl ? (
-            <Image src={profilePictureUrl} alt="Profile picture" width={110} height={110} className="rounded-full object-cover ring-4 ring-teal-600" />
+            <ProfilePhoto src={profilePictureUrl} alt="Profile picture" size={110} className="rounded-full object-cover ring-4 ring-teal-600" />
           ) : (
             initials && (
               <div className="h-24 w-24 rounded-full ring-4 ring-teal-600 bg-teal-800 flex items-center justify-center text-[30px] font-light tracking-wider">{initials}</div>

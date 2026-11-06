@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image";
+import { ProfilePhoto } from "./templates/shared";
 
 interface SubtleElegantTemplateProps {
   name: string;
@@ -43,13 +43,7 @@ const SubtleElegantTemplate: React.FC<SubtleElegantTemplateProps> = ({
       <header className="border-b border-gray-200 pb-8 mb-10">
         <div className="flex items-center justify-between">
           {profilePictureUrl && (
-        <Image
-          src={profilePictureUrl}
-          alt="Profile"
-          width={96}
-          height={96}
-          className="w-24 h-24 rounded-full object-cover border-2 border-gray-100 mr-6"
-        />
+        <ProfilePhoto src={profilePictureUrl} alt="Profile" size={96} className="w-24 h-24 rounded-full object-cover border-2 border-gray-100 mr-6" />
           )}
           <div className="flex-1">
         <div className="flex flex-col justify-center">

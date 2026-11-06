@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image";
+import { ProfilePhoto } from "./templates/shared";
 
 // This is a simplified adaptation inspired by the "react-cv" template (https://github.com/cvluca/react-cv)
 // For a full-featured version, further modularization and styling may be needed.
@@ -49,13 +49,7 @@ export default function AwesomeCVTemplate({
       <aside className="w-1/3 bg-[#22223B] text-white p-8 flex flex-col items-center min-h-full">
         {profilePictureUrl && (
           <div className="mb-6">
-            <Image
-              src={profilePictureUrl}
-              alt="Profile picture"
-              width={96}
-              height={96}
-              className="rounded-full object-cover border-4 border-white shadow"
-            />
+            <ProfilePhoto src={profilePictureUrl} alt="Profile picture" size={96} className="rounded-full object-cover border-4 border-white shadow" />
           </div>
         )}
         <div className="mb-8 text-center">
