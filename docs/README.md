@@ -79,12 +79,15 @@ sign-in the account is linked by email, so saved resumes reappear.
 ### Fresher jobs board
 
 * `CRON_SECRET` protects `GET /api/cron/jobs/`. Vercel Cron calls it on the **1st of each month at 07:00 IST** (`vercel.json`).
-* Sources (all optional, configured via env): **Adzuna** India API (`ADZUNA_APP_ID/KEY`, free), public
-  **Greenhouse/Lever** boards (`GREENHOUSE_BOARDS`, `LEVER_COMPANIES`), any **RSS/Atom** feed (`JOB_FEEDS`), and
-  hand-curated listings in `src/data/jobs/curated.ts`.
+* Sources: employers' own careers boards on **Greenhouse, Lever, Ashby and SmartRecruiters**, from the verified
+  registry in `src/data/jobs/employers.ts` (public APIs, no keys; extra boards via `GREENHOUSE_BOARDS`,
+  `LEVER_COMPANIES`, `ASHBY_BOARDS`, `SMARTRECRUITERS_COMPANIES`), plus the optional **Adzuna** India API
+  (`ADZUNA_APP_ID/KEY`, free, supplementary), any **RSS/Atom** feed (`JOB_FEEDS`), and hand-curated listings in
+  `src/data/jobs/curated.ts`.
 * Jobs are filtered to entry-level roles (fresher/trainee/intern/apprentice/0–2 yrs, not senior), deduplicated,
   kept for `JOBS_RETENTION_DAYS` (default 21) or until their last date, so each monthly run
-  replaces the previous month's listings. Pruning is skipped when any source fails, so a bad run never empties the board.
+  replaces the previous month's listings. Listings from a source that failed in a run are kept (until their last date),
+  so one broken board never empties its listings or blocks clean-up of the others.
 * Manual refresh: `curl -H "Authorization: Bearer $CRON_SECRET" https://securecv.co.in/api/cron/jobs/`
 
 ---

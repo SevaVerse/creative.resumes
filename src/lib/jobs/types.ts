@@ -19,4 +19,7 @@ export type RawJob = {
 
 export type SourceResult = { source: string; jobs: RawJob[]; error?: string };
 
-export type JobSource = { name: string; fetch: () => Promise<RawJob[]> };
+/** Stored rows a source is responsible for: all rows with `source`, or only those for one `organization`. */
+export type SourceScope = { source: string; organization?: string };
+
+export type JobSource = { name: string; fetch: () => Promise<RawJob[]>; scope: SourceScope };

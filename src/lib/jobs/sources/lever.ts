@@ -9,8 +9,17 @@ type LeverPosting = {
   hostedUrl: string;
   createdAt?: number;
   descriptionPlain?: string;
+  /** ISO 3166-1 alpha-2, e.g. "IN". */
+  country?: string;
   categories?: { location?: string; commitment?: string; team?: string };
 };
+
+/** Lever locations are often a bare city ("Noida, UP"); name the country so the India filter can see it. */
+function locationOf(p: LeverPosting): string | null {
+  const loc = p.categories?.location?.trim() || null;
+  if (p.country?.toUpperCase() !== "IN") return loc;
+  return loc && /india/i.test(loc) ? loc : [loc, "India"].filter(Boolean).join(", ");
+}
 
 export async function fetchLeverCompany(company: string, displayName?: string): Promise<RawJob[]> {
   const res = await fetchWithTimeout(`https://api.lever.co/v0/postings/${encodeURIComponent(company)}?mode=json`);
@@ -20,7 +29,7 @@ export async function fetchLeverCompany(company: string, displayName?: string): 
     title: p.text,
     organization: displayName || company,
     url: p.hostedUrl,
-    location: p.categories?.location ?? null,
+    location: locationOf(p),
     employmentType: p.categories?.commitment ?? null,
     summary: p.descriptionPlain ? truncate(stripHtml(p.descriptionPlain), 280) : null,
     postedAt: toIsoDate(p.createdAt),

@@ -1,27 +1,46 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { getJobsConfig } from "./config";
+import { getJobsConfig, type BoardConfig } from "./config";
 import { classifySector, deriveTags, isEntryLevel, isIndiaOrRemote } from "./classify";
 import { isSafeHttpUrl, toIsoDate, truncate } from "./text";
 import { fetchAdzuna } from "./sources/adzuna";
+import { fetchAshbyBoard } from "./sources/ashby";
 import { fetchGreenhouseBoard } from "./sources/greenhouse";
 import { fetchLeverCompany } from "./sources/lever";
+import { fetchSmartRecruitersCompany } from "./sources/smartrecruiters";
 import { fetchFeed } from "./sources/rss";
 import { CURATED_JOBS } from "@/data/jobs/curated";
-import type { JobSource, RawJob, SourceResult } from "./types";
+import type { JobSource, RawJob, SourceResult, SourceScope } from "./types";
 import { pruneJobs, recordJobRun, upsertJobs, type JobUpsert } from "@/lib/db/jobs";
 import { logger } from "@/utils/logger";
 
+// Each adapter's `source` value as stored on its rows, and the fetcher for one board.
+const ATS_ADAPTERS: Record<BoardConfig["ats"], { source: string; fetch: (slug: string, name?: string) => Promise<RawJob[]> }> = {
+  greenhouse: { source: "Greenhouse", fetch: fetchGreenhouseBoard },
+  lever: { source: "Lever", fetch: fetchLeverCompany },
+  ashby: { source: "Ashby", fetch: fetchAshbyBoard },
+  smartrecruiters: { source: "SmartRecruiters", fetch: fetchSmartRecruitersCompany },
+};
+
+function boardSource(b: BoardConfig): JobSource {
+  const adapter = ATS_ADAPTERS[b.ats];
+  return {
+    name: `${adapter.source}:${b.slug}`,
+    fetch: () => adapter.fetch(b.slug, b.name),
+    // Adapters store the display name (or the slug) as the organization, so it identifies the board's rows.
+    scope: { source: adapter.source, organization: truncate((b.name || b.slug).trim(), 200) },
+  };
+}
+
 export function buildSources(): JobSource[] {
   const cfg = getJobsConfig();
-  const sources: JobSource[] = [{ name: "Curated", fetch: async () => CURATED_JOBS }];
+  const sources: JobSource[] = [{ name: "Curated", fetch: async () => CURATED_JOBS, scope: { source: "Curated" } }];
   if (cfg.adzuna) {
     const { appId, appKey } = cfg.adzuna;
-    sources.push({ name: "Adzuna", fetch: () => fetchAdzuna(appId, appKey) });
+    sources.push({ name: "Adzuna", fetch: () => fetchAdzuna(appId, appKey), scope: { source: "Adzuna" } });
   }
-  for (const b of cfg.greenhouse) sources.push({ name: `Greenhouse:${b.slug}`, fetch: () => fetchGreenhouseBoard(b.slug, b.name) });
-  for (const c of cfg.lever) sources.push({ name: `Lever:${c.slug}`, fetch: () => fetchLeverCompany(c.slug, c.name) });
-  for (const f of cfg.feeds) sources.push({ name: `Feed:${f.name}`, fetch: () => fetchFeed(f) });
+  for (const b of cfg.boards) sources.push(boardSource(b));
+  for (const f of cfg.feeds) sources.push({ name: `Feed:${f.name}`, fetch: () => fetchFeed(f), scope: { source: f.name } });
   return sources;
 }
 
@@ -70,11 +89,11 @@ export function toEntryLevelRows(raw: RawJob[]): JobUpsert[] {
   return [...byId.values()];
 }
 
-async function runSource(source: JobSource): Promise<SourceResult> {
+async function runSource(source: JobSource): Promise<SourceResult & { scope: SourceScope }> {
   try {
-    return { source: source.name, jobs: await source.fetch() };
+    return { source: source.name, jobs: await source.fetch(), scope: source.scope };
   } catch (error) {
-    return { source: source.name, jobs: [], error: (error as Error).message };
+    return { source: source.name, jobs: [], error: (error as Error).message, scope: source.scope };
   }
 }
 
@@ -85,13 +104,15 @@ export async function refreshJobs() {
   const results = await Promise.all(buildSources().map(runSource));
   const rows = toEntryLevelRows(results.flatMap((r) => r.jobs));
   const inserted = await upsertJobs(rows);
-  // A monthly run replaces last month's listings. If any source failed, keep the old
-  // listings instead of emptying the board until the next run.
-  const anyFailed = results.some((r) => r.error);
-  const pruned = anyFailed ? 0 : await pruneJobs(cfg.retentionDays);
+  // A monthly run replaces last month's listings. Rows from a source that failed this run are kept
+  // (until their last date) instead of being dropped, so one broken board doesn't empty its listings
+  // or stop the others from being cleaned up.
+  const failed = results.filter((r) => r.error);
+  const pruned = await pruneJobs(cfg.retentionDays, failed.map((r) => r.scope));
 
   const stats = {
     sources: results.map((r) => ({ source: r.source, fetched: r.jobs.length, error: r.error })),
+    failedSources: failed.length,
     accepted: rows.length,
     inserted,
     pruned,

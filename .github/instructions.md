@@ -11,7 +11,7 @@ This file defines repository-specific guidance for AI coding agents working in t
   - Turso / libSQL database (`@libsql/client`; local SQLite file fallback in dev)
   - Groq (AI rewrite, resume import)
   - Puppeteer + `@sparticuz/chromium(-min)` for server-side PDF generation
-  - Job sources for `/jobs`: Adzuna, Greenhouse, Lever, RSS/Atom feeds, curated list
+  - Job sources for `/jobs`: employer ATS boards (Greenhouse, Lever, Ashby, SmartRecruiters) from the registry in `src/data/jobs/employers.ts`, Adzuna (supplementary), RSS/Atom feeds, curated list
 - Runtime split:
   - Single Next.js app: pages + API routes under `src/app`, monthly Vercel Cron (`/api/cron/jobs/`, 1st of the month, see `vercel.json`)
 

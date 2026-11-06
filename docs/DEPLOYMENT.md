@@ -71,26 +71,25 @@ A GitHub OAuth app allows only one callback URL, so use two apps: one for produc
 
 ## 5. Job source credentials (≈15 min, optional but recommended)
 
-Without these, `/jobs` shows only the official-portals section and any hand-curated entries.
+Employer careers boards from the registry in `src/data/jobs/employers.ts` are polled without any keys, so
+`/jobs` has private-sector listings even with nothing set here.
 
-### Adzuna (main source of private-sector fresher jobs)
+### Adzuna (supplementary private-sector source)
 1. Register at https://developer.adzuna.com/ and create an application.
 2. Copy the **Application ID** into `ADZUNA_APP_ID` and the **Application Key** into `ADZUNA_APP_KEY`.
    Each run makes 5 requests. The refresh runs once a month to stay within the free allowance.
 
-### Company job boards (Greenhouse / Lever, no key needed)
-1. On a company's careers page, open a job. If the URL looks like one of these, note the slug:
-   - `boards.greenhouse.io/<slug>/...` or `job-boards.greenhouse.io/<slug>/...` is a **Greenhouse** slug.
-   - `jobs.lever.co/<slug>/...` is a **Lever** slug.
-2. Check that the slug works by opening it in a browser. It should return JSON with jobs in it:
-   - `https://boards-api.greenhouse.io/v1/boards/<slug>/jobs`
-   - `https://api.lever.co/v0/postings/<slug>?mode=json`
-3. Add the slugs as a comma-separated list, with an optional display name after `:`:
-   ```
-   GREENHOUSE_BOARDS=slugone:Company One,slugtwo:Company Two
-   LEVER_COMPANIES=slugthree:Company Three
-   ```
-   Only roles that look entry-level and are in India or remote are kept. Large boards are fine.
+### Company job boards (Greenhouse / Lever / Ashby / SmartRecruiters, no key needed)
+The verified list lives in `src/data/jobs/employers.ts`; add boards there via PR (the file explains how to find
+and check a slug). To try a board without a deploy, add it through env as a comma-separated list, with an
+optional display name after `:`:
+```
+GREENHOUSE_BOARDS=slugone:Company One,slugtwo:Company Two
+LEVER_COMPANIES=slugthree:Company Three
+ASHBY_BOARDS=slugfour:Company Four
+SMARTRECRUITERS_COMPANIES=CompanyId:Company Five
+```
+Only roles that look entry-level and are in India (or remote with no other country named) are kept. Large boards are fine.
 
 ### Government / other RSS feeds
 1. On an official site, look for an RSS link (often a "RSS" icon or a "What's New" feed). Open it.
@@ -121,7 +120,7 @@ and for **Preview** too if you use preview deployments:
 | `GROQ_API_KEY` | your existing key |
 | `CRON_SECRET` | from step 2 |
 | `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | from step 5 (optional) |
-| `GREENHOUSE_BOARDS`, `LEVER_COMPANIES`, `JOB_FEEDS` | from step 5 (optional) |
+| `GREENHOUSE_BOARDS`, `LEVER_COMPANIES`, `ASHBY_BOARDS`, `SMARTRECRUITERS_COMPANIES`, `JOB_FEEDS` | from step 5 (optional) |
 
 Leave the old `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` variables in place for now. The new code
 ignores them. You'll remove them in step 10.

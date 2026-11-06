@@ -2,6 +2,7 @@ import "server-only";
 import type { InStatement, Row } from "@libsql/client";
 import { getDb, nowIso } from "./client";
 import type { JobRow, JobSector } from "@/types/database";
+import type { SourceScope } from "@/lib/jobs/types";
 
 function toJob(row: Row): JobRow {
   let tags: string[] = [];
@@ -60,14 +61,20 @@ export async function upsertJobs(jobs: JobUpsert[]): Promise<number> {
   return Number(after.rows[0]?.n ?? 0) - Number(before.rows[0]?.n ?? 0);
 }
 
-/** Removes listings not seen recently or whose last date has passed. */
-export async function pruneJobs(retentionDays: number): Promise<number> {
+/**
+ * Removes listings whose last date has passed, and listings not seen recently unless they belong to
+ * one of the `keep` scopes (sources that failed this run, so their absence says nothing).
+ */
+export async function pruneJobs(retentionDays: number, keep: SourceScope[] = []): Promise<number> {
   const db = await getDb();
   const cutoff = new Date(Date.now() - retentionDays * 86_400_000).toISOString();
   const today = new Date().toISOString().slice(0, 10);
+  const keepSql = keep.map((k) => (k.organization === undefined ? "source = ?" : "(source = ? AND organization = ?)"));
+  const keepArgs = keep.flatMap((k) => (k.organization === undefined ? [k.source] : [k.source, k.organization]));
+  const stale = keepSql.length ? `(last_seen_at < ? AND NOT (${keepSql.join(" OR ")}))` : "last_seen_at < ?";
   const rs = await db.execute({
-    sql: "DELETE FROM jobs WHERE last_seen_at < ? OR (last_date IS NOT NULL AND substr(last_date, 1, 10) < ?)",
-    args: [cutoff, today],
+    sql: `DELETE FROM jobs WHERE ${stale} OR (last_date IS NOT NULL AND substr(last_date, 1, 10) < ?)`,
+    args: [cutoff, ...keepArgs, today],
   });
   return rs.rowsAffected;
 }

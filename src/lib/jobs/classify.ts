@@ -36,10 +36,14 @@ const GOVT_RECRUITMENT_SIGNALS = [
 
 const GOVT_ORG = /\b(?:govt|government|ministry|department of|public sector|psu|railway|rrb|municipal|nagar nigam|commission|upsc|ssc|ibps|rbi|sbi|nabard|sebi|drdo|isro|barc|bsnl|ongc|ntpc|bhel|sail|gail|iocl|hpcl|bpcl|aiims|nhm|indian (?:army|navy|air force|post|oil|bank)|india post|high court|district court|police|cpsu|central university|kendriya|navodaya|state bank|bank of (?:india|baroda|maharashtra)|punjab national|canara bank|union bank|ministry of)\b/i;
 
-const INDIA_LOCATION = /\b(?:india|bengaluru|bangalore|mumbai|delhi|new delhi|ncr|gurgaon|gurugram|noida|hyderabad|chennai|pune|kolkata|ahmedabad|jaipur|kochi|cochin|chandigarh|indore|coimbatore|thiruvananthapuram|trivandrum|lucknow|bhubaneswar|nagpur|vadodara|visakhapatnam|mysuru|mysore|remote)\b/i;
+const INDIA_LOCATION = /\b(?:india|bengaluru|bangalore|mumbai|delhi|new delhi|ncr|gurgaon|gurugram|noida|hyderabad|chennai|pune|kolkata|ahmedabad|jaipur|kochi|cochin|chandigarh|indore|coimbatore|thiruvananthapuram|trivandrum|lucknow|bhubaneswar|nagpur|vadodara|visakhapatnam|mysuru|mysore)\b/i;
+// Location words that don't name a country; a "remote" posting made only of these is open to India.
+const UNRESTRICTED_REMOTE = /\b(?:remote|anywhere|worldwide|global|work from home|wfh|apac|asia(?: pacific)?|hybrid)\b/gi;
 
 export function looksSenior(text: string): boolean {
-  return SENIOR_SIGNALS.some((re) => re.test(text));
+  // Some ATS titles use underscores as separators ("IN_RBAI_Senior Engineer"), which hide words from \b.
+  const normalized = text.replace(/_/g, " ");
+  return SENIOR_SIGNALS.some((re) => re.test(normalized));
 }
 
 export function isEntryLevel(job: RawJob, sector: JobSector): boolean {
@@ -59,7 +63,9 @@ export function classifySector(job: RawJob): JobSector {
 
 export function isIndiaOrRemote(location?: string | null): boolean {
   if (!location) return true; // many govt feeds omit location; they are India-only sources
-  return INDIA_LOCATION.test(location);
+  if (INDIA_LOCATION.test(location)) return true;
+  // "Remote" alone is fine; "Remote - US" or "San Francisco; Remote" is not open to India.
+  return /\bremote\b/i.test(location) && !/[a-z]/i.test(location.replace(UNRESTRICTED_REMOTE, ""));
 }
 
 const TAG_RULES: [string, RegExp][] = [
