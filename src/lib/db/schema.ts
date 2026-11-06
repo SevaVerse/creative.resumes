@@ -70,6 +70,15 @@ export const SCHEMA_STATEMENTS: string[] = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_jobs_sector_seen ON jobs(sector, first_seen_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_jobs_last_seen ON jobs(last_seen_at)`,
+  // Shared rate-limit windows (src/lib/db/rateLimits.ts). `key` is an HMAC, never a raw IP or user id;
+  // rows are deleted after expires_at.
+  `CREATE TABLE IF NOT EXISTS rate_limits (
+    key TEXT PRIMARY KEY,
+    window_start INTEGER NOT NULL,
+    hits INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_rate_limits_expires ON rate_limits(expires_at)`,
   `CREATE TABLE IF NOT EXISTS job_runs (
     id TEXT PRIMARY KEY,
     started_at TEXT NOT NULL,

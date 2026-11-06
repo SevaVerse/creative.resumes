@@ -23,10 +23,13 @@ function skills(v: unknown): SkillItem[] {
   });
 }
 
-/** Only inline images or https URLs are allowed as the photo source. */
+/**
+ * Only inline images are allowed as the photo source (the builder stores uploads as data: URLs).
+ * A remote URL would let a shared page's owner see who views it, and make the PDF renderer fetch it.
+ */
 function photo(v: unknown): string {
   const s = str(v, 2_500_000);
-  return /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(s) || /^https:\/\//i.test(s) ? s : "";
+  return /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(s) ? s : "";
 }
 
 export function toResumeData(data: Record<string, unknown>, opts: { hideContact?: boolean } = {}): ResumeData {

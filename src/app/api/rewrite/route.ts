@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rewriteText, type RewriteType, type Tone, type Action, isAIRewriterEnabled, estimateTokens } from "@/utils/groq";
 import { logger, extractRequestId } from "@/utils/logger";
-import { createRateLimiter } from "@/utils/rateLimit";
+import { checkRateLimit } from "@/lib/db/rateLimits";
+import { isPlainObject, readJsonBody } from "@/lib/api/http";
 import { getCorsHeaders } from "@/utils/cors";
 import { getSessionUserId } from "@/utils/auth/session";
 
-// Rate limiting for AI rewrite requests (per user)
-const rewriteLimiter = createRateLimiter(60 * 1000, 20); // 20 requests per minute
+// AI rewrite requests per user per minute, shared across server instances (each is a paid AI call).
+const REWRITE_LIMIT = 20;
+// Text is capped at 2,000 characters below; this leaves room for multi-byte text and the other fields.
+const MAX_REWRITE_BODY_BYTES = 16_384;
 
 // Handle CORS preflight requests
 export async function OPTIONS(req: NextRequest) {
@@ -53,8 +56,7 @@ export async function POST(req: NextRequest) {
     log.info('rewrite.authenticated', { userId: userId });
 
     // Rate limiting check (per authenticated user)
-    const rlKey = `rewrite:${userId}`;
-    const rl = rewriteLimiter.check(rlKey);
+    const rl = await checkRateLimit("rewrite", userId, 60_000, REWRITE_LIMIT);
     
     if (!rl.allowed) {
       log.warn('rewrite.rate_limited', { userId: userId, retryAfterMs: rl.retryAfterMs });
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
           status: 429,
           headers: {
             "Retry-After": Math.ceil((rl.retryAfterMs || 0) / 1000).toString(),
-            "RateLimit-Limit": "20",
+            "RateLimit-Limit": String(REWRITE_LIMIT),
             "RateLimit-Remaining": rl.remaining.toString(),
             ...corsHeaders,
           }
@@ -76,7 +78,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse request body
-    const body = await req.json();
+    const body = await readJsonBody<unknown>(req, MAX_REWRITE_BODY_BYTES);
+    if (!isPlainObject(body)) {
+      return NextResponse.json({ error: "Invalid or too large request body" }, { status: 400, headers: corsHeaders });
+    }
     const { text, type, tone = 'professional', action = 'improve' } = body;
 
     // Validate input
@@ -191,7 +196,7 @@ export async function POST(req: NextRequest) {
       requestId
     }, {
       headers: {
-        "RateLimit-Limit": "20",
+        "RateLimit-Limit": String(REWRITE_LIMIT),
         "RateLimit-Remaining": rl.remaining.toString(),
         ...corsHeaders,
       }

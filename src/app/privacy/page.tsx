@@ -284,19 +284,23 @@ export default function PrivacyPage() {
               </h2>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              We maintain lightweight,{" "}
-              <strong className="text-teal-600 dark:text-teal-400">in-memory</strong>
-              {" "}counters for page hits and resume downloads via{" "}
+              We keep{" "}
+              <strong className="text-teal-600 dark:text-teal-400">anonymous counts</strong>
+              {" "}of page hits and resume downloads, shown via{" "}
               <code className="bg-gray-100 dark:bg-neutral-700 px-2 py-1 rounded text-sm">
                 /api/metrics
               </code>
-              .
+              . A page hit is counted at most once per visitor every 30 minutes, and a
+              download is counted when a PDF is actually generated (only the template
+              name is recorded).
             </p>
             <div className="bg-teal-50/50 dark:bg-teal-900/30 p-4 rounded-xl border border-teal-200/50 dark:border-teal-800/50">
               <p className="text-teal-800 dark:text-teal-200 text-sm">
-                <strong>Privacy-First:</strong> These counters are completely
-                anonymous and reset on server restarts. For persistence, you can
-                optionally use a self-hosted database or KV store.
+                <strong>Rate limits:</strong> To stop abuse, PDF export, the AI
+                tools and resume import are rate limited. Limits are tracked with
+                short-lived keys made from your IP address or account id by a secret
+                one-way hash: the IP address itself is never stored, and each key is
+                deleted once its time window (at most an hour) ends.
               </p>
             </div>
           </section>
