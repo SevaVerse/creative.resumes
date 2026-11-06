@@ -374,6 +374,14 @@ export function jobDetailPath(id: string): string {
   return `/jobs/listing/${id}/`;
 }
 
+// Sources whose apply URL goes through a job-board redirect rather than the employer's own page.
+const AGGREGATOR_SOURCES = new Set(["Adzuna"]);
+
+/** Apply-button label that doesn't claim an employer site when the link goes via an aggregator. */
+export function applyLinkLabel(job: Pick<JobRow, "source">): string {
+  return AGGREGATOR_SOURCES.has(job.source) ? `View & apply via ${job.source}` : "View & apply on official site";
+}
+
 /** "November 2026" in IST, for fresh-looking titles. */
 export function monthYear(date = new Date()): string {
   return date.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "Asia/Kolkata" });

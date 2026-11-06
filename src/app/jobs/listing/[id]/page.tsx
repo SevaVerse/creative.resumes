@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { loadJob } from "@/lib/jobs/load";
 import {
   JOB_CATEGORIES,
+  applyLinkLabel,
   breadcrumbJsonLd,
   jobDescription,
   jobDetailPath,
@@ -116,7 +117,7 @@ export default async function JobListingPage({ params }: { params: Promise<Param
 
         <div className="flex flex-wrap gap-3">
           <a href={job.url} target="_blank" rel="nofollow noopener noreferrer" className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-            View &amp; apply on official site ↗
+            {applyLinkLabel(job)} ↗
           </a>
           <Link href="/?template=campus" className="px-5 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold">
             Make a fresher resume for this job (free) →
