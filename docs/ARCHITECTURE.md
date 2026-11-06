@@ -12,7 +12,7 @@
                        │          │         │
               ┌────────▼───┐ ┌────▼────┐ ┌──▼────────────────────────┐
               │ Turso      │ │ Groq    │ │ Job sources (monthly)      │
-              │ (libSQL)   │ │ LLM API │ │ Adzuna · Greenhouse · Lever│
+              │ (libSQL)   │ │ LLM API │ │ Employer ATS boards·Adzuna │
               │ HTTP client│ └─────────┘ │ RSS/Atom feeds · curated   │
               └────────────┘             └────────────────────────────┘
          OAuth: Google / GitHub via Auth.js (JWT cookie sessions)
